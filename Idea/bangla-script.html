@@ -1,0 +1,395 @@
+<title>উপস্থাপনার স্ক্রিপ্ট</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --paper:#FAF7F8; --paper-2:#F2EDEF; --paper-3:#E9E1E5;
+  --ink:#1F1720; --ink-2:#5A4E58; --ink-3:#8C7F88;
+  --rule:#E0D6DB; --rule-2:#CDBFC7;
+  --accent:#B01B3F; --accent-2:#8E1533; --accent-soft:#F7DEE5;
+  --signal:#10796B; --signal-soft:#DBEFEA;
+  --warn:#9C5A12; --warn-soft:#F7E8D4;
+  --font-bn:"Hind Siliguri","Noto Sans Bengali",system-ui,sans-serif;
+  --font-en:"Archivo",ui-sans-serif,system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#16111A; --paper-2:#1F1824; --paper-3:#29202F;
+    --ink:#F0E9EE; --ink-2:#B3A5AE; --ink-3:#7D6F79;
+    --rule:#322A38; --rule-2:#443A4B;
+    --accent:#FF6B8A; --accent-2:#FF93A9; --accent-soft:#3B1D28;
+    --signal:#45D6B0; --signal-soft:#123029;
+    --warn:#E0A050; --warn-soft:#33260F;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#16111A; --paper-2:#1F1824; --paper-3:#29202F;
+  --ink:#F0E9EE; --ink-2:#B3A5AE; --ink-3:#7D6F79;
+  --rule:#322A38; --rule-2:#443A4B;
+  --accent:#FF6B8A; --accent-2:#FF93A9; --accent-soft:#3B1D28;
+  --signal:#45D6B0; --signal-soft:#123029;
+  --warn:#E0A050; --warn-soft:#33260F;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:var(--font-bn); margin:0;
+  padding:0 1rem 5rem; line-height:1.85;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:44rem;margin-inline:auto}
+h1,h2,h3{margin:0;line-height:1.3}
+
+header{padding:3rem 0 1.6rem;border-bottom:1px solid var(--rule);display:flex;flex-direction:column;gap:.7rem}
+.eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600}
+header h1{font-size:clamp(1.9rem,5vw,2.9rem);font-weight:700}
+header p{margin:0;color:var(--ink-2);font-size:1.02rem}
+
+.howto{
+  margin-top:1.4rem;background:var(--paper-2);border-left:3px solid var(--signal);
+  padding:1rem 1.2rem;border-radius:0 4px 4px 0;
+}
+.howto ul{margin:.4rem 0 0;padding-left:1.2rem;font-size:.95rem;color:var(--ink-2)}
+.howto li{margin-bottom:.25rem}
+
+.slide{padding:2.2rem 0;border-bottom:1px solid var(--rule)}
+.shead{display:flex;align-items:baseline;gap:.8rem;flex-wrap:wrap;margin-bottom:.9rem}
+.snum{
+  font-family:var(--font-mono);font-size:.72rem;font-weight:600;letter-spacing:.1em;
+  background:var(--accent);color:var(--paper);padding:.22rem .55rem;border-radius:3px;
+  white-space:nowrap;
+}
+.stitle{font-family:var(--font-en);font-size:1.02rem;font-weight:600;color:var(--ink-2)}
+.stime{font-family:var(--font-mono);font-size:.72rem;color:var(--ink-3);margin-left:auto;white-space:nowrap}
+
+.say{font-size:1.16rem;color:var(--ink);margin-bottom:.9rem}
+.say + .say{margin-top:-.2rem}
+.say b{font-weight:600}
+.en{font-family:var(--font-en);font-weight:600;color:var(--accent);font-size:.95em}
+.num{font-family:var(--font-mono);font-weight:600;color:var(--accent)}
+
+.cue{
+  font-family:var(--font-en);font-size:.86rem;color:var(--signal);
+  background:var(--signal-soft);border-radius:3px;padding:.5rem .8rem;
+  display:flex;gap:.5rem;align-items:flex-start;margin-bottom:1rem;line-height:1.5;
+}
+.cue::before{content:"▶";flex-shrink:0;opacity:.7}
+
+.tip{
+  font-family:var(--font-en);font-size:.86rem;color:var(--warn);
+  border:1px dashed var(--warn);border-radius:3px;padding:.5rem .8rem;
+  margin-top:.9rem;line-height:1.5;
+}
+.tip b{font-weight:600}
+
+.qa{padding:2.5rem 0 1rem}
+.qa h2{font-family:var(--font-en);font-size:1.5rem;font-weight:700;margin-bottom:.4rem}
+.qa > p{color:var(--ink-2);font-size:.98rem;margin:0 0 1.4rem}
+details{
+  border:1px solid var(--rule);border-radius:4px;background:var(--paper-2);
+  padding:.9rem 1.1rem;margin-bottom:.7rem;
+}
+summary{cursor:pointer;font-weight:600;font-size:1.05rem;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸ ";color:var(--accent);font-family:var(--font-mono)}
+details[open] summary::before{content:"▾ "}
+details .ans{margin-top:.8rem;padding-top:.8rem;border-top:1px dashed var(--rule-2);font-size:1.08rem;color:var(--ink-2)}
+
+.closing{
+  margin-top:2rem;border:2px solid var(--ink);border-radius:5px;padding:1.4rem;
+  display:flex;flex-direction:column;gap:.6rem;
+}
+.closing h3{font-family:var(--font-en);font-size:1.1rem;font-weight:700}
+.closing p{margin:0;font-size:1.05rem;color:var(--ink-2)}
+
+footer{padding-top:2rem;font-family:var(--font-mono);font-size:.74rem;color:var(--ink-3);text-align:center}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">TRACE-rPPG · Presentation Script</div>
+  <h1>উপস্থাপনার স্ক্রিপ্ট</h1>
+  <p>স্লাইড অনুযায়ী বাংলা স্ক্রিপ্ট। মোট সময় আনুমানিক <strong>১২–১৪ মিনিট</strong>।</p>
+
+  <div class="howto">
+    <strong style="font-family:var(--font-en);font-size:.92rem">কীভাবে ব্যবহার করবেন</strong>
+    <ul>
+      <li>এই পেজটা <b>ফোনে বা দ্বিতীয় স্ক্রিনে</b> খুলে রাখুন — শেয়ার করা স্ক্রিনে যেন না আসে।</li>
+      <li>স্লাইড বদলাতে <b>ডান/বাম অ্যারো কী</b> চাপুন।</li>
+      <li>হুবহু পড়বেন না — পয়েন্টগুলো মাথায় রেখে নিজের ভাষায় বলুন। বেশি স্বাভাবিক শোনাবে।</li>
+      <li>টেকনিক্যাল শব্দ ইংরেজিতেই বলুন। এটাই স্বাভাবিক এবং শিক্ষক এভাবেই আশা করবেন।</li>
+    </ul>
+  </div>
+</header>
+
+<!-- 1 -->
+<section class="slide">
+  <div class="shead"><span class="snum">স্লাইড ১</span><span class="stitle">Title</span><span class="stime">~৪৫ সেকেন্ড</span></div>
+  <div class="cue">শুরুতেই স্লাইড ১ ওপেন রাখুন।</div>
+  <p class="say">আসসালামু আলাইকুম স্যার। আমাদের প্রজেক্টের নাম <span class="en">TRACE-rPPG</span>।</p>
+  <p class="say">আমরা যা করতে চাচ্ছি সেটা এক লাইনে বলি — <b>একটা সাধারণ ওয়েবক্যাম দিয়ে, শরীরে কোনো সেন্সর না লাগিয়ে, শুধু মুখের ভিডিও থেকে হার্ট রেট বের করব।</b></p>
+  <p class="say">আর পুরো সিস্টেমটা দাঁড়িয়ে আছে আমাদের কোর্সের ঠিক তিনটা টপিকের উপর — <span class="en">Fourier Series</span>, <span class="en">Fourier Transform</span>, আর <span class="en">Convolution</span>। এর বাইরে কোনো <span class="en">machine learning</span> বা <span class="en">trained model</span> আমরা ব্যবহার করছি না।</p>
+  <div class="tip"><b>টোন:</b> শান্তভাবে, আত্মবিশ্বাসের সাথে। এই প্রথম লাইনটাই স্যারের আগ্রহ তৈরি করবে।</div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <div class="shead"><span class="snum">স্লাইড ২</span><span class="stitle">The problem</span><span class="stime">~৫০ সেকেন্ড</span></div>
+  <p class="say">প্রথমে সমস্যাটা বলি। এখন পর্যন্ত <span class="en">vital sign</span> মাপতে হলে শরীরে কিছু না কিছু লাগাতেই হয় — <span class="en">pulse oximeter</span>, <span class="en">ECG electrode</span>, <span class="en">chest strap</span>।</p>
+  <p class="say">তিনটা জায়গায় এটা বড় সমস্যা।</p>
+  <p class="say"><b>এক</b> — <span class="en">telehealth</span>। ডাক্তার ভিডিও কলে রোগীকে দেখতে পারেন, কিন্তু পালস মাপতে পারেন না।</p>
+  <p class="say"><b>দুই</b> — <span class="en">NICU</span>, মানে নবজাতকদের ইউনিট। প্রিম্যাচিউর বাচ্চাদের চামড়া এত পাতলা যে আঠালো সেন্সর লাগালে ক্ষতি হয়। অথচ এদেরই সবচেয়ে বেশি মনিটরিং দরকার।</p>
+  <p class="say"><b>তিন</b> — <span class="en">driver monitoring</span>। গাড়ি চালানোর সময় কেউ চেস্ট স্ট্র্যাপ পরে না।</p>
+  <p class="say">লক্ষ্য করুন — <b>এই তিন জায়গাতেই কিন্তু মানুষের দিকে আগে থেকেই একটা ক্যামেরা তাক করা আছে।</b></p>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <div class="shead"><span class="snum">স্লাইড ৩</span><span class="stitle">The idea</span><span class="stime">~৫০ সেকেন্ড</span></div>
+  <p class="say">তাহলে আইডিয়াটা কী?</p>
+  <p class="say">প্রতিবার হার্ট বিট হলে মুখের কৈশিক নালীতে রক্ত ঢোকে। রক্ত বেশি মানে চামড়া একটু বেশি আলো শুষে নেয়। ফলে চামড়ার রঙ <b>খুব সামান্য</b> বদলায়।</p>
+  <p class="say">কতটুকু সামান্য? <span class="num">এক শতাংশেরও কম</span>। খালি চোখে একেবারেই বোঝা যায় না।</p>
+  <p class="say">কিন্তু ক্যামেরা এটা ধরতে পারে। সমস্যা হলো — এই সিগন্যালটা <span class="en">noise</span>-এর নিচে চাপা পড়ে থাকে। এটাকে বের করে আনাই আসল কাজ, আর ঠিক এখানেই <span class="en">Fourier</span> আসে।</p>
+  <div class="tip"><b>এখানে থামুন এক সেকেন্ড।</b> "এক শতাংশেরও কম" বলার পর একটু বিরতি দিন — এটা স্যারের মনোযোগ ধরে রাখবে।</div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <div class="shead"><span class="snum">স্লাইড ৪</span><span class="stitle">The physics</span><span class="stime">~৫০ সেকেন্ড</span></div>
+  <p class="say">এবার একটু ফিজিক্স। <span class="en">Hemoglobin</span> সবুজ আলো অনেক বেশি শোষণ করে, লাল আলো তুলনামূলক কম।</p>
+  <p class="say">এর মানে হলো — রক্তের পরিমাণ বাড়লে <span class="en">green channel</span> অনেক বেশি নামে, <span class="en">red channel</span> তুলনায় কম নামে।</p>
+  <p class="say">তাহলে <b>পালস সিগন্যালটা আসলে চ্যানেলগুলোর পার্থক্যের মধ্যে লুকানো, মোট উজ্জ্বলতার মধ্যে না।</b></p>
+  <p class="say">এটা কেন গুরুত্বপূর্ণ? কারণ মানুষ যদি নড়ে, বা আলো বদলায়, তাহলে <b>তিনটা চ্যানেলই একসাথে</b> বাড়ে বা কমে। কিন্তু হার্ট বিট চ্যানেলগুলোর <b>ভারসাম্য</b> বদলায়।</p>
+  <p class="say">এই পার্থক্যটাই আমাদের পুরো প্রজেক্টের ভিত্তি — <b>নড়াচড়া উজ্জ্বলতা বদলায়, রক্ত রঙের ভারসাম্য বদলায়।</b></p>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <div class="shead"><span class="snum">স্লাইড ৫</span><span class="stitle">The pipeline</span><span class="stime">~৭০ সেকেন্ড</span></div>
+  <div class="cue">এই স্লাইডে সবুজ আর লাল বক্সগুলো আঙুল দিয়ে দেখান।</div>
+  <p class="say">এটা আমাদের পুরো <span class="en">pipeline</span> — এগারোটা ধাপ।</p>
+  <p class="say">শুরুতে ভিডিও নিই, মুখের চামড়ার অংশটা <span class="en">track</span> করি, প্রতি <span class="en">frame</span>-এ <span class="en">R, G, B</span>-এর গড় বের করি। এতে তিনটা <span class="en">1D time series</span> পাই।</p>
+  <p class="say">এরপর — <b>এই সবুজ বক্স দুটো <span class="en">Convolution</span></b>। আর <b>এই লাল বক্স তিনটা <span class="en">Fourier Transform</span></b>।</p>
+  <p class="say">স্যার, এখানে একটা কথা জোর দিয়ে বলতে চাই — <b>আমাদের সিস্টেম যত সংখ্যা আউটপুট দেয়, তার প্রত্যেকটা এই সবুজ বা লাল বক্স থেকেই বের হয়।</b> কোথাও কোনো <span class="en">trained model</span> নেই।</p>
+  <div class="tip"><b>এটাই স্যারের সবচেয়ে বড় প্রশ্নের উত্তর</b> — "কোর্সের টপিক কোথায় ব্যবহার করছ?" এই স্লাইডে সময় দিন, তাড়াহুড়ো করবেন না।</div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <div class="shead"><span class="snum">স্লাইড ৬</span><span class="stitle">Convolution</span><span class="stime">~৬৫ সেকেন্ড</span></div>
+  <p class="say">প্রথমে <span class="en">Convolution</span> — আমরা এটা দুই জায়গায় ব্যবহার করছি।</p>
+  <p class="say"><b>প্রথম জায়গা, <span class="en">detrending</span>।</b> কাঁচা সিগন্যালে আলোর ধীর পরিবর্তন থাকে — জানালার আলো বদলায়, মানুষ একটু নড়ে বসে। এই <span class="en">drift</span> পালসের চেয়ে অনেক বড়।</p>
+  <p class="say">আমরা একটা <span class="en">moving-average kernel</span> দিয়ে <span class="en">convolve</span> করে ধীর অংশটা বের করি, তারপর সেটা মূল সিগন্যাল থেকে বিয়োগ করি। মজার ব্যাপার — <b>একটা <span class="en">low-pass</span> বিয়োগ করলে সেটা <span class="en">high-pass</span> হয়ে যায়।</b></p>
+  <p class="say"><b>দ্বিতীয় জায়গা, <span class="en">bandpass filtering</span>।</b> আমরা শুধু <span class="num">0.7</span> থেকে <span class="num">4</span> হার্জ রাখি — এটা <span class="num">42</span> থেকে <span class="num">240</span> <span class="en">BPM</span>, মানে মানুষের হার্ট রেট যতটুকু হতে পারে।</p>
+  <p class="say">আর স্যার, আমরা <span class="en">convolution theorem</span>-টাও হাতে-কলমে দেখাব — সময়ে <span class="en">convolve</span> করা আর <span class="en">frequency</span>-তে গুণ করা যে হুবহু একই ফলাফল দেয়, সেটা সংখ্যা দিয়ে প্রমাণ করব।</p>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <div class="shead"><span class="snum">স্লাইড ৭</span><span class="stitle">Fourier Transform</span><span class="stime">~৭০ সেকেন্ড</span></div>
+  <div class="cue">এই স্লাইডে বাঁ পাশের অ্যানিমেশনটা নিজে নিজে চলবে। উপরের লাইনটা দেখিয়ে বলুন।</div>
+  <p class="say">এবার সবচেয়ে গুরুত্বপূর্ণ অংশ — <span class="en">Fourier Transform</span>। এখান থেকেই আসল সংখ্যাটা আসে।</p>
+  <p class="say">স্যার, উপরের লাইনটা দেখুন — এটাই আমাদের <span class="en">filtered signal</span>। খালি চোখে দেখে <b>কোনো ছন্দ বোঝা যাচ্ছে না</b>, কারণ <span class="en">noise</span> পালসের চেয়ে বড়।</p>
+  <p class="say">কিন্তু নিচের <span class="en">spectrum</span>-এ একটা <span class="en">peak</span> স্পষ্ট দেখা যাচ্ছে।</p>
+  <p class="say">কীভাবে? আমরা সিগন্যালটাকে প্রতিটা সম্ভাব্য <span class="en">frequency</span>-তে একটা বৃত্তের চারপাশে পেঁচাই। <span class="en">Noise</span> এলোমেলোভাবে ছড়িয়ে যায় আর <b>নিজেই নিজেকে কাটাকাটি করে ফেলে</b>। কিন্তু আসল পালসের ছন্দ প্রতিবার একই জায়গায় পড়ে, তাই সেটা <b>জমা হতে থাকে</b>।</p>
+  <p class="say">যেখানে সবচেয়ে বেশি জমে, সেই <span class="en">frequency</span>-কে <span class="num">৬০</span> দিয়ে গুণ করলেই <span class="en">BPM</span>।</p>
+  <div class="tip"><b>এই লাইনটা জোর দিয়ে বলুন:</b> "নয়েজ কাটাকাটি হয়ে যাওয়াটা কোনো ভাগ্যের ব্যাপার না — এটাই পদ্ধতিটার মূল কৌশল।"</div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <div class="shead"><span class="snum">স্লাইড ৮</span><span class="stitle">Fourier Series</span><span class="stime">~৬০ সেকেন্ড</span></div>
+  <p class="say">তৃতীয় টপিক — <span class="en">Fourier Series</span>। এটা আমরা একটা <b>বাস্তব সমস্যা</b> সমাধানে ব্যবহার করছি।</p>
+  <p class="say">হার্ট বিট কিন্তু <span class="en">sine wave</span> না। এটা একটা ধারালো ঢেউ — হঠাৎ উঠে, দ্রুত নামে, ছোট একটা দ্বিতীয় ধাক্কা থাকে।</p>
+  <p class="say"><span class="en">Fourier Series</span> বলে, এত ধারালো একটা পুনরাবৃত্ত আকার বানাতে হলে <span class="en">fundamental</span>-এর সাথে <span class="en">harmonic</span> লাগবেই।</p>
+  <p class="say">এর ফল কী? <span class="en">Spectrum</span>-এ <span class="num">72</span> <span class="en">BPM</span>-এ একটা <span class="en">peak</span> থাকে, আবার <span class="num">144</span>-তেও আরেকটা থাকে। দ্বিতীয়টা <span class="en">harmonic</span> — <b>দ্বিতীয় কোনো হার্ট বিট না।</b></p>
+  <p class="say">এখন সমস্যা হলো, সাধারণ <span class="en">argmax</span> যদি সবচেয়ে উঁচু <span class="en">peak</span> নেয়, তাহলে কোনো কোনো সময় সে <span class="num">144</span> রিপোর্ট করবে — একজন সুস্থ বিশ্রামরত মানুষের জন্য, যেটা ভুল।</p>
+  <p class="say">আমরা এটা ধরার জন্য <span class="en">sub-harmonic check</span> রাখছি — কোনো <span class="en">peak</span> মেনে নেওয়ার আগে তার অর্ধেক <span class="en">frequency</span>-তে শক্তি আছে কিনা দেখব।</p>
+  <div class="tip"><b>এটা খুব শক্তিশালী পয়েন্ট।</b> আপনি শুধু থিওরি জানেন না — থিওরি দিয়ে একটা ভবিষ্যৎ বাগ আগেভাগে ধরেছেন।</div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <div class="shead"><span class="snum">স্লাইড ৯</span><span class="stitle">Why fusion</span><span class="stime">~৫০ সেকেন্ড</span></div>
+  <p class="say">এবার আমাদের নিজস্ব অবদানের কথা বলি।</p>
+  <p class="say"><span class="en">RGB</span> থেকে পালস বের করার তিনটা প্রতিষ্ঠিত পদ্ধতি আছে — <span class="en">green channel</span>, <span class="en">CHROM</span>, আর <span class="en">POS</span>।</p>
+  <p class="say">এদের প্রত্যেকের আলাদা দুর্বলতা আছে। <span class="en">Green channel</span> সহজ, <span class="en">compression</span>-এ ভালো টেকে, কিন্তু নড়াচড়ায় ভেঙে পড়ে। <span class="en">CHROM</span> আর <span class="en">POS</span> নড়াচড়া সামলাতে পারে, কিন্তু ভালো আলো আর রঙের ডিটেইল দরকার।</p>
+  <p class="say">মূল কথা — <b>ভিন্ন ভিন্ন পরিস্থিতিতে ভিন্ন ভিন্ন পদ্ধতি জেতে।</b></p>
+  <p class="say">অথচ এখন পর্যন্ত যত <span class="en">implementation</span> আছে, সবাই <b>একটা পদ্ধতি বেছে নিয়ে পুরো ভিডিওর জন্য সেটাই চালায়</b>। এটা আসলে একটা বাজি, পরিমাপ না।</p>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <div class="shead"><span class="snum">স্লাইড ১০</span><span class="stitle">TRACE</span><span class="stime">~৫৫ সেকেন্ড</span></div>
+  <div class="cue">অ্যানিমেশনে ওজনগুলো নিজে নিজে বদলাবে — সেদিকে ইশারা করুন।</div>
+  <p class="say">আমাদের সমাধান, আর এটাই প্রজেক্টের নাম — <span class="en">Signal-Quality-Adaptive Fusion</span>।</p>
+  <p class="say">আমরা তিনটা পদ্ধতিই একসাথে চালাই। প্রতিটার জন্য <b>প্রতি মুহূর্তে</b> একটা <span class="en">quality score</span> হিসাব করি — মানে "এই মুহূর্তে এই পদ্ধতিটাকে কতটুকু বিশ্বাস করা যায়"।</p>
+  <p class="say">তারপর সেই <span class="en">score</span> অনুযায়ী ওজন দিয়ে তাদের <span class="en">spectrum</span> মিশিয়ে দিই।</p>
+  <p class="say">স্যার, স্ক্রিনে দেখুন — আলো কমলে <span class="en">green</span>-এর ওজন কমে যাচ্ছে। মানুষ নড়লে <span class="en">green</span> একদম পড়ে যাচ্ছে আর <span class="en">CHROM</span> দায়িত্ব নিচ্ছে।</p>
+  <p class="say"><b>কোনো একটা পদ্ধতিকে অন্ধভাবে বিশ্বাস করা হচ্ছে না।</b></p>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <div class="shead"><span class="snum">স্লাইড ১১</span><span class="stitle">Quality metric</span><span class="stime">~৫৫ সেকেন্ড</span></div>
+  <p class="say">এখন প্রশ্ন হতে পারে — এই <span class="en">quality score</span>-টা আসে কোথা থেকে? আলাদা কোনো <span class="en">model</span> কি লাগে?</p>
+  <p class="say">লাগে না। <b>এটা সরাসরি <span class="en">FFT</span> থেকেই আসে</b>, যেটা আমরা এমনিতেই হিসাব করে ফেলেছি।</p>
+  <p class="say">আমরা দেখি — <span class="en">band</span>-এর ভেতরে মোট যত শক্তি আছে, তার কত ভাগ <span class="en">peak</span> আর তার <span class="en">harmonic</span>-এ জমা আছে।</p>
+  <p class="say">পরিষ্কার পালস হলে প্রায় সব শক্তি এক জায়গায় জমে — <span class="en">score</span> ১-এর কাছে। আর <span class="en">noise</span> হলে শক্তি সব জায়গায় ছড়িয়ে থাকে — <span class="en">score</span> শূন্যের কাছে।</p>
+  <p class="say">শক্তি এভাবে মাপা যায় <span class="en">Parseval's theorem</span>-এর কারণে — সময়ের ডোমেইনে আর <span class="en">frequency</span> ডোমেইনে মোট শক্তি সমান থাকে।</p>
+  <div class="tip"><b>এটা বলতে ভুলবেন না:</b> "কোনো বাড়তি হিসাব লাগছে না, শুধু যোগফলের একটা অনুপাত।" এটা দেখায় ডিজাইনটা পরিষ্কারভাবে ভাবা হয়েছে।</div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <div class="shead"><span class="snum">স্লাইড ১২</span><span class="stitle">Compression</span><span class="stime">~৬৫ সেকেন্ড</span></div>
+  <p class="say">আমাদের প্রথম <span class="en">extension</span>।</p>
+  <p class="say">সব <span class="en">benchmark dataset</span> পরিষ্কার, <span class="en">uncompressed</span> ভিডিও। কিন্তু বাস্তবে <span class="en">telehealth</span> হয় জুম বা গুগল মিটে।</p>
+  <p class="say">এখন একটা মজার ব্যাপার — <span class="en">video codec</span>-গুলো <b>রঙের তথ্য এক-চতুর্থাংশ রেজলিউশনে</b> রাখে, কারণ মানুষের চোখ রঙের চেয়ে উজ্জ্বলতায় বেশি সংবেদনশীল।</p>
+  <p class="say">কিন্তু স্যার, <b>আমাদের সিগন্যাল তো ঠিক ওই রঙের তথ্যেই থাকে।</b> মানে <span class="en">compression</span> ঠিক সেই জিনিসটাই ফেলে দেয় যেটা আমাদের দরকার।</p>
+  <p class="say">তাই আমরা আসল ভিডিও কলের মধ্য দিয়ে ফুটেজ পাঠিয়ে মাপব কতটুকু ক্ষতি হয়।</p>
+  <p class="say">আর আমাদের ধারণা — <b>কম <span class="en">bitrate</span>-এ পদ্ধতিগুলোর ক্রম উল্টে যাবে</b>। এই গ্রাফে দেখুন, এখানে <span class="en">POS</span> ভালো, কিন্তু এখানে <span class="en">green</span> ভালো টিকে থাকে।</p>
+  <p class="say">আর <b>ঠিক এই পরিস্থিতির জন্যই আমাদের <span class="en">adaptive fusion</span></b> — যেখানে কোনো একটা স্থির পছন্দ সব জায়গায় সঠিক না।</p>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <div class="shead"><span class="snum">স্লাইড ১৩</span><span class="stitle">Second FFT</span><span class="stime">~৬৫ সেকেন্ড</span></div>
+  <p class="say">দ্বিতীয় <span class="en">extension</span>, আর ব্যক্তিগতভাবে এটা আমার সবচেয়ে পছন্দের অংশ।</p>
+  <p class="say">আমরা <span class="en">Fourier Transform</span> <b>দুইবার</b> ব্যবহার করছি।</p>
+  <p class="say"><b>প্রথমবার</b> ভিডিও সিগন্যালের উপর — হার্ট রেট বের করতে।</p>
+  <p class="say"><b>দ্বিতীয়বার</b> সম্পূর্ণ আলাদা একটা সিগন্যালের উপর — <b>বিটগুলোর মধ্যের ফাঁকগুলোর উপর</b>। মানে হার্ট বিটের নিজস্ব ছন্দ।</p>
+  <p class="say">সুস্থ হৃৎপিণ্ড কিন্তু মেট্রোনোমের মতো বাজে না — প্রতিটা বিটের ফাঁক একটু একটু আলাদা। এই তারতম্যকে বলে <span class="en">Heart Rate Variability</span>।</p>
+  <p class="say">এই ফাঁকের সিরিজটার <span class="en">FFT</span> নিলে দুটো <span class="en">band</span> পাওয়া যায় — <span class="en">LF</span> আর <span class="en">HF</span>।</p>
+  <p class="say">আর <span class="en">HF band</span>-টা দারুণ — এটা <span class="num">0.15</span> থেকে <span class="num">0.40</span> হার্জ, মানে মিনিটে ৯ থেকে ২৪ বার। এটা আসলে <b>মানুষটার শ্বাস-প্রশ্বাস</b>। শ্বাস নিলে হার্ট রেট একটু বাড়ে, ছাড়লে কমে।</p>
+  <p class="say">অর্থাৎ <b>মুখের ভিডিও থেকে আমরা তার শ্বাসের হারও বের করে ফেলতে পারি</b> — হার্ট বিটের ভেতরে লুকানো অবস্থায়।</p>
+  <p class="say">একটা কথা পরিষ্কার করে বলতে চাই স্যার — আমরা এটাকে <b>কোনোভাবেই রোগ নির্ণয় বা <span class="en">diagnosis</span> হিসেবে দাবি করছি না।</b> এটা একটা <span class="en">wellness indicator</span>, এবং স্ক্রিনে ও রিপোর্টে দুই জায়গাতেই আমরা সেটা স্পষ্ট লিখে দেব।</p>
+  <div class="tip"><b>শেষ লাইনটা বাদ দেবেন না।</b> স্বাস্থ্য-সম্পর্কিত প্রজেক্টে এই সততাটুকু শিক্ষকরা খুব ইতিবাচকভাবে দেখেন।</div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <div class="shead"><span class="snum">স্লাইড ১৪</span><span class="stitle">Method purity</span><span class="stime">~৫৫ সেকেন্ড</span></div>
+  <div class="cue">এই টেবিলটা স্যারের সবচেয়ে গুরুত্বপূর্ণ প্রশ্নের সরাসরি উত্তর।</div>
+  <p class="say">স্যার, এই টেবিলে আমরা প্রতিটা ধাপ ধরে ধরে দেখিয়েছি কোন জায়গায় কোন টপিক ব্যবহার হচ্ছে।</p>
+  <p class="say"><span class="en">Detrending</span> আর <span class="en">bandpass</span> — <span class="en">Convolution</span>। <span class="en">BPM</span>, <span class="en">quality metric</span>, আর <span class="en">LF/HF</span> — <span class="en">Fourier Transform</span>। <span class="en">Harmonic</span> সামলানো — <span class="en">Fourier Series</span>।</p>
+  <p class="say">আর সবচেয়ে গুরুত্বপূর্ণ কথাটা হলো — <b>আমাদের দুটো প্রধান আউটপুট, <span class="en">BPM</span> আর <span class="en">LF/HF ratio</span>, দুটোই সরাসরি একটা <span class="en">Fourier Transform</span> থেকে বের হয়।</b></p>
+  <p class="say">নিচের ধূসর সারিগুলো সৎভাবে বলছি — <span class="en">CHROM</span> আর <span class="en">POS</span> হলো <span class="en">linear algebra</span>, আর <span class="en">validation</span> হলো <span class="en">statistics</span>। এগুলো <span class="en">Fourier</span> না।</p>
+  <p class="say">কিন্তু এগুলো কোনোটাই <span class="en">estimation path</span>-এ নেই — এরা হয় <span class="en">Fourier</span> স্টেজকে পরিষ্কার ডেটা দেয়, নয়তো হিসাব শেষ হওয়ার পরে প্রয়োগ হয়।</p>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <div class="shead"><span class="snum">স্লাইড ১৫</span><span class="stitle">Validation</span><span class="stime">~৫৫ সেকেন্ড</span></div>
+  <p class="say">এখন — আমরা কীভাবে প্রমাণ করব যে এটা সত্যিই কাজ করে?</p>
+  <p class="say">শুধু স্ক্রিনে একটা সংখ্যা দেখিয়ে "দেখুন কাজ করছে" বলা যথেষ্ট না।</p>
+  <p class="say">আমরা <span class="en">UBFC-rPPG</span> <span class="en">dataset</span> ব্যবহার করব — ৪২টা ভিডিও, সাথে <span class="en">pulse oximeter</span>-এর <span class="en">synchronised</span> রিডিং আছে। এটা ফ্রি, কোনো ফর্ম পূরণ করতে হয় না। সাথে <span class="en">PURE</span>, যেখানে নিয়ন্ত্রিত মাথা নাড়ানোর ছয়টা পরিস্থিতি আছে।</p>
+  <p class="say">আর আমরা নিজেরাও একটা ছোট <span class="en">dataset</span> বানাব — বন্ধুদের অনুমতি নিয়ে, একটা সস্তা <span class="en">pulse oximeter</span> দিয়ে।</p>
+  <p class="say">মেট্রিক হিসেবে <span class="en">MAE</span>, <span class="en">RMSE</span>, <span class="en">Pearson r</span> — আর সবচেয়ে গুরুত্বপূর্ণ, <span class="en">Bland-Altman analysis</span>। কারণ গড় ভুল দেখে বোঝা যায় না সিস্টেমটা <b>সবসময় একদিকে ভুল করছে কিনা</b>।</p>
+  <p class="say">আর <span class="en">ablation study</span> — প্রতিটা পদ্ধতি আলাদা, তারপর <span class="en">fusion</span>। <b>এটাই "আমাদেরটা ভালো" কথাটাকে দাবি থেকে প্রমাণে বদলে দেয়।</b></p>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <div class="shead"><span class="snum">স্লাইড ১৬</span><span class="stitle">Plan</span><span class="stime">~৪০ সেকেন্ড</span></div>
+  <p class="say">সময়ের পরিকল্পনা চার সপ্তাহের।</p>
+  <p class="say"><b>প্রথম সপ্তাহ</b> — পেপার পড়া, <span class="en">green-channel baseline</span> দাঁড় করানো, <span class="en">dataset</span> লোড করা।</p>
+  <p class="say"><b>দ্বিতীয় সপ্তাহ</b> — <span class="en">CHROM</span>, <span class="en">POS</span>, আর আমাদের মূল <span class="en">fusion layer</span>।</p>
+  <p class="say"><b>তৃতীয় সপ্তাহ</b> — <span class="en">compression</span> টেস্টিং, <span class="en">HRV</span> লেয়ার, <span class="en">ablation</span>।</p>
+  <p class="say"><b>চতুর্থ সপ্তাহ</b> — পরিসংখ্যান, <span class="en">live demo</span>, আর রিপোর্ট।</p>
+  <p class="say">শেষে আমরা তিনটা জিনিস জমা দেব — একটা চলন্ত <span class="en">real-time demo</span>, প্রকাশিত পদ্ধতির সাথে তুলনা করা একটা <span class="en">results table</span>, আর <span class="en">research paper</span>-এর কাঠামোয় লেখা একটা রিপোর্ট।</p>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <div class="shead"><span class="snum">স্লাইড ১৭</span><span class="stitle">Close</span><span class="stime">~৩৫ সেকেন্ড</span></div>
+  <p class="say">শেষ করি এক লাইনে, স্যার।</p>
+  <p class="say"><b>আমরা শুধু একটা পরিচিত কৌশল আবার বানাচ্ছি না।</b></p>
+  <p class="say">বর্তমান সিস্টেমগুলো কীভাবে তাদের পদ্ধতি বাছে — সেখানে একটা বাস্তব দুর্বলতা আমরা চিহ্নিত করেছি, এবং সেটা ঠিক করছি এমন একটা <span class="en">adaptive</span> উপায়ে যেটা <b>পুরোপুরি এই কোর্সের <span class="en">Fourier</span> আর <span class="en">convolution</span> থিওরির উপর দাঁড়ানো</b>।</p>
+  <p class="say">ধন্যবাদ স্যার। এখন কোনো প্রশ্ন থাকলে করতে পারেন।</p>
+</section>
+
+<!-- Q&A -->
+<section class="qa">
+  <h2>সম্ভাব্য প্রশ্ন ও উত্তর</h2>
+  <p style="font-family:var(--font-en)">এই প্রশ্নগুলো আসার সম্ভাবনা সবচেয়ে বেশি। আগে থেকে তৈরি থাকলে অনেক আত্মবিশ্বাসী দেখাবে।</p>
+
+  <details>
+    <summary>এটা তো আগে থেকেই আছে, তোমাদের নতুনত্ব কী?</summary>
+    <div class="ans">
+      <p>স্যার, ঠিকই বলেছেন — <span class="en">rPPG</span> নিজে নতুন না, ২০০৮ সাল থেকে গবেষণা হচ্ছে। আমরা সেটা দাবিও করছি না।</p>
+      <p>আমাদের নতুনত্ব একটা নির্দিষ্ট জায়গায় — <b>বিদ্যমান সব সিস্টেম একটা পদ্ধতি স্থিরভাবে বেছে নেয়</b>। আমরা প্রতি মুহূর্তে মান মেপে ওজন বদলাই।</p>
+      <p>আর <span class="en">video-call compression</span>-এর অধীনে এই তুলনাটা এখনো প্রায় কেউ করেনি, যদিও বাস্তব <span class="en">telehealth</span> ঠিক ওভাবেই হয়।</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Deep learning ব্যবহার করছ না কেন? এখন তো সবাই করে।</summary>
+    <div class="ans">
+      <p>দুটো কারণ, স্যার।</p>
+      <p><b>এক</b> — এটা <span class="en">Signals</span> কোর্সের প্রজেক্ট। <span class="en">Neural network</span> ব্যবহার করলে <span class="en">Fourier</span> আর <span class="en">convolution</span>-এর ভূমিকা প্রায় থাকত না। আমরা চেয়েছি প্রতিটা সংখ্যা যেন কোর্সের থিওরিতে ফিরে যায়।</p>
+      <p><b>দুই</b> — এটা আসলে একটা বৈধ গবেষণা অবস্থান। স্বাস্থ্যখাতে <span class="en">black-box model</span>-এর <span class="en">interpretability</span> নিয়ে বাস্তব সমস্যা আছে, এবং যেসব পেপার <span class="en">deep learning</span> ব্যবহার করে তারা নিজেরাই এই সীমাবদ্ধতার কথা লেখে। আমাদের প্রতিটা আউটপুট একটা নির্দিষ্ট <span class="en">frequency-domain</span> হিসাবে ফিরে যায়।</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>কতটা নির্ভুল হবে? সংখ্যা বলতে পারবে?</summary>
+    <div class="ans">
+      <p>স্যার, এখনই কোনো সংখ্যা দাবি করা অসৎ হবে, কারণ আমরা এখনো মাপিনি।</p>
+      <p>তবে প্রকাশিত গবেষণায় <span class="en">CHROM</span> আর <span class="en">POS</span> পরিষ্কার পরিস্থিতিতে সাধারণত <span class="num">2</span> থেকে <span class="num">4</span> <span class="en">BPM</span> <span class="en">MAE</span> দেয়। আমাদের লক্ষ্য ওই মানের কাছাকাছি পৌঁছানো, আর <b>খারাপ পরিস্থিতিতে ওদের চেয়ে ভালো করা</b>।</p>
+      <p>আর যেখানে আমরা হারব, সেটাও রিপোর্টে সৎভাবে লিখব।</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>গায়ের রঙ কালো হলে কি কাজ করবে?</summary>
+    <div class="ans">
+      <p>ভালো প্রশ্ন স্যার, এবং সৎ উত্তর হলো — <b>কম ভালো কাজ করবে</b>।</p>
+      <p><span class="en">Melanin</span> বেশি আলো শোষণ করে, তাই সিগন্যাল দুর্বল হয়। এটা এই ক্ষেত্রের একটা <span class="en">documented</span> সমস্যা — <span class="en">Dasari et al. 2021</span> দেখিয়েছেন <span class="en">chrominance</span> পদ্ধতিগুলো গাঢ় <span class="en">Fitzpatrick</span> ত্বকে বেশি ভুল করে।</p>
+      <p>আমরা এটা লুকাব না। রিপোর্টের <span class="en">Limitations</span> অংশে স্পষ্ট লিখব, এবং সম্ভব হলে <span class="en">MMPD dataset</span> দিয়ে মেপে দেখাব ঠিক কতটুকু পার্থক্য হয়।</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>মানুষ যদি নড়াচড়া করে বা কথা বলে?</summary>
+    <div class="ans">
+      <p>এটাই এই ক্ষেত্রের সবচেয়ে বড় সমস্যা, স্যার, এবং সত্যি বলতে <b>এটাই আমাদের পদ্ধতিটার মূল কারণ</b>।</p>
+      <p>নড়াচড়ায় <span class="en">green channel</span> ভেঙে পড়ে কিন্তু <span class="en">CHROM</span> টিকে থাকে। আমাদের <span class="en">quality metric</span> সেটা ধরে ফেলে আর ওজন সরিয়ে দেয়।</p>
+      <p>তবে <b>খুব বেশি নড়াচড়ায় সব পদ্ধতিই ব্যর্থ হয়</b>। তখন আমাদের সিস্টেম ভুল সংখ্যা না দেখিয়ে <span class="en">low confidence</span> দেখাবে — এটাও একটা ডিজাইন সিদ্ধান্ত।</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>৯০টা দলের অনেকেই তো এটা করবে, তোমাদের আলাদা কী?</summary>
+    <div class="ans">
+      <p>সম্ভাবনা আছে স্যার, কারণ <span class="en">webcam-pulse-detector</span> নামে একটা জনপ্রিয় <span class="en">repo</span> আছে যেটা সবাই আগে খুঁজে পায়।</p>
+      <p>কিন্তু ওগুলো সাধারণত <span class="en">clone</span> করে একটা সংখ্যা দেখিয়ে শেষ। আমাদের পার্থক্য তিনটা জায়গায় — <b>নিজস্ব <span class="en">fusion</span> পদ্ধতি</b>, <b><span class="en">public dataset</span>-এর বিপরীতে সংখ্যায় প্রমাণ</b>, আর <b><span class="en">compression</span>-এর অধীনে পরীক্ষা</b>।</p>
+      <p>আমরা <span class="en">baseline</span> হিসেবেই ওই সাধারণ পদ্ধতিটা বানাব — <b>হারানোর জন্য</b>।</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>ডেমো দেখাতে পারবে? কতক্ষণ লাগবে?</summary>
+    <div class="ans">
+      <p>জি স্যার। <span class="en">BPM</span>-এর জন্য <span class="num">২০</span> থেকে <span class="num">৩০</span> সেকেন্ড ভিডিও যথেষ্ট, এবং ওটা <span class="en">live</span> চলতে থাকবে।</p>
+      <p>তবে <span class="en">HRV</span> বা <span class="en">LF/HF</span>-এর জন্য বেশি সময় লাগে — অন্তত দুই মিনিট, আদর্শভাবে পাঁচ মিনিট। কারণ <span class="en">LF band</span> শুরু হয় <span class="num">0.04</span> হার্জে, যার এক চক্রই ২৫ সেকেন্ড।</p>
+      <p>তাই আমাদের ডেমোতে <b>দুইটা আলাদা <span class="en">mode</span></b> থাকবে — একটা দ্রুত <span class="en">live BPM</span>, আরেকটা দীর্ঘ <span class="en">HRV reading</span>।</p>
+    </div>
+  </details>
+</section>
+
+<div class="closing">
+  <h3>শেষ মুহূর্তের কয়েকটা কথা</h3>
+  <p>ধীরে বলুন। ঘাবড়ে গেলে গতি বেড়ে যায়, আর তখন শ্রোতা ধরতে পারে না।</p>
+  <p>কোনো প্রশ্নের উত্তর না জানলে সোজা বলুন — <b>"এটা এখনো দেখিনি স্যার, তবে যেভাবে বের করব সেটা হলো…"</b>। বানিয়ে বলার চেয়ে এটা অনেক ভালো শোনায়।</p>
+  <p>স্লাইড ৫ আর স্লাইড ১৪ সবচেয়ে গুরুত্বপূর্ণ। বাকি সব দ্রুত গেলেও ক্ষতি নেই, এই দুটোয় সময় দিন।</p>
+</div>
+
+<footer>TRACE-rPPG · উপস্থাপনার স্ক্রিপ্ট · ১৭ স্লাইড</footer>
+
+</div>

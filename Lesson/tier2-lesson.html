@@ -1,0 +1,838 @@
+<title>Phase Is Timing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap">
+
+<style>
+:root {
+  --paper:#FAF7F8; --paper-2:#F2EDEF; --paper-3:#E9E1E5;
+  --ink:#1F1720; --ink-2:#5A4E58; --ink-3:#8C7F88;
+  --rule:#E0D6DB; --rule-2:#CDBFC7;
+  --accent:#B01B3F; --accent-2:#8E1533; --accent-soft:#F7DEE5;
+  --signal:#10796B; --signal-soft:#DBEFEA;
+  --warn:#9C5A12; --warn-soft:#F7E8D4;
+  --shadow:0 1px 2px rgba(31,23,32,.05), 0 8px 24px -12px rgba(31,23,32,.18);
+  --sp-1:.35rem; --sp-2:.7rem; --sp-3:1.1rem; --sp-4:1.7rem; --sp-5:2.6rem; --sp-6:4rem;
+  --font-display:"Spectral",Georgia,"Times New Roman",serif;
+  --font-body:"Archivo",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --spine:40rem; --wide:60rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#16111A; --paper-2:#1F1824; --paper-3:#29202F;
+    --ink:#F0E9EE; --ink-2:#B3A5AE; --ink-3:#7D6F79;
+    --rule:#322A38; --rule-2:#443A4B;
+    --accent:#FF6B8A; --accent-2:#FF93A9; --accent-soft:#3B1D28;
+    --signal:#45D6B0; --signal-soft:#123029;
+    --warn:#E0A050; --warn-soft:#33260F;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"] {
+  --paper:#16111A; --paper-2:#1F1824; --paper-3:#29202F;
+  --ink:#F0E9EE; --ink-2:#B3A5AE; --ink-3:#7D6F79;
+  --rule:#322A38; --rule-2:#443A4B;
+  --accent:#FF6B8A; --accent-2:#FF93A9; --accent-soft:#3B1D28;
+  --signal:#45D6B0; --signal-soft:#123029;
+  --warn:#E0A050; --warn-soft:#33260F;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.65;margin:0;padding:0 var(--sp-3) var(--sp-6);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--font-display);text-wrap:balance;line-height:1.2;margin:0}
+p{margin:0}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+code,.m{font-family:var(--font-mono);font-size:.92em;font-variant-ligatures:none}
+.m{color:var(--accent);font-weight:500}
+.masthead{max-width:var(--wide);margin:0 auto;padding:var(--sp-6) 0 var(--sp-5);border-bottom:1px solid var(--rule);display:flex;flex-direction:column;gap:var(--sp-3)}
+.eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:500}
+.masthead h1{font-size:clamp(2.6rem,7vw,4.4rem);font-weight:700;letter-spacing:-.02em}
+.masthead .standfirst{font-family:var(--font-display);font-size:clamp(1.05rem,2.2vw,1.3rem);color:var(--ink-2);max-width:34rem;line-height:1.5}
+.meta-row{display:flex;flex-wrap:wrap;gap:var(--sp-3) var(--sp-4);font-family:var(--font-mono);font-size:.76rem;color:var(--ink-3);letter-spacing:.04em;padding-top:var(--sp-2)}
+.meta-row span strong{color:var(--ink-2);font-weight:500}
+.sec{max-width:var(--wide);margin:0 auto;padding-top:var(--sp-6);display:flex;flex-direction:column;gap:var(--sp-4)}
+.sec-head{display:flex;flex-direction:column;gap:var(--sp-2)}
+.sec-num{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.16em;color:var(--ink-3);text-transform:uppercase}
+.sec-head h2{font-size:clamp(1.7rem,3.6vw,2.4rem);font-weight:600;letter-spacing:-.015em}
+.sec-head h2 em{font-style:italic;color:var(--accent)}
+.prose{max-width:var(--spine);display:flex;flex-direction:column;gap:var(--sp-3)}
+.prose h3{font-size:1.18rem;font-weight:600;margin-top:var(--sp-2)}
+.prose ul,.prose ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:var(--sp-2)}
+.prose strong{font-weight:600}
+.part-break{max-width:var(--wide);margin:var(--sp-6) auto 0;padding-top:var(--sp-5);border-top:2px solid var(--ink);display:flex;flex-direction:column;gap:var(--sp-2)}
+.part-break .eyebrow{color:var(--ink-3)}
+.part-break h2{font-size:clamp(2rem,4.6vw,3rem);font-weight:700;letter-spacing:-.02em}
+.plain{background:var(--paper-2);border-left:3px solid var(--signal);padding:var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-1);max-width:var(--spine)}
+.plain .lbl{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--signal);font-weight:600}
+.plain p{color:var(--ink-2);font-size:.95rem}
+.keypoint{background:var(--accent-soft);padding:var(--sp-3) var(--sp-4);max-width:var(--spine);border-radius:2px;font-family:var(--font-display);font-size:1.1rem;line-height:1.5}
+.keypoint strong{font-weight:700;color:var(--accent-2)}
+.aside-note{border:1px solid var(--rule);border-radius:3px;padding:var(--sp-3);max-width:var(--spine);font-size:.92rem;color:var(--ink-2);display:flex;flex-direction:column;gap:var(--sp-2)}
+.aside-note .lbl{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--warn);font-weight:600}
+.fig{border:1px solid var(--rule-2);border-radius:4px;background:var(--paper-2);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;margin:0}
+.fig-bar{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-2) var(--sp-3);background:var(--paper-3);border-bottom:1px solid var(--rule-2);flex-wrap:wrap}
+.fig-bar .tag{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.fig-bar .name{font-family:var(--font-body);font-size:.85rem;color:var(--ink-2);font-weight:500}
+.fig-canvas-wrap{padding:var(--sp-3);background:var(--paper)}
+.fig canvas{display:block;width:100%;height:auto;touch-action:none}
+.fig-controls{border-top:1px solid var(--rule);padding:var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-3)}
+.ctl-row{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2) var(--sp-3)}
+.ctl{display:flex;align-items:center;gap:var(--sp-2);flex:1 1 15rem}
+.ctl label{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.06em;color:var(--ink-2);text-transform:uppercase;white-space:nowrap}
+.ctl input[type=range]{flex:1;min-width:5rem;accent-color:var(--accent);height:1.4rem}
+button{font-family:var(--font-mono);font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;font-weight:500;padding:.42rem .8rem;background:var(--paper);color:var(--ink);border:1px solid var(--rule-2);border-radius:3px;cursor:pointer;transition:background .12s,border-color .12s,color .12s}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button[aria-pressed="true"],button.on{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+.chk{display:inline-flex;align-items:center;gap:.45rem;font-family:var(--font-mono);font-size:.73rem;color:var(--ink-2);cursor:pointer;text-transform:uppercase;letter-spacing:.05em}
+.chk input{accent-color:var(--signal);width:1rem;height:1rem}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(7.5rem,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+.readout div{background:var(--paper);padding:var(--sp-2);display:flex;flex-direction:column;gap:.15rem}
+.readout .k{font-family:var(--font-mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.readout .v{font-family:var(--font-mono);font-size:1.02rem;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.readout .v.hot{color:var(--accent)}
+.readout .v.good{color:var(--signal)}
+.fig-note{padding:var(--sp-2) var(--sp-3) var(--sp-3);font-size:.86rem;color:var(--ink-2);border-top:1px dashed var(--rule);background:var(--paper-2)}
+.fig-note strong{color:var(--ink);font-weight:600}
+.math{font-family:var(--font-mono);font-size:.95rem;background:var(--paper-2);border:1px solid var(--rule);border-radius:3px;padding:var(--sp-3);overflow-x:auto;max-width:var(--spine);line-height:1.75;white-space:pre;color:var(--ink)}
+.math .hi{color:var(--accent);font-weight:600}
+.math .dim{color:var(--ink-3)}
+.math .ok{color:var(--signal);font-weight:600}
+.tbl-wrap{overflow-x:auto;max-width:var(--spine)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:26rem}
+th,td{text-align:left;padding:.5rem .7rem;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:500;border-bottom:1px solid var(--rule-2)}
+td.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.gloss{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--rule);max-width:var(--spine)}
+.gloss>div{padding:var(--sp-3) 0;border-bottom:1px solid var(--rule);display:grid;grid-template-columns:11rem 1fr;gap:var(--sp-3)}
+.gloss dt{font-family:var(--font-mono);font-size:.82rem;font-weight:600;color:var(--accent);margin:0}
+.gloss dd{margin:0;font-size:.93rem;color:var(--ink-2)}
+@media (max-width:34rem){.gloss>div{grid-template-columns:1fr;gap:var(--sp-1)}}
+details{border:1px solid var(--rule);border-radius:3px;background:var(--paper-2);padding:var(--sp-3);max-width:var(--spine)}
+details+details{margin-top:var(--sp-2)}
+summary{cursor:pointer;font-weight:600;font-family:var(--font-display);font-size:1.05rem;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸ ";color:var(--accent);font-family:var(--font-mono)}
+details[open] summary::before{content:"▾ "}
+details .ans{margin-top:var(--sp-3);padding-top:var(--sp-3);border-top:1px dashed var(--rule-2);font-size:.95rem;color:var(--ink-2);display:flex;flex-direction:column;gap:var(--sp-2)}
+.foot{max-width:var(--wide);margin:var(--sp-6) auto 0;padding-top:var(--sp-4);border-top:1px solid var(--rule);font-family:var(--font-mono);font-size:.76rem;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:var(--sp-3);justify-content:space-between}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+
+/* ---- bilingual ---- */
+:root[data-lang="bn"] body,
+:root[data-lang="bn"] .prose,
+:root[data-lang="bn"] .sec-head h2,
+:root[data-lang="bn"] .keypoint,
+:root[data-lang="bn"] .fig-note,
+:root[data-lang="bn"] .plain p,
+:root[data-lang="bn"] .aside-note,
+:root[data-lang="bn"] .gloss dd,
+:root[data-lang="bn"] details,
+:root[data-lang="bn"] .masthead .standfirst {
+  font-family: "Hind Siliguri", "Noto Sans Bengali", var(--font-body);
+}
+:root[data-lang="bn"] .prose p,
+:root[data-lang="bn"] .prose li { line-height: 1.9; }
+:root[data-lang="bn"] .keypoint { line-height: 1.75; }
+#langbtn{
+  position:fixed; top:.75rem; right:.75rem; z-index:200;
+  font-family:var(--font-mono); font-size:.75rem; letter-spacing:.06em;
+  padding:.45rem .85rem; border-radius:4px; cursor:pointer;
+  background:var(--accent); color:var(--paper); border:1px solid var(--accent);
+  box-shadow:0 2px 10px -4px rgba(0,0,0,.4);
+}
+#langbtn:hover{ filter:brightness(1.08); }
+@media print{ #langbtn{ display:none; } }
+</style>
+<button id="langbtn" type="button" aria-label="Switch language">বাংলা</button>
+
+
+<header class="masthead">
+  <div class="eyebrow">TRACE-rPPG · Foundations · Tier 2</div>
+  <h1>Phase Is Timing</h1>
+  <p class="standfirst" data-t="0">Designing the filters your pipeline runs on &mdash; and the one filtering habit that silently destroys the heart-rate variability layer you are planning to build.</p>
+  <div class="meta-row">
+    <span><strong>4</strong> interactive figures</span>
+    <span>Follows <strong>Tier 1</strong> &mdash; the harmonic trap</span>
+    <span>Steps 4 and 6 of your pipeline live here.</span>
+  </div>
+</header>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">00 &mdash; Orientation</div>
+    <h2 data-t="1">Where this sits in your pipeline</h2>
+  </div>
+  <div class="prose">
+    <p data-t="2">Two of the eleven steps in your plan are filters:</p>
+    <ul>
+      <li data-t="3"><strong>Step 4, detrending.</strong> Remove the slow drift caused by lighting changes and the subject settling in their chair.</li>
+      <li data-t="4"><strong>Step 6, bandpass filtering.</strong> Keep only 0.7 to 4 Hz, the range a human heart rate could plausibly occupy.</li>
+    </ul>
+    <p data-t="5">Both are convolutions, which Tier 1 covered. This tier is about choosing <em>which</em> convolution, because the defaults will hurt you in two specific ways: a filter that removes more than you intended, and a filter that shifts your signal in time without telling you.</p>
+    <p data-t="6">That second one is the important one. Your project's headline extension is heart-rate variability, which is built entirely on <strong>when</strong> each beat happened. A filter that moves beats around corrupts the measurement while leaving the spectrum looking perfectly healthy, so nothing warns you.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">01 &mdash; The simplest filter</div>
+    <h2 data-t="7">A moving average, and what it does to your <em>frequencies</em></h2>
+  </div>
+  <div class="prose">
+    <p data-t="8">Average each sample with its neighbours. That is a moving average, and it is the first filter anyone writes:</p>
+  </div>
+  <div class="math">kernel = np.ones(K) / K
+smoothed = np.convolve(signal, kernel, mode="same")</div>
+  <div class="prose">
+    <p data-t="9">Everyone knows it smooths. Almost nobody knows what it does in the frequency domain, and that is the half that matters, because Tier 1 established that <strong>filtering is reshaping a spectrum</strong>.</p>
+    <p data-t="10">Its frequency response turns out to be a <span class="m">sinc</span> shape: a broad main lobe that passes low frequencies, and a series of ripples that <em>partially</em> pass higher ones. It is a leaky, imprecise low-pass filter. It also has nulls, exact frequencies it deletes entirely, which can bite you badly if one lands on your heart rate.</p>
+    <p data-t="11">Drag the kernel length and watch the response move.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 1</span><span class="name" data-t="12">Moving average &mdash; the kernel, its frequency response, and the damage</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-ma" height="340"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-k">kernel length</label><input type="range" id="sl-k" min="2" max="60" step="1" value="15"></div>
+      </div>
+      <div class="readout">
+        <div><span class="k">kernel length K</span><span class="v" id="ro-k">15</span></div>
+        <div><span class="k">spans</span><span class="v" id="ro-span">0.50 s</span></div>
+        <div><span class="k">first null at</span><span class="v hot" id="ro-null">2.00 Hz</span></div>
+        <div><span class="k">gain at 1.2 Hz</span><span class="v" id="ro-g12">0.66</span></div>
+        <div><span class="k">pulse survives?</span><span class="v" id="ro-surv">yes</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="13">The <span style="color:var(--signal);font-weight:600">teal</span> marker sits at 72 BPM, your target. Push the kernel past about 25 samples and the first null slides down onto the pulse band, and the filter <strong>deletes the very thing you are trying to measure.</strong> The ripples to the right of the main lobe are why a moving average is a crude low-pass: it does not cleanly stop, it leaks.</figcaption>
+  </figure>
+
+  <div class="plain">
+    <div class="lbl">Plain English</div>
+    <p data-t="84"><strong>Frequency response</strong> means: for each frequency, how much of it survives the filter? A gain of 1 means untouched, 0 means deleted, 0.5 means halved. Plotting gain against frequency tells you everything a filter does, and it is the only honest way to judge one.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">02 &mdash; Pipeline step 4</div>
+    <h2 data-t="14">Detrending is a <em>high-pass</em> in disguise</h2>
+  </div>
+  <div class="prose">
+    <p data-t="15">Your plan describes detrending as "convolve with a moving-average kernel, then subtract." That is exactly right, and it is worth seeing why it works:</p>
+  </div>
+  <div class="math">trend    = convolve(signal, movingAverage)   <span class="dim">→ keeps only the slow part</span>
+detrended = signal <span class="hi">−</span> trend                    <span class="dim">→ keeps everything else</span></div>
+  <div class="prose">
+    <p data-t="16">If the moving average keeps the slow stuff, then subtracting it keeps the <em>fast</em> stuff. Low-pass subtracted from the original gives you a <strong>high-pass</strong>. You built one filter out of another with a minus sign.</p>
+    <p data-t="17">This step matters more than it looks. Raw skin-brightness signals are dominated by drift: the sun goes behind a cloud, the subject leans forward, a screen behind them changes colour. That drift is many times larger than the pulse, and if you FFT without removing it, an enormous low-frequency spike swamps the plot and its leakage skirts bury your heart rate.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 2</span><span class="name" data-t="18">Detrending &mdash; digging a pulse out from under lighting drift</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-det" height="400"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-drift">drift severity</label><input type="range" id="sl-drift" min="0" max="8" step="0.1" value="4"></div>
+        <div class="ctl"><label for="sl-dk">detrend window</label><input type="range" id="sl-dk" min="5" max="90" step="1" value="45"></div>
+      </div>
+      <div class="ctl-row">
+        <label class="chk"><input type="checkbox" id="chk-det" checked> apply detrending</label>
+      </div>
+      <div class="readout">
+        <div><span class="k">drift vs pulse</span><span class="v" id="ro-ratio">4.0×</span></div>
+        <div><span class="k">peak found at</span><span class="v" id="ro-peak">72 BPM</span></div>
+        <div><span class="k">status</span><span class="v" id="ro-detv">clean</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="19">Top: the raw signal, where the pulse is a barely visible wobble riding on a huge slow swell. Middle: the trend the moving average extracted, and the detrended result beneath it. Bottom: the spectrum. <strong>Untick detrending</strong> and watch a mountain appear at 0 Hz whose skirts swallow your heart rate completely.</figcaption>
+  </figure>
+
+  <div class="aside-note">
+    <div class="lbl">Choose the detrend window with care</div>
+    <p data-t="20">Too long and drift survives. Too short and the moving average starts tracking the pulse itself, so subtracting it removes your signal. A sensible rule is to make the window several times longer than one heartbeat: at 30 fps and 72 BPM, one beat is 25 samples, so a window of 45 to 90 samples removes drift while leaving the pulse untouched. Figure 1's null calculation is how you check that claim rather than trusting it.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">03 &mdash; Pipeline step 6</div>
+    <h2 data-t="21">Designing the <em>0.7 to 4 Hz</em> bandpass</h2>
+  </div>
+  <div class="prose">
+    <p data-t="22">Now the main filter. You want to keep 0.7 to 4 Hz and reject everything else. The ideal version is a perfect rectangle: gain 1 inside the band, gain 0 outside, vertical walls.</p>
+    <p data-t="23">You cannot have it. A perfectly rectangular frequency response requires an infinitely long kernel in time, and you do not have infinite data. Every real filter is a compromise, and filter design is the art of choosing which compromise.</p>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th></th><th>FIR</th><th>IIR (Butterworth)</th></tr></thead>
+      <tbody>
+        <tr><td><strong>What it is</strong></td><td>A finite kernel you convolve with</td><td>A feedback recipe; output depends on past outputs</td></tr>
+        <tr><td><strong>Sharpness</strong></td><td>Needs a long kernel to get steep</td><td>Steep with very few coefficients</td></tr>
+        <tr><td><strong>Phase</strong></td><td>Can be exactly linear, so all frequencies delay equally</td><td>Non-linear, so different frequencies shift differently</td></tr>
+        <tr><td><strong>Cost</strong></td><td>Higher</td><td>Very cheap</td></tr>
+        <tr><td><strong>For you</strong></td><td>Safe default</td><td>Fine, <em>if</em> you run it with filtfilt (Section 4)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="prose">
+    <p data-t="24">Build one below. Watch the passband, and watch what happens to the pulse when you get the edges wrong.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 3</span><span class="name" data-t="25">Bandpass designer &mdash; set the band, see what survives</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-bp" height="360"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-lo">low cutoff</label><input type="range" id="sl-lo" min="0.2" max="2" step="0.02" value="0.7"></div>
+        <div class="ctl"><label for="sl-hi">high cutoff</label><input type="range" id="sl-hi" min="1.5" max="8" step="0.05" value="4"></div>
+      </div>
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-ord">steepness</label><input type="range" id="sl-ord" min="1" max="8" step="1" value="3"></div>
+      </div>
+      <div class="readout">
+        <div><span class="k">band</span><span class="v" id="ro-band">0.70 – 4.00 Hz</span></div>
+        <div><span class="k">in BPM</span><span class="v" id="ro-bandb">42 – 240</span></div>
+        <div><span class="k">gain at 72 BPM</span><span class="v" id="ro-g72">1.00</span></div>
+        <div><span class="k">gain at 144 BPM</span><span class="v" id="ro-g144">0.99</span></div>
+        <div><span class="k">pulse shape</span><span class="v" id="ro-shape">intact</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="26">Push the low cutoff up past 1.2 Hz and watch two things happen at once: the gain at 72 BPM collapses, and the waveform below loses its fundamental while keeping its harmonic. <strong>That is Tier 1's harmonic trap being created by your own filter.</strong> An over-aggressive high-pass edge is the single most common way students accidentally cause the 144 BPM bug.</figcaption>
+  </figure>
+
+  <div class="keypoint" data-t="27">Keep the lower edge <strong>well below</strong> the slowest heart rate you expect to see. 0.7 Hz is 42 BPM, which leaves comfortable margin under a resting adult at 60. Do not tighten it to "clean up" the plot.</div>
+</section>
+
+<div class="part-break">
+  <div class="eyebrow">Part B</div>
+  <h2 data-t="28">The one that matters</h2>
+</div>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">04 &mdash; The trap</div>
+    <h2 data-t="29">Filters move your signal in <em>time</em></h2>
+  </div>
+  <div class="prose">
+    <p data-t="30">Every filter delays its input. That is unavoidable: a filter has to see some of the signal before it can respond to it.</p>
+    <p data-t="31">If the filter delayed everything by the same amount you could simply subtract it and move on. The problem is that most filters <strong>delay different frequencies by different amounts</strong>. That is called non-linear phase, and it does something worse than shifting your signal. It changes its <em>shape</em>, because the components that make up the waveform arrive out of step with each other.</p>
+    <p data-t="32">For measuring average BPM, none of this matters at all. The FFT throws phase away, so a distorted, shifted waveform gives the same spectrum peak.</p>
+    <p data-t="33">For heart-rate variability it is fatal.</p>
+  </div>
+  <div class="keypoint" data-t="34">HRV is the measurement of <strong>tiny differences in beat timing</strong> &mdash; tens of milliseconds. A filter that moves beats by an amount that varies with the signal is injecting error directly into the quantity you are trying to measure.</div>
+  <div class="prose">
+    <p data-t="35">Below, the same pulse train goes through the same filter twice: once normally, once with <span class="m">filtfilt</span>. Watch the detected beat positions against the truth.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 4</span><span class="name" data-t="36">Phase distortion &mdash; and the two-line fix</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-phase" height="380"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-po">filter steepness</label><input type="range" id="sl-po" min="1" max="8" step="1" value="4"></div>
+      </div>
+      <div class="ctl-row">
+        <label class="chk"><input type="checkbox" id="chk-ff"> use filtfilt (run it forwards, then backwards)</label>
+      </div>
+      <div class="readout">
+        <div><span class="k">method</span><span class="v" id="ro-pm">single pass</span></div>
+        <div><span class="k">beat timing error</span><span class="v" id="ro-terr">104 ms</span></div>
+        <div><span class="k">typical RMSSD</span><span class="v">~40 ms</span></div>
+        <div><span class="k">HRV usable?</span><span class="v" id="ro-hrv">NO</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="37">The <span style="color:var(--signal);font-weight:600">teal</span> ticks are the true beat positions. The <span style="color:var(--accent);font-weight:600">crimson</span> ticks are where a peak detector finds them after filtering. Single pass, they drift steadily later, and the error grows with steepness. <strong>Tick filtfilt</strong> and they snap back into alignment. Compare the error against a typical RMSSD of about 40 ms: an uncorrected shift is larger than the entire quantity you are trying to measure.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <h3 data-t="38">How filtfilt works, and why it is free</h3>
+    <p data-t="39">The trick is almost embarrassingly simple. Run the filter forwards, then reverse the result and run the same filter over it again, then reverse it back.</p>
+  </div>
+  <div class="math"><span class="dim"># wrong for HRV — introduces a frequency-dependent delay</span>
+y = scipy.signal.lfilter(b, a, x)
+
+<span class="dim"># correct — zero phase distortion</span>
+y = scipy.signal.<span class="hi">filtfilt</span>(b, a, x)</div>
+  <div class="prose">
+    <p data-t="40">The second pass applies exactly the same delay in the opposite direction, so the two cancel to precisely zero at every frequency. The magnitude response gets applied twice, which makes the filter effectively steeper and squares the gain, so account for that when picking your order. Everything else is free.</p>
+    <p data-t="41">The one restriction: it needs the whole signal in advance, since it has to run backwards through it. That makes it perfect for offline analysis of your validation datasets, and unavailable for a strictly real-time stream. In practice your live demo processes a sliding window of the last 20 or 30 seconds, which is a complete block of data, so <span class="m">filtfilt</span> works there too.</p>
+  </div>
+
+  <div class="aside-note">
+    <div class="lbl">Put this in your report</div>
+    <p data-t="42">"We used zero-phase filtering (<span class="m">filtfilt</span>) throughout, because single-pass IIR filtering introduces a frequency-dependent group delay that would bias the inter-beat interval estimates underpinning our HRV metrics." That one sentence demonstrates you understood a subtlety most student projects never notice, and it costs you nothing to have got right.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">05 &mdash; Reference</div>
+    <h2 data-t="43">Tier 2 vocabulary, plainly</h2>
+  </div>
+  <div class="gloss">
+    <div><dt data-t="44">Frequency response</dt><dd data-t="45">For each frequency, how much survives the filter. Gain 1 is untouched, 0 is deleted.</dd></div>
+    <div><dt data-t="46">Passband</dt><dd data-t="47">The range you are keeping. For you, 0.7 to 4 Hz.</dd></div>
+    <div><dt data-t="48">Stopband</dt><dd data-t="49">The range you are rejecting.</dd></div>
+    <div><dt data-t="50">Transition width</dt><dd data-t="51">How much frequency it takes to get from pass to stop. Narrow means steep means expensive.</dd></div>
+    <div><dt data-t="52">Ripple</dt><dd data-t="53">Wobble in the gain where it should be flat. A moving average has a lot of it.</dd></div>
+    <div><dt data-t="54">Null</dt><dd data-t="55">A frequency the filter deletes completely. A moving average has them at regular spacings, and one landing on your heart rate is a real hazard.</dd></div>
+    <div><dt data-t="56">FIR</dt><dd data-t="57">Finite impulse response. A fixed-length kernel you convolve with. Can have perfectly linear phase.</dd></div>
+    <div><dt data-t="58">IIR</dt><dd data-t="59">Infinite impulse response. Uses feedback, so it is very cheap and very steep, but its phase is not linear.</dd></div>
+    <div><dt data-t="60">Butterworth</dt><dd data-t="61">A common IIR design with a maximally flat passband. The usual choice for this kind of work.</dd></div>
+    <div><dt data-t="62">Order</dt><dd data-t="63">Roughly, how steep the filter is. Higher order means sharper edges and more phase distortion.</dd></div>
+    <div><dt data-t="64">Group delay</dt><dd data-t="65">How long a given frequency is held up by the filter. Constant across frequency is good; varying is what wrecks beat timing.</dd></div>
+    <div><dt data-t="66">Linear phase</dt><dd data-t="67">Every frequency delayed by the same amount, so the waveform shifts without changing shape.</dd></div>
+    <div><dt data-t="68">Zero-phase / filtfilt</dt><dd data-t="69">Filtering forwards then backwards so the delays cancel exactly. Mandatory before any timing measurement.</dd></div>
+    <div><dt data-t="70">Detrending</dt><dd data-t="71">Subtracting a smoothed copy from the original. A high-pass built out of a low-pass.</dd></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">06 &mdash; Before Tier 3</div>
+    <h2 data-t="72">Check yourself</h2>
+  </div>
+
+  <details>
+    <summary data-t="73">Your BPM readings look fine but your RMSSD values are wildly too large. What do you check first?</summary>
+    <div class="ans">
+      <p data-t="74">Whether you used <span class="m">lfilter</span> instead of <span class="m">filtfilt</span>. The pattern is diagnostic: BPM is unaffected because the FFT discards phase, while HRV is destroyed because it is made entirely of timing.</p>
+      <p data-t="75">Second suspect: peak detection resolution. If you are locating beats to the nearest whole frame at 30 fps, your timing quantum is 33 ms, which is already comparable to the RMSSD you are trying to measure. That is what parabolic interpolation, in Tier 4, exists to fix.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="76">You widen your detrending window to remove drift more thoroughly, and your pulse gets weaker. Why?</summary>
+    <div class="ans">
+      <p data-t="77">You have it backwards. A <em>wider</em> moving average tracks only slower things, so it removes drift better and leaves the pulse alone. If widening the window is weakening the pulse, check the sign of your change: you have probably narrowed it, so the moving average is now fast enough to follow the heartbeat itself, and subtracting it removes the signal.</p>
+      <p data-t="78">Figure 1 gives you the exact check. Compute where the first null lands for your kernel length and confirm it sits well above 4 Hz.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="79">Why does raising the low cutoff from 0.7 to 1.4 Hz cause the 144 BPM bug?</summary>
+    <div class="ans">
+      <p data-t="80">A resting heart rate of 72 BPM is 1.2 Hz, which now sits <em>below</em> your cutoff and gets attenuated. Its second harmonic at 2.4 Hz sits comfortably inside the passband and passes untouched.</p>
+      <p data-t="81">You have therefore built a filter that suppresses the fundamental while preserving the harmonic, which is precisely the condition where <span class="m">argmax</span> picks the wrong peak. The filter did not reveal a problem in the data; it manufactured one.</p>
+    </div>
+  </details>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">07 &mdash; Ahead</div>
+    <h2 data-t="82">What Tier 3 adds</h2>
+  </div>
+  <div class="prose">
+    <p data-t="83">You can now get a clean pulse signal out of raw video. Tier 3 is where your actual contribution lives: how to look at a spectrum and produce a single honest number for <em>how much to trust it</em>. That number is the "signal quality" in Signal-Quality-Adaptive Fusion, and everything your project claims rests on computing it well.</p>
+  </div>
+</section>
+
+<footer class="foot">
+  <span>TRACE-rPPG &mdash; Tier 2 of 5</span>
+  <span>Filter design · frequency response · zero-phase filtering</span>
+</footer>
+
+<script>
+"use strict";
+var C={};
+function refreshTheme(){
+  var s=getComputedStyle(document.documentElement);
+  ["paper","paper-2","paper-3","ink","ink-2","ink-3","rule","rule-2","accent","accent-2","signal","warn"]
+    .forEach(function(k){ C[k]=s.getPropertyValue("--"+k).trim(); });
+}
+refreshTheme();
+if(window.matchMedia){
+  var mq=window.matchMedia("(prefers-color-scheme: dark)");
+  if(mq.addEventListener) mq.addEventListener("change",function(){refreshTheme();redrawAll();});
+}
+new MutationObserver(function(){refreshTheme();redrawAll();})
+  .observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+var redraws=[];
+function redrawAll(){ redraws.forEach(function(f){f();}); }
+
+var _fitCache=new WeakMap();
+function fit(cv){
+  var st=_fitCache.get(cv);
+  if(!st){ st={cssH:parseInt(cv.getAttribute("height"),10),ctx:cv.getContext("2d"),w:0,dpr:0}; _fitCache.set(cv,st); }
+  var dpr=window.devicePixelRatio||1;
+  var w=cv.clientWidth||cv.parentNode.clientWidth||600;
+  if(w!==st.w||dpr!==st.dpr){
+    st.w=w; st.dpr=dpr;
+    cv.width=Math.round(w*dpr); cv.height=Math.round(st.cssH*dpr);
+    cv.style.height=st.cssH+"px";
+    st.ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  return {ctx:st.ctx,w:st.w,h:st.cssH};
+}
+function label(ctx,txt,x,y,col,size,align){
+  ctx.fillStyle=col; ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+  ctx.textAlign=align||"left"; ctx.textBaseline="middle"; ctx.fillText(txt,x,y);
+}
+function axis(ctx,x0,y,w,col){ ctx.strokeStyle=col; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x0,y); ctx.lineTo(x0+w,y); ctx.stroke(); }
+function plotArr(ctx,arr,x0,y0,w,hh,col,wid,amp){
+  ctx.strokeStyle=col; ctx.lineWidth=wid||2; ctx.lineJoin="round"; ctx.beginPath();
+  for(var i=0;i<arr.length;i++){
+    var px=x0+(i/(arr.length-1))*w, py=y0+hh/2-arr[i]*(hh/2)/(amp||1);
+    if(i===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+}
+function mag(x,f,fs){
+  var sx=0,sy=0;
+  for(var n=0;n<x.length;n++){ var a=-2*Math.PI*f*n/fs; sx+=x[n]*Math.cos(a); sy+=x[n]*Math.sin(a); }
+  return Math.hypot(sx,sy)/x.length;
+}
+/* moving-average frequency response magnitude (Dirichlet kernel) */
+function maResp(K,f,fs){
+  if(f===0)return 1;
+  var w=2*Math.PI*f/fs;
+  var num=Math.sin(K*w/2), den=K*Math.sin(w/2);
+  return Math.abs(den)<1e-12?1:Math.abs(num/den);
+}
+/* butterworth-style bandpass magnitude */
+function bpResp(f,lo,hi,ord){
+  if(f<=0)return 0;
+  var hp=1/Math.sqrt(1+Math.pow(lo/f,2*ord));
+  var lp=1/Math.sqrt(1+Math.pow(f/hi,2*ord));
+  return hp*lp;
+}
+
+/* ---------- FIG 1 : MOVING AVERAGE ---------- */
+(function(){
+  var cv=document.getElementById("cv-ma"), sl=document.getElementById("sl-k");
+  var FS=30;
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var K=parseInt(sl.value,10);
+
+    var leftW=Math.min(w*0.3,190), gap=26;
+    label(ctx,"THE KERNEL",0,10,C["ink-3"],10);
+    var ky=30, kh=h-70, base=ky+kh;
+    axis(ctx,0,base,leftW,C.rule);
+    var bw=leftW/Math.max(K,2);
+    for(var i=0;i<K;i++){
+      ctx.fillStyle=C.accent; ctx.globalAlpha=.8;
+      var bh=Math.min(kh-10,(1/K)*kh*6);
+      ctx.fillRect(i*bw+1,base-bh,Math.max(1,bw-2),bh);
+      ctx.globalAlpha=1;
+    }
+    label(ctx,"each = 1/K",0,base+16,C["ink-3"],9.5);
+
+    var rx0=leftW+gap, rw=w-rx0;
+    label(ctx,"FREQUENCY RESPONSE  ·  what survives the filter",rx0,10,C["ink-3"],10);
+    var ry=30, rh=h-70, rbase=ry+rh;
+    axis(ctx,rx0,rbase,rw,C.rule);
+    ctx.strokeStyle=C["rule-2"]; ctx.lineWidth=1; ctx.setLineDash([2,3]);
+    ctx.beginPath(); ctx.moveTo(rx0,ry); ctx.lineTo(rx0+rw,ry); ctx.stroke(); ctx.setLineDash([]);
+    label(ctx,"gain 1",rx0+2,ry+7,C["ink-3"],9);
+
+    var FMAX=8;
+    ctx.fillStyle=C.signal; ctx.globalAlpha=.08;
+    var bx0=rx0+(0.7/FMAX)*rw, bx1=rx0+(4/FMAX)*rw;
+    ctx.fillRect(bx0,ry,bx1-bx0,rh); ctx.globalAlpha=1;
+    label(ctx,"your band",bx0+4,ry+18,C.signal,9);
+
+    ctx.strokeStyle=C.accent; ctx.lineWidth=2.4; ctx.beginPath();
+    for(var s=0;s<=400;s++){
+      var ff=s/400*FMAX;
+      var px=rx0+(ff/FMAX)*rw, py=rbase-maResp(K,ff,FS)*(rh-6);
+      if(s===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+
+    var px72=rx0+(1.2/FMAX)*rw;
+    var g12=maResp(K,1.2,FS);
+    ctx.strokeStyle=C.signal; ctx.lineWidth=2; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(px72,ry); ctx.lineTo(px72,rbase); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle=C.signal;
+    ctx.beginPath(); ctx.arc(px72,rbase-g12*(rh-6),5,0,6.2832); ctx.fill();
+    label(ctx,"72 BPM",px72+7,ry+10,C.signal,10);
+
+    [0,2,4,6,8].forEach(function(t){
+      var xx=rx0+(t/FMAX)*rw;
+      ctx.strokeStyle=C["rule-2"];
+      ctx.beginPath(); ctx.moveTo(xx,rbase); ctx.lineTo(xx,rbase+4); ctx.stroke();
+      label(ctx,t,xx,rbase+14,C["ink-3"],9.5,"center");
+    });
+    label(ctx,"Hz",rx0+rw,rbase+28,C["ink-3"],9.5,"right");
+
+    document.getElementById("ro-k").textContent=K;
+    document.getElementById("ro-span").textContent=(K/FS).toFixed(2)+" s";
+    document.getElementById("ro-null").textContent=(FS/K).toFixed(2)+" Hz";
+    document.getElementById("ro-g12").textContent=g12.toFixed(2);
+    var sv=document.getElementById("ro-surv");
+    var ok=g12>0.5;
+    sv.textContent=ok?"yes":"DAMAGED";
+    sv.className="v"+(ok?" good":" hot");
+    document.getElementById("ro-null").className="v"+((FS/K)<4.5?" hot":"");
+  }
+  sl.addEventListener("input",draw);
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 2 : DETRENDING ---------- */
+(function(){
+  var cv=document.getElementById("cv-det");
+  var sd=document.getElementById("sl-drift"), sk=document.getElementById("sl-dk");
+  var FS=30, N=300;
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var D=parseFloat(sd.value), K=parseInt(sk.value,10);
+    var on=document.getElementById("chk-det").checked;
+
+    var raw=[];
+    for(var n=0;n<N;n++){
+      var t=n/FS;
+      var pulse=Math.cos(2*Math.PI*1.2*t)+0.4*Math.cos(2*Math.PI*2.4*t+0.6);
+      var drift=D*(Math.sin(2*Math.PI*0.06*t+0.4)+0.5*Math.sin(2*Math.PI*0.021*t));
+      raw.push(pulse+drift);
+    }
+    var trend=[];
+    for(var i=0;i<N;i++){
+      var a=0,c=0;
+      for(var k=-Math.floor(K/2);k<=Math.floor(K/2);k++){
+        var idx=i+k; if(idx<0||idx>=N)continue;
+        a+=raw[idx]; c++;
+      }
+      trend.push(a/c);
+    }
+    var det = on ? raw.map(function(v,i2){return v-trend[i2];}) : raw.slice();
+
+    var pad=6,pw=w-pad*2,bh=(h-58)/3;
+    var mxr=0; raw.forEach(function(v){mxr=Math.max(mxr,Math.abs(v));});
+    label(ctx,"RAW SIGNAL  ·  pulse riding on lighting drift",pad,9,C["ink-3"],10);
+    var y1=22;
+    axis(ctx,pad,y1+bh/2,pw,C.rule);
+    plotArr(ctx,raw,pad,y1,pw,bh,C["ink-3"],1.6,mxr);
+    plotArr(ctx,trend,pad,y1,pw,bh,C.warn,2.2,mxr);
+    label(ctx,"extracted trend",pad+2,y1+12,C.warn,9.5);
+
+    var y2=y1+bh+14;
+    label(ctx, on?"AFTER SUBTRACTING THE TREND":"DETRENDING OFF — raw signal passed straight through",
+          pad,y2-8,on?C["ink-3"]:C.warn,10);
+    var mxd=0; det.forEach(function(v){mxd=Math.max(mxd,Math.abs(v));});
+    axis(ctx,pad,y2+bh/2,pw,C.rule);
+    plotArr(ctx,det,pad,y2,pw,bh,C.accent,2,mxd);
+
+    var y3=y2+bh+18;
+    label(ctx,"SPECTRUM OF THAT RESULT",pad,y3-8,C["ink-3"],10);
+    var bmin=0,bmax=200,steps=260,vals=[],mxv=0.0001;
+    for(var s=0;s<=steps;s++){
+      var bp=bmin+(bmax-bmin)*s/steps;
+      var v=mag(det,bp/60,FS);
+      vals.push(v); if(v>mxv)mxv=v;
+    }
+    var sb=y3+bh;
+    axis(ctx,pad,sb,pw,C.rule);
+    ctx.strokeStyle=C.accent; ctx.lineWidth=2; ctx.beginPath();
+    for(var s2=0;s2<=steps;s2++){
+      var px=pad+(s2/steps)*pw, py=sb-(vals[s2]/mxv)*(bh-4);
+      if(s2===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+    var t72=pad+((72-bmin)/(bmax-bmin))*pw;
+    ctx.strokeStyle=C.signal; ctx.setLineDash([3,3]); ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(t72,y3); ctx.lineTo(t72,sb); ctx.stroke(); ctx.setLineDash([]);
+    label(ctx,"72",t72,y3-4,C.signal,9.5,"center");
+    [0,50,100,150,200].forEach(function(b){
+      var xx=pad+((b-bmin)/(bmax-bmin))*pw;
+      label(ctx,b,xx,sb+11,C["ink-3"],9,"center");
+    });
+
+    var bi=0; for(var i3=1;i3<vals.length;i3++) if(vals[i3]>vals[bi])bi=i3;
+    var pk=bmin+(bmax-bmin)*bi/steps;
+    document.getElementById("ro-ratio").textContent=D.toFixed(1)+"×";
+    document.getElementById("ro-peak").textContent=Math.round(pk)+" BPM";
+    var st=document.getElementById("ro-detv");
+    var good=Math.abs(pk-72)<10;
+    st.textContent=good?"clean":"DRIFT WINS";
+    st.className="v"+(good?" good":" hot");
+    document.getElementById("ro-peak").className="v"+(good?" good":" hot");
+  }
+  [sd,sk].forEach(function(e){e.addEventListener("input",draw);});
+  document.getElementById("chk-det").addEventListener("change",draw);
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 3 : BANDPASS DESIGNER ---------- */
+(function(){
+  var cv=document.getElementById("cv-bp");
+  var slo=document.getElementById("sl-lo"), shi=document.getElementById("sl-hi"), sor=document.getElementById("sl-ord");
+  var FS=30,N=240;
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var lo=parseFloat(slo.value), hi=parseFloat(shi.value), ord=parseInt(sor.value,10);
+    if(hi<lo+0.3) hi=lo+0.3;
+
+    var FMAX=8, pad=34, pw=w-pad-14;
+    var ry=26, rh=h*0.5;
+    label(ctx,"FREQUENCY RESPONSE",pad,10,C["ink-3"],10);
+    var rbase=ry+rh;
+    axis(ctx,pad,rbase,pw,C.rule);
+    ctx.strokeStyle=C["rule-2"]; ctx.setLineDash([2,3]); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad,ry); ctx.lineTo(pad+pw,ry); ctx.stroke(); ctx.setLineDash([]);
+
+    ctx.fillStyle=C.accent; ctx.globalAlpha=.08;
+    ctx.fillRect(pad+(lo/FMAX)*pw,ry,((hi-lo)/FMAX)*pw,rh); ctx.globalAlpha=1;
+
+    ctx.strokeStyle=C.accent; ctx.lineWidth=2.4; ctx.beginPath();
+    for(var s=0;s<=420;s++){
+      var ff=s/420*FMAX;
+      var px=pad+(ff/FMAX)*pw, py=rbase-bpResp(ff,lo,hi,ord)*(rh-6);
+      if(s===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+
+    [[1.2,"72 BPM",C.signal],[2.4,"144 BPM",C.warn]].forEach(function(m){
+      var xx=pad+(m[0]/FMAX)*pw, g=bpResp(m[0],lo,hi,ord);
+      ctx.strokeStyle=m[2]; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.moveTo(xx,ry); ctx.lineTo(xx,rbase); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle=m[2];
+      ctx.beginPath(); ctx.arc(xx,rbase-g*(rh-6),4.5,0,6.2832); ctx.fill();
+      label(ctx,m[1],xx+6,ry+10,m[2],9.5);
+    });
+    [0,2,4,6,8].forEach(function(t){
+      var xx2=pad+(t/FMAX)*pw;
+      label(ctx,t,xx2,rbase+12,C["ink-3"],9.5,"center");
+    });
+    label(ctx,"Hz",pad+pw,rbase+26,C["ink-3"],9.5,"right");
+
+    var wy=rbase+38, wh2=h-wy-14;
+    label(ctx,"WHAT THE PULSE WAVEFORM LOOKS LIKE AFTER THIS FILTER",pad,wy-8,C["ink-3"],10);
+    var out=[];
+    var g1=bpResp(1.2,lo,hi,ord), g2=bpResp(2.4,lo,hi,ord), g3=bpResp(3.6,lo,hi,ord);
+    for(var n=0;n<N;n++){
+      var t2=n/FS;
+      out.push(g1*Math.cos(2*Math.PI*1.2*t2)+g2*0.62*Math.cos(2*Math.PI*2.4*t2-0.5)+g3*0.35*Math.cos(2*Math.PI*3.6*t2-1));
+    }
+    var mo=0; out.forEach(function(v){mo=Math.max(mo,Math.abs(v));});
+    axis(ctx,pad,wy+wh2/2,pw,C.rule);
+    plotArr(ctx,out,pad,wy,pw,wh2,C.ink,2,mo||1);
+
+    document.getElementById("ro-band").textContent=lo.toFixed(2)+" – "+hi.toFixed(2)+" Hz";
+    document.getElementById("ro-bandb").textContent=Math.round(lo*60)+" – "+Math.round(hi*60);
+    document.getElementById("ro-g72").textContent=g1.toFixed(2);
+    document.getElementById("ro-g144").textContent=g2.toFixed(2);
+    var sh=document.getElementById("ro-shape");
+    var bad=g1<g2;
+    sh.textContent=bad?"FUNDAMENTAL LOST":"intact";
+    sh.className="v"+(bad?" hot":" good");
+    document.getElementById("ro-g72").className="v"+(bad?" hot":"");
+  }
+  [slo,shi,sor].forEach(function(e){e.addEventListener("input",draw);});
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 4 : PHASE DISTORTION ---------- */
+(function(){
+  var cv=document.getElementById("cv-phase");
+  var so=document.getElementById("sl-po");
+  var FS=30,N=300,BEAT=1.2;
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var ord=parseInt(so.value,10);
+    var ff=document.getElementById("chk-ff").checked;
+
+    /* delay in samples grows with order; filtfilt cancels it exactly */
+    var delaySamp = ff ? 0 : ord*0.78;
+    var errMs = delaySamp/FS*1000;
+
+    var clean=[],filt=[];
+    for(var n=0;n<N;n++){
+      var t=n/FS;
+      clean.push(pulseShape(t*BEAT));
+      filt.push(pulseShape((t - delaySamp/FS)*BEAT) * (ff?1:0.94));
+    }
+    function pulseShape(ph){
+      var x=ph-Math.floor(ph);
+      return Math.exp(-Math.pow((x-0.18)/0.075,2))
+           - 0.35*Math.exp(-Math.pow((x-0.36)/0.09,2))
+           + 0.18*Math.exp(-Math.pow((x-0.52)/0.11,2));
+    }
+
+    var pad=6,pw=w-pad*2,bh=(h-70)/2;
+    label(ctx,"TRUE PULSE  ·  teal ticks mark real beat positions",pad,9,C["ink-3"],10);
+    var y1=24;
+    axis(ctx,pad,y1+bh*0.8,pw,C.rule);
+    plotArr(ctx,clean,pad,y1,pw,bh,C["ink-3"],1.8,1.2);
+    var beats=[];
+    for(var b=0;b<N/FS*BEAT;b++){
+      var tb=(b+0.18)/BEAT;
+      if(tb*FS>=N)break;
+      beats.push(tb);
+      var px=pad+(tb*FS/(N-1))*pw;
+      ctx.strokeStyle=C.signal; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(px,y1); ctx.lineTo(px,y1+12); ctx.stroke();
+    }
+
+    var y2=y1+bh+34;
+    label(ctx, ff? "AFTER FILTFILT  ·  crimson ticks land on the teal ones"
+                 : "AFTER SINGLE-PASS FILTERING  ·  crimson ticks have drifted late",
+          pad,y2-10, ff?C.signal:C.warn,10);
+    axis(ctx,pad,y2+bh*0.8,pw,C.rule);
+    plotArr(ctx,filt,pad,y2,pw,bh,C.accent,2,1.2);
+    beats.forEach(function(tb){
+      var pxT=pad+(tb*FS/(N-1))*pw;
+      var pxD=pad+((tb*FS+delaySamp)/(N-1))*pw;
+      ctx.strokeStyle=C.signal; ctx.lineWidth=1; ctx.setLineDash([2,3]);
+      ctx.beginPath(); ctx.moveTo(pxT,y2); ctx.lineTo(pxT,y2+bh*0.8); ctx.stroke(); ctx.setLineDash([]);
+      ctx.strokeStyle=C.accent; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(pxD,y2); ctx.lineTo(pxD,y2+12); ctx.stroke();
+      if(!ff && pxD-pxT>3){
+        ctx.strokeStyle=C.warn; ctx.lineWidth=3;
+        ctx.beginPath(); ctx.moveTo(pxT,y2+18); ctx.lineTo(pxD,y2+18); ctx.stroke();
+      }
+    });
+
+    document.getElementById("ro-pm").textContent=ff?"filtfilt":"single pass";
+    document.getElementById("ro-terr").textContent=errMs.toFixed(0)+" ms";
+    document.getElementById("ro-terr").className="v"+(errMs>15?" hot":" good");
+    var hv=document.getElementById("ro-hrv");
+    hv.textContent=errMs>15?"NO":"yes";
+    hv.className="v"+(errMs>15?" hot":" good");
+  }
+  so.addEventListener("input",draw);
+  document.getElementById("chk-ff").addEventListener("change",draw);
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+</script>
+
+<script>
+(function(){
+  var BN = {"0": "আপনার pipeline যে filter-গুলোর উপর চলে সেগুলো নকশা করা &mdash; আর filter করার সেই একটা অভ্যাস যা চুপচাপ আপনার পরিকল্পিত heart-rate variability স্তরটা ধ্বংস করে দেয়।", "1": "আপনার pipeline-এ এটা কোথায় বসে", "2": "আপনার পরিকল্পনার এগারোটা ধাপের দুইটা হলো filter:", "3": "<strong>ধাপ ৪, detrending।</strong> আলোর পরিবর্তন আর মানুষটার চেয়ারে থিতু হওয়ার কারণে তৈরি ধীর drift সরানো।", "4": "<strong>ধাপ ৬, bandpass filtering।</strong> শুধু ০.৭ থেকে ৪ Hz রাখা, অর্থাৎ মানুষের হার্ট রেট যতটুকু হতে পারে।", "5": "দুইটাই convolution, যা Tier 1 আলোচনা করেছে। এই tier হলো <em>কোন</em> convolution বাছবেন সেটা নিয়ে, কারণ ডিফল্ট বাছাইগুলো আপনার দুইভাবে ক্ষতি করবে: এমন filter যা আপনার চাওয়ার চেয়ে বেশি সরিয়ে দেয়, আর এমন filter যা আপনাকে না জানিয়ে সিগন্যালটাকে সময়ে সরিয়ে দেয়।", "6": "দ্বিতীয়টাই গুরুত্বপূর্ণ। আপনার প্রজেক্টের প্রধান সম্প্রসারণ হলো heart-rate variability, যা পুরোপুরি দাঁড়িয়ে আছে প্রতিটা বিট <strong>কখন</strong> হয়েছে তার উপর। যে filter বিটগুলো এদিক-ওদিক সরিয়ে দেয় সে পরিমাপটা নষ্ট করে অথচ spectrum দেখতে একদম সুস্থ থাকে, তাই কোনো সতর্কতাই আসে না।", "7": "একটা moving average, আর সেটা আপনার <em>frequency</em>-র সাথে কী করে", "8": "প্রতিটা নমুনাকে তার প্রতিবেশীদের সাথে গড় করুন। এটাই moving average, আর এটাই সবাই প্রথমে যে filter লেখে:", "9": "সবাই জানে এটা মসৃণ করে। প্রায় কেউ জানে না এটা frequency ডোমেইনে কী করে, আর ওই অর্ধেকটাই গুরুত্বপূর্ণ, কারণ Tier 1 প্রতিষ্ঠা করেছে যে <strong>filtering মানে একটা spectrum-কে নতুন আকার দেওয়া</strong>।", "10": "এর frequency response আসলে একটা <span class=\"m\">sinc</span> আকার: একটা চওড়া মূল খাঁজ যা নিচু frequency পার হতে দেয়, আর একগুচ্ছ ঢেউ যা উঁচু frequency-গুলোকে <em>আংশিকভাবে</em> পার হতে দেয়। এটা একটা ফুটো, অনির্ভুল low-pass filter। এর null-ও আছে, অর্থাৎ কিছু নির্দিষ্ট frequency যা এটা পুরোপুরি মুছে দেয়, আর তার একটা যদি আপনার হার্ট রেটের উপর পড়ে তাহলে খুব খারাপ হতে পারে।", "11": "Kernel-এর দৈর্ঘ্য টানুন আর response সরতে দেখুন।", "12": "Moving average &mdash; kernel, তার frequency response, আর ক্ষতিটা", "13": "<span style=\"color:var(--signal);font-weight:600\">সবুজ</span> চিহ্নটা ৭২ BPM-এ, আপনার লক্ষ্য। Kernel-কে প্রায় ২৫ নমুনার বেশি ঠেলে দিন আর প্রথম null-টা নেমে এসে পালস ব্যান্ডের উপর বসে, আর filter-টা <strong>আপনি যা মাপতে চাইছেন সেটাই মুছে দেয়।</strong> মূল খাঁজের ডান পাশের ঢেউগুলোই দেখায় কেন moving average একটা মোটা দাগের low-pass: এটা পরিষ্কারভাবে থামে না, চুইয়ে পড়ে।", "14": "Detrending ছদ্মবেশে একটা <em>high-pass</em>", "15": "আপনার পরিকল্পনায় detrending-কে বলা হয়েছে \"একটা moving-average kernel দিয়ে convolve করো, তারপর বিয়োগ করো\"। এটা একদম ঠিক, আর কেন কাজ করে সেটা দেখার মতো:", "16": "Moving average যদি ধীর অংশটা রাখে, তাহলে সেটা বিয়োগ করলে থাকে <em>দ্রুত</em> অংশটা। মূল থেকে low-pass বিয়োগ করলে পাওয়া যায় একটা <strong>high-pass</strong>। আপনি একটা বিয়োগ চিহ্ন দিয়ে একটা filter থেকে আরেকটা filter বানিয়ে ফেললেন।", "17": "এই ধাপটা দেখতে যতটা, তার চেয়ে বেশি গুরুত্বপূর্ণ। কাঁচা চামড়ার উজ্জ্বলতার সিগন্যালে drift প্রধান হয়ে থাকে: সূর্য মেঘের আড়ালে যায়, মানুষটা সামনে ঝোঁকে, পেছনের একটা স্ক্রিনের রঙ বদলায়। ওই drift পালসের চেয়ে বহুগুণ বড়, আর সেটা না সরিয়ে FFT করলে একটা বিশাল নিচু-frequency চূড়া প্লটটা গিলে ফেলে আর তার leakage ঝালর আপনার হার্ট রেট চাপা দিয়ে দেয়।", "18": "Detrending &mdash; আলোর drift-এর নিচ থেকে একটা পালস খুঁড়ে বের করা", "19": "উপরে: কাঁচা সিগন্যাল, যেখানে পালসটা একটা বিশাল ধীর ঢেউয়ের উপরে সবে দেখা যাওয়া একটা কাঁপুনি। মাঝে: moving average যে trend বের করেছে, আর তার নিচে detrend করা ফল। নিচে: spectrum। <strong>Detrending-এর টিক তুলে দিন</strong> আর দেখুন ০ Hz-এ একটা পাহাড় গজিয়ে উঠছে যার ঝালর আপনার হার্ট রেট পুরোপুরি গিলে ফেলছে।", "20": "বেশি লম্বা হলে drift টিকে যায়। বেশি ছোট হলে moving average পালসটাকেই অনুসরণ করতে শুরু করে, তাই বিয়োগ করলে আপনার সিগন্যালই সরে যায়। একটা যুক্তিসঙ্গত নিয়ম হলো জানালাটা একটা হৃৎস্পন্দনের চেয়ে কয়েক গুণ লম্বা রাখা: ৩০ fps আর ৭২ BPM-এ একটা বিট ২৫ নমুনা, তাই ৪৫ থেকে ৯০ নমুনার জানালা drift সরায় আর পালস অক্ষত রাখে। Figure 1-এর null হিসাবটাই এই দাবি যাচাই করার উপায়, শুধু বিশ্বাস করার বদলে।", "21": "<em>০.৭ থেকে ৪ Hz</em> bandpass নকশা করা", "22": "এবার প্রধান filter। আপনি ০.৭ থেকে ৪ Hz রাখতে চান আর বাকি সব বাতিল করতে চান। আদর্শ সংস্করণটা একটা নিখুঁত আয়তক্ষেত্র: ব্যান্ডের ভেতরে gain ১, বাইরে ০, খাড়া দেয়াল।", "23": "আপনি সেটা পাবেন না। নিখুঁত আয়তাকার frequency response-এর জন্য সময়ে অসীম লম্বা kernel লাগে, আর আপনার কাছে অসীম ডেটা নেই। প্রতিটা বাস্তব filter একটা আপস, আর filter নকশা হলো কোন আপসটা করবেন সেটা বাছার শিল্প।", "24": "নিচে একটা বানান। Passband দেখুন, আর প্রান্ত ভুল করলে পালসের কী হয় সেটাও দেখুন।", "25": "Bandpass designer &mdash; ব্যান্ড ঠিক করুন, দেখুন কী টিকে থাকে", "26": "Low cutoff-টা ১.২ Hz-এর উপরে ঠেলে দিন আর একসাথে দুইটা জিনিস ঘটতে দেখুন: ৭২ BPM-এ gain ধসে পড়ে, আর নিচের তরঙ্গটা তার fundamental হারায় কিন্তু harmonic ধরে রাখে। <strong>এটাই Tier 1-এর harmonic ফাঁদ, যা আপনার নিজের filter তৈরি করছে।</strong> অতিরিক্ত আক্রমণাত্মক high-pass প্রান্তই ছাত্রদের অজান্তে ১৪৪ BPM bug তৈরির সবচেয়ে প্রচলিত উপায়।", "27": "নিচের প্রান্তটা আপনার প্রত্যাশিত সবচেয়ে ধীর হার্ট রেটের <strong>অনেক নিচে</strong> রাখুন। ০.৭ Hz মানে ৪২ BPM, যা ৬০-এ থাকা একজন বিশ্রামরত প্রাপ্তবয়স্কের নিচে স্বচ্ছন্দ জায়গা রাখে। প্লট \"পরিষ্কার\" করার জন্য এটা চেপে ধরবেন না।", "28": "যেটা আসলে গুরুত্বপূর্ণ", "29": "Filter আপনার সিগন্যালকে <em>সময়ে</em> সরিয়ে দেয়", "30": "প্রতিটা filter তার input দেরি করিয়ে দেয়। এটা অনিবার্য: সাড়া দেওয়ার আগে filter-কে সিগন্যালের কিছুটা দেখতে হয়।", "31": "Filter যদি সবকিছু সমান পরিমাণে দেরি করাত তাহলে আপনি সেটা বিয়োগ করে এগিয়ে যেতে পারতেন। সমস্যা হলো বেশিরভাগ filter <strong>ভিন্ন ভিন্ন frequency-কে ভিন্ন ভিন্ন পরিমাণে দেরি করায়</strong>। একে বলে non-linear phase, আর এটা সিগন্যাল সরিয়ে দেওয়ার চেয়েও খারাপ কিছু করে। এটা সিগন্যালের <em>আকার</em> বদলে দেয়, কারণ তরঙ্গটা যেসব উপাদান দিয়ে তৈরি সেগুলো একে অপরের সাথে তাল হারিয়ে পৌঁছায়।", "32": "গড় BPM মাপার জন্য এর কিছুই গুরুত্বপূর্ণ না। FFT phase ফেলে দেয়, তাই বিকৃত, সরে যাওয়া তরঙ্গও একই spectrum চূড়া দেয়।", "33": "Heart-rate variability-র জন্য এটা মারাত্মক।", "34": "HRV হলো <strong>বিটের সময়ের ক্ষুদ্র পার্থক্যের</strong> পরিমাপ &mdash; কয়েক দশ মিলিসেকেন্ড। যে filter বিটগুলোকে সিগন্যাল অনুযায়ী বদলে যাওয়া পরিমাণে সরায়, সে আপনি যে রাশিটা মাপতে চাইছেন ঠিক তার ভেতরেই ভুল ঢুকিয়ে দিচ্ছে।", "35": "নিচে, একই পালস ট্রেন একই filter-এর ভেতর দিয়ে দুইবার যায়: একবার স্বাভাবিকভাবে, একবার <span class=\"m\">filtfilt</span> দিয়ে। সত্যের বিপরীতে শনাক্ত করা বিটের অবস্থান দেখুন।", "36": "Phase বিকৃতি &mdash; আর দুই লাইনের সমাধান", "37": "<span style=\"color:var(--signal);font-weight:600\">সবুজ</span> দাগগুলো আসল বিটের অবস্থান। <span style=\"color:var(--accent);font-weight:600\">লাল</span> দাগগুলো filter করার পর একটা peak detector যেখানে বিট খুঁজে পায়। এক পাসে তারা ক্রমাগত দেরিতে সরে যায়, আর steepness বাড়ার সাথে ভুলও বাড়ে। <strong>filtfilt-এ টিক দিন</strong> আর তারা আবার মিলে যায়। মোটামুটি ৪০ ms-এর সাধারণ RMSSD-র সাথে ভুলটা তুলনা করুন: অসংশোধিত সরে যাওয়াটা আপনি যে রাশিটা মাপতে চাইছেন তার চেয়েও বড়।", "38": "filtfilt কীভাবে কাজ করে, আর কেন এটা বিনামূল্যে", "39": "কৌশলটা প্রায় লজ্জাজনকভাবে সহজ। Filter-টা সামনের দিকে চালান, তারপর ফলটা উল্টে দিয়ে একই filter আবার চালান, তারপর আবার উল্টে দিন।", "40": "দ্বিতীয় পাস ঠিক একই দেরি বিপরীত দিকে প্রয়োগ করে, তাই দুইটা প্রতিটা frequency-তে হুবহু শূন্যে কাটাকাটি হয়ে যায়। Magnitude response দুইবার প্রয়োগ হয়, যা filter-টাকে কার্যত আরও খাড়া করে আর gain-কে বর্গ করে, তাই order বাছার সময় সেটা হিসাবে রাখুন। বাকি সবটাই বিনামূল্যে।", "41": "একটাই শর্ত: এর আগেই পুরো সিগন্যাল দরকার, কারণ একে পেছন দিকে চলতে হয়। এতে এটা আপনার validation dataset-এর offline বিশ্লেষণের জন্য নিখুঁত, আর কড়া real-time stream-এর জন্য অনুপলব্ধ। বাস্তবে আপনার live ডেমো শেষ ২০ বা ৩০ সেকেন্ডের একটা চলন্ত জানালা প্রক্রিয়া করে, যেটা একটা সম্পূর্ণ ডেটা ব্লক, তাই ওখানেও <span class=\"m\">filtfilt</span> কাজ করে।", "42": "\"আমরা সর্বত্র zero-phase filtering (<span class=\"m\">filtfilt</span>) ব্যবহার করেছি, কারণ single-pass IIR filtering একটা frequency-নির্ভর group delay তৈরি করে যা আমাদের HRV metric-এর ভিত্তি inter-beat interval অনুমানগুলোকে পক্ষপাতদুষ্ট করত।\" ওই একটা বাক্যই দেখায় যে আপনি এমন একটা সূক্ষ্মতা বুঝেছেন যা বেশিরভাগ ছাত্র প্রজেক্ট খেয়ালই করে না, আর ঠিক করে রাখতে আপনার কিছুই খরচ হয়নি।", "43": "Tier 2-এর শব্দগুলো, সহজ ভাষায়", "45": "প্রতিটা frequency-র কতটুকু filter পার হয়ে টিকে থাকে। Gain ১ মানে অক্ষত, ০ মানে মুছে ফেলা।", "47": "আপনি যে পরিসরটা রাখছেন। আপনার ক্ষেত্রে ০.৭ থেকে ৪ Hz।", "49": "আপনি যে পরিসরটা বাতিল করছেন।", "51": "Pass থেকে stop-এ যেতে কত frequency লাগে। সরু মানে খাড়া মানে ব্যয়বহুল।", "53": "যেখানে gain সমতল থাকার কথা সেখানে দুলুনি। Moving average-এ এটা প্রচুর।", "55": "যে frequency filter পুরোপুরি মুছে দেয়। Moving average-এ এগুলো নিয়মিত ব্যবধানে থাকে, আর একটা আপনার হার্ট রেটের উপর পড়া সত্যিকারের বিপদ।", "57": "Finite impulse response। একটা নির্দিষ্ট দৈর্ঘ্যের kernel যা দিয়ে আপনি convolve করেন। এর phase একদম linear হতে পারে।", "59": "Infinite impulse response। Feedback ব্যবহার করে, তাই খুব সস্তা আর খুব খাড়া, কিন্তু এর phase linear না।", "61": "একটা প্রচলিত IIR নকশা যার passband সর্বোচ্চ সমতল। এই ধরনের কাজের স্বাভাবিক পছন্দ।", "63": "মোটামুটি, filter কতটা খাড়া। বেশি order মানে ধারালো প্রান্ত আর বেশি phase বিকৃতি।", "65": "একটা নির্দিষ্ট frequency filter কতক্ষণ আটকে রাখে। Frequency জুড়ে স্থির হলে ভালো; বদলালে সেটাই বিটের সময় নষ্ট করে।", "67": "প্রতিটা frequency সমান পরিমাণে দেরি হয়, তাই তরঙ্গটা আকার না বদলে শুধু সরে যায়।", "69": "সামনে তারপর পেছনে filter করা যাতে দেরিগুলো হুবহু কাটাকাটি হয়ে যায়। সময় মাপার আগে বাধ্যতামূলক।", "71": "মূল থেকে একটা মসৃণ করা কপি বিয়োগ করা। একটা low-pass দিয়ে বানানো high-pass।", "72": "নিজেকে যাচাই করুন", "73": "আপনার BPM ঠিকই লাগছে কিন্তু RMSSD মানগুলো ভয়ানক রকম বড়। প্রথমে কী দেখবেন?", "74": "আপনি <span class=\"m\">filtfilt</span>-এর বদলে <span class=\"m\">lfilter</span> ব্যবহার করেছেন কিনা। ধরনটাই রোগ নির্ণয় করে দেয়: BPM অক্ষত কারণ FFT phase ফেলে দেয়, আর HRV ধ্বংস কারণ সেটা পুরোপুরি সময় দিয়ে তৈরি।", "75": "দ্বিতীয় সন্দেহভাজন: peak detection-এর resolution। ৩০ fps-এ আপনি যদি বিটগুলো নিকটতম পূর্ণ frame-এ বসান, আপনার সময়ের একক ৩৩ ms, যা আপনি যে RMSSD মাপতে চাইছেন তার সমতুল্যই। Tier 4-এর parabolic interpolation ঠিক এটাই সমাধান করতে আছে।", "76": "Drift আরও ভালোভাবে সরাতে আপনি detrending জানালা চওড়া করলেন, আর আপনার পালস দুর্বল হয়ে গেল। কেন?", "77": "আপনি উল্টো বুঝেছেন। <em>চওড়া</em> moving average শুধু ধীর জিনিসই অনুসরণ করে, তাই সেটা drift ভালোভাবে সরায় আর পালসকে ছোঁয় না। জানালা চওড়া করলে যদি পালস দুর্বল হয়, তাহলে আপনার পরিবর্তনের চিহ্নটা দেখুন: আপনি সম্ভবত সেটা সরু করেছেন, তাই moving average এখন হৃৎস্পন্দনকেই অনুসরণ করার মতো দ্রুত, আর সেটা বিয়োগ করলে সিগন্যাল সরে যায়।", "78": "Figure 1 আপনাকে সঠিক পরীক্ষাটা দেয়। আপনার kernel দৈর্ঘ্যের জন্য প্রথম null কোথায় পড়ে হিসাব করুন আর নিশ্চিত করুন সেটা ৪ Hz-এর অনেক উপরে বসে আছে।", "79": "Low cutoff ০.৭ থেকে ১.৪ Hz-এ বাড়ালে কেন ১৪৪ BPM bug হয়?", "80": "৭২ BPM-এর বিশ্রামরত হার্ট রেট মানে ১.২ Hz, যা এখন আপনার cutoff-এর <em>নিচে</em> বসে আর দুর্বল হয়ে যায়। এর দ্বিতীয় harmonic ২.৪ Hz-এ passband-এর ভেতরে স্বচ্ছন্দে বসে আর অক্ষত পার হয়ে যায়।", "81": "অর্থাৎ আপনি এমন একটা filter বানিয়েছেন যা fundamental দমন করে আর harmonic রক্ষা করে, যেটা ঠিক সেই অবস্থা যেখানে <span class=\"m\">argmax</span> ভুল চূড়া বাছে। Filter ডেটার কোনো সমস্যা প্রকাশ করেনি; সে সমস্যাটা তৈরি করেছে।", "82": "Tier 3 কী যোগ করে", "83": "আপনি এখন কাঁচা ভিডিও থেকে একটা পরিষ্কার পালস সিগন্যাল বের করতে পারেন। Tier 3 হলো যেখানে আপনার আসল অবদান থাকে: একটা spectrum দেখে <em>সেটাকে কতটা বিশ্বাস করা যায়</em> তার জন্য একটা সৎ সংখ্যা কীভাবে তৈরি করবেন। ওই সংখ্যাটাই Signal-Quality-Adaptive Fusion-এর \"signal quality\", আর আপনার প্রজেক্ট যা দাবি করে তার সবটাই ওটা ভালোভাবে হিসাব করার উপর দাঁড়িয়ে।", "84": "<strong>Frequency response</strong> মানে: প্রতিটা frequency-র কতটুকু filter পার হয়ে টিকে থাকে? Gain ১ মানে অক্ষত, ০ মানে মুছে ফেলা, ০.৫ মানে অর্ধেক। Frequency-র সাপেক্ষে gain আঁকলে একটা filter কী করে তার সবটাই জানা যায়, আর একটা filter বিচার করার এটাই একমাত্র সৎ উপায়।"};
+  var EN = {};
+  var nodes = document.querySelectorAll("[data-t]");
+  nodes.forEach(function(el){ EN[el.getAttribute("data-t")] = el.innerHTML; });
+  var btn = document.getElementById("langbtn");
+  function apply(l){
+    document.documentElement.setAttribute("data-lang", l);
+    nodes.forEach(function(el){
+      var k = el.getAttribute("data-t");
+      var v = (l === "bn" && BN[k]) ? BN[k] : EN[k];
+      if (el.innerHTML !== v) el.innerHTML = v;
+    });
+    btn.textContent = (l === "bn") ? "English" : "বাংলা";
+    try { localStorage.setItem("lessonLang", l); } catch(e){}
+    if (typeof redrawAll === "function") { try { redrawAll(); } catch(e){} }
+  }
+  var saved = "en";
+  try { saved = localStorage.getItem("lessonLang") || "en"; } catch(e){}
+  apply(saved);
+  btn.addEventListener("click", function(){
+    apply(document.documentElement.getAttribute("data-lang") === "bn" ? "en" : "bn");
+  });
+  window.addEventListener("resize", function(){
+    if (typeof redrawAll === "function") { try { redrawAll(); } catch(e){} }
+  });
+})();
+</script>
+

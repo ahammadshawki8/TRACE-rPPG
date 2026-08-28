@@ -1,0 +1,816 @@
+<title>Measuring Trust</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap">
+
+<style>
+:root {
+  --paper:#FAF7F8; --paper-2:#F2EDEF; --paper-3:#E9E1E5;
+  --ink:#1F1720; --ink-2:#5A4E58; --ink-3:#8C7F88;
+  --rule:#E0D6DB; --rule-2:#CDBFC7;
+  --accent:#B01B3F; --accent-2:#8E1533; --accent-soft:#F7DEE5;
+  --signal:#10796B; --signal-soft:#DBEFEA;
+  --warn:#9C5A12; --warn-soft:#F7E8D4;
+  --shadow:0 1px 2px rgba(31,23,32,.05), 0 8px 24px -12px rgba(31,23,32,.18);
+  --sp-1:.35rem; --sp-2:.7rem; --sp-3:1.1rem; --sp-4:1.7rem; --sp-5:2.6rem; --sp-6:4rem;
+  --font-display:"Spectral",Georgia,"Times New Roman",serif;
+  --font-body:"Archivo",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --spine:40rem; --wide:60rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#16111A; --paper-2:#1F1824; --paper-3:#29202F;
+    --ink:#F0E9EE; --ink-2:#B3A5AE; --ink-3:#7D6F79;
+    --rule:#322A38; --rule-2:#443A4B;
+    --accent:#FF6B8A; --accent-2:#FF93A9; --accent-soft:#3B1D28;
+    --signal:#45D6B0; --signal-soft:#123029;
+    --warn:#E0A050; --warn-soft:#33260F;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"] {
+  --paper:#16111A; --paper-2:#1F1824; --paper-3:#29202F;
+  --ink:#F0E9EE; --ink-2:#B3A5AE; --ink-3:#7D6F79;
+  --rule:#322A38; --rule-2:#443A4B;
+  --accent:#FF6B8A; --accent-2:#FF93A9; --accent-soft:#3B1D28;
+  --signal:#45D6B0; --signal-soft:#123029;
+  --warn:#E0A050; --warn-soft:#33260F;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.65;margin:0;padding:0 var(--sp-3) var(--sp-6);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--font-display);text-wrap:balance;line-height:1.2;margin:0}
+p{margin:0}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+code,.m{font-family:var(--font-mono);font-size:.92em;font-variant-ligatures:none}
+.m{color:var(--accent);font-weight:500}
+.masthead{max-width:var(--wide);margin:0 auto;padding:var(--sp-6) 0 var(--sp-5);border-bottom:1px solid var(--rule);display:flex;flex-direction:column;gap:var(--sp-3)}
+.eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:500}
+.masthead h1{font-size:clamp(2.6rem,7vw,4.4rem);font-weight:700;letter-spacing:-.02em}
+.masthead .standfirst{font-family:var(--font-display);font-size:clamp(1.05rem,2.2vw,1.3rem);color:var(--ink-2);max-width:34rem;line-height:1.5}
+.meta-row{display:flex;flex-wrap:wrap;gap:var(--sp-3) var(--sp-4);font-family:var(--font-mono);font-size:.76rem;color:var(--ink-3);letter-spacing:.04em;padding-top:var(--sp-2)}
+.meta-row span strong{color:var(--ink-2);font-weight:500}
+.sec{max-width:var(--wide);margin:0 auto;padding-top:var(--sp-6);display:flex;flex-direction:column;gap:var(--sp-4)}
+.sec-head{display:flex;flex-direction:column;gap:var(--sp-2)}
+.sec-num{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.16em;color:var(--ink-3);text-transform:uppercase}
+.sec-head h2{font-size:clamp(1.7rem,3.6vw,2.4rem);font-weight:600;letter-spacing:-.015em}
+.sec-head h2 em{font-style:italic;color:var(--accent)}
+.prose{max-width:var(--spine);display:flex;flex-direction:column;gap:var(--sp-3)}
+.prose h3{font-size:1.18rem;font-weight:600;margin-top:var(--sp-2)}
+.prose ul,.prose ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:var(--sp-2)}
+.prose strong{font-weight:600}
+.part-break{max-width:var(--wide);margin:var(--sp-6) auto 0;padding-top:var(--sp-5);border-top:2px solid var(--ink);display:flex;flex-direction:column;gap:var(--sp-2)}
+.part-break .eyebrow{color:var(--ink-3)}
+.part-break h2{font-size:clamp(2rem,4.6vw,3rem);font-weight:700;letter-spacing:-.02em}
+.plain{background:var(--paper-2);border-left:3px solid var(--signal);padding:var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-1);max-width:var(--spine)}
+.plain .lbl{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--signal);font-weight:600}
+.plain p{color:var(--ink-2);font-size:.95rem}
+.keypoint{background:var(--accent-soft);padding:var(--sp-3) var(--sp-4);max-width:var(--spine);border-radius:2px;font-family:var(--font-display);font-size:1.1rem;line-height:1.5}
+.keypoint strong{font-weight:700;color:var(--accent-2)}
+.aside-note{border:1px solid var(--rule);border-radius:3px;padding:var(--sp-3);max-width:var(--spine);font-size:.92rem;color:var(--ink-2);display:flex;flex-direction:column;gap:var(--sp-2)}
+.aside-note .lbl{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--warn);font-weight:600}
+.fig{border:1px solid var(--rule-2);border-radius:4px;background:var(--paper-2);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;margin:0}
+.fig-bar{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-2) var(--sp-3);background:var(--paper-3);border-bottom:1px solid var(--rule-2);flex-wrap:wrap}
+.fig-bar .tag{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.fig-bar .name{font-family:var(--font-body);font-size:.85rem;color:var(--ink-2);font-weight:500}
+.fig-canvas-wrap{padding:var(--sp-3);background:var(--paper)}
+.fig canvas{display:block;width:100%;height:auto;touch-action:none}
+.fig-controls{border-top:1px solid var(--rule);padding:var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-3)}
+.ctl-row{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2) var(--sp-3)}
+.ctl{display:flex;align-items:center;gap:var(--sp-2);flex:1 1 15rem}
+.ctl label{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.06em;color:var(--ink-2);text-transform:uppercase;white-space:nowrap}
+.ctl input[type=range]{flex:1;min-width:5rem;accent-color:var(--accent);height:1.4rem}
+button{font-family:var(--font-mono);font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;font-weight:500;padding:.42rem .8rem;background:var(--paper);color:var(--ink);border:1px solid var(--rule-2);border-radius:3px;cursor:pointer;transition:background .12s,border-color .12s,color .12s}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button[aria-pressed="true"],button.on{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+.chk{display:inline-flex;align-items:center;gap:.45rem;font-family:var(--font-mono);font-size:.73rem;color:var(--ink-2);cursor:pointer;text-transform:uppercase;letter-spacing:.05em}
+.chk input{accent-color:var(--signal);width:1rem;height:1rem}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(7.5rem,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+.readout div{background:var(--paper);padding:var(--sp-2);display:flex;flex-direction:column;gap:.15rem}
+.readout .k{font-family:var(--font-mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.readout .v{font-family:var(--font-mono);font-size:1.02rem;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.readout .v.hot{color:var(--accent)}
+.readout .v.good{color:var(--signal)}
+.readout .v.warn{color:var(--warn)}
+.fig-note{padding:var(--sp-2) var(--sp-3) var(--sp-3);font-size:.86rem;color:var(--ink-2);border-top:1px dashed var(--rule);background:var(--paper-2)}
+.fig-note strong{color:var(--ink);font-weight:600}
+.math{font-family:var(--font-mono);font-size:.95rem;background:var(--paper-2);border:1px solid var(--rule);border-radius:3px;padding:var(--sp-3);overflow-x:auto;max-width:var(--spine);line-height:1.75;white-space:pre;color:var(--ink)}
+.math .hi{color:var(--accent);font-weight:600}
+.math .dim{color:var(--ink-3)}
+.math .ok{color:var(--signal);font-weight:600}
+.tbl-wrap{overflow-x:auto;max-width:var(--spine)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:26rem}
+th,td{text-align:left;padding:.5rem .7rem;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:500;border-bottom:1px solid var(--rule-2)}
+td.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.gloss{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--rule);max-width:var(--spine)}
+.gloss>div{padding:var(--sp-3) 0;border-bottom:1px solid var(--rule);display:grid;grid-template-columns:11rem 1fr;gap:var(--sp-3)}
+.gloss dt{font-family:var(--font-mono);font-size:.82rem;font-weight:600;color:var(--accent);margin:0}
+.gloss dd{margin:0;font-size:.93rem;color:var(--ink-2)}
+@media (max-width:34rem){.gloss>div{grid-template-columns:1fr;gap:var(--sp-1)}}
+details{border:1px solid var(--rule);border-radius:3px;background:var(--paper-2);padding:var(--sp-3);max-width:var(--spine)}
+details+details{margin-top:var(--sp-2)}
+summary{cursor:pointer;font-weight:600;font-family:var(--font-display);font-size:1.05rem;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸ ";color:var(--accent);font-family:var(--font-mono)}
+details[open] summary::before{content:"▾ "}
+details .ans{margin-top:var(--sp-3);padding-top:var(--sp-3);border-top:1px dashed var(--rule-2);font-size:.95rem;color:var(--ink-2);display:flex;flex-direction:column;gap:var(--sp-2)}
+.foot{max-width:var(--wide);margin:var(--sp-6) auto 0;padding-top:var(--sp-4);border-top:1px solid var(--rule);font-family:var(--font-mono);font-size:.76rem;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:var(--sp-3);justify-content:space-between}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+
+/* ---- bilingual ---- */
+:root[data-lang="bn"] body,
+:root[data-lang="bn"] .prose,
+:root[data-lang="bn"] .sec-head h2,
+:root[data-lang="bn"] .keypoint,
+:root[data-lang="bn"] .fig-note,
+:root[data-lang="bn"] .plain p,
+:root[data-lang="bn"] .aside-note,
+:root[data-lang="bn"] .gloss dd,
+:root[data-lang="bn"] details,
+:root[data-lang="bn"] .masthead .standfirst {
+  font-family: "Hind Siliguri", "Noto Sans Bengali", var(--font-body);
+}
+:root[data-lang="bn"] .prose p,
+:root[data-lang="bn"] .prose li { line-height: 1.9; }
+:root[data-lang="bn"] .keypoint { line-height: 1.75; }
+#langbtn{
+  position:fixed; top:.75rem; right:.75rem; z-index:200;
+  font-family:var(--font-mono); font-size:.75rem; letter-spacing:.06em;
+  padding:.45rem .85rem; border-radius:4px; cursor:pointer;
+  background:var(--accent); color:var(--paper); border:1px solid var(--accent);
+  box-shadow:0 2px 10px -4px rgba(0,0,0,.4);
+}
+#langbtn:hover{ filter:brightness(1.08); }
+@media print{ #langbtn{ display:none; } }
+</style>
+<button id="langbtn" type="button" aria-label="Switch language">বাংলা</button>
+
+
+<header class="masthead">
+  <div class="eyebrow">TRACE-rPPG · Foundations · Tier 3</div>
+  <h1>Measuring Trust</h1>
+  <p class="standfirst" data-t="0">How to look at a spectrum and produce one honest number for how much to believe it &mdash; the quality metric your entire contribution is built on.</p>
+  <div class="meta-row">
+    <span><strong>4</strong> interactive figures</span>
+    <span>Follows <strong>Tier 2</strong> &mdash; phase is timing</span>
+    <span>This tier <em>is</em> the S and the Q in TRACE.</span>
+  </div>
+</header>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">00 &mdash; Orientation</div>
+    <h2 data-t="1">Why this tier is the project</h2>
+  </div>
+  <div class="prose">
+    <p data-t="2">Your fusion layer is called signal-quality-adaptive fusion. Unpack that name and it makes a specific promise:</p>
+    <ul>
+      <li data-t="3"><strong>Signal-Quality</strong> &mdash; the system measures, live, how trustworthy each extraction method is right now.</li>
+      <li data-t="4"><strong>Adaptive</strong> &mdash; those measurements change frame by frame as conditions change.</li>
+      <li data-t="5"><strong>Fusion</strong> &mdash; the final answer is a blend weighted by those measurements, rather than a bet on one fixed method.</li>
+    </ul>
+    <p data-t="6">Everything hinges on the first part. If your quality metric is bad, the adaptation is arbitrary and the fusion is worse than just picking a decent method and sticking with it. If the metric is good, the whole thing works and you have a real result.</p>
+    <p data-t="7">So this tier is short on new theory and long on getting one thing right.</p>
+  </div>
+  <div class="keypoint" data-t="8">The good news: the quality metric comes <strong>straight out of the FFT you already computed.</strong> No new transform, no extra pass over the data, no trained model. It is a ratio of two sums.</div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">01 &mdash; The bridge</div>
+    <h2 data-t="9">Parseval's theorem, or: <em>energy is energy</em></h2>
+  </div>
+  <div class="prose">
+    <p data-t="10">One small result unlocks the whole tier.</p>
+  </div>
+  <div class="math">Σ |x[n]|²      <span class="dim">=</span>      (1/N) Σ |X[k]|²
+<span class="dim">total energy               total energy
+in the time domain         in the frequency domain</span></div>
+  <div class="prose">
+    <p data-t="11">Add up the squared samples of your signal, and you get the same total as adding up the squared values of its spectrum. The Fourier transform moves energy around between frequencies but never creates or destroys any.</p>
+    <p data-t="12">Why that is useful: it means you can ask <strong>"what fraction of my signal's energy sits in the heart-rate band?"</strong> and answer it entirely in the frequency domain, by adding up bins. And that fraction is exactly a measure of quality.</p>
+    <ul>
+      <li data-t="13">A clean pulse concentrates nearly all its energy into one narrow peak. High fraction.</li>
+      <li data-t="14">Noise spreads energy evenly everywhere. Low fraction.</li>
+    </ul>
+    <p data-t="15">That single ratio is your metric. Everything below is refinement.</p>
+  </div>
+  <div class="plain">
+    <div class="lbl">Plain English</div>
+    <p data-t="83"><strong>Power</strong> here just means the square of the magnitude. Squaring makes everything positive so it can be added up, and it weights strong components more heavily than weak ones. When a paper says "power spectrum" it means the ordinary spectrum with every value squared.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">02 &mdash; The metric</div>
+    <h2 data-t="16">Spectral <em>SNR</em>: how much of the energy is the pulse?</h2>
+  </div>
+  <div class="prose">
+    <p data-t="17">Here is the metric, in full:</p>
+  </div>
+  <div class="math"><span class="dim"># 1. find the strongest peak inside the plausible band</span>
+peak = argmax(power[band])
+
+<span class="dim"># 2. energy in a narrow window around that peak, plus its harmonic</span>
+signalPower = sum(power[peak ± w]) + sum(power[2·peak ± w])
+
+<span class="dim"># 3. everything else in the band</span>
+noisePower  = sum(power[band]) − signalPower
+
+<span class="dim"># 4. the quality score</span>
+<span class="hi">quality = signalPower / (signalPower + noisePower)</span></div>
+  <div class="prose">
+    <p data-t="18">The result lands between 0 and 1. Near 1 means nearly all the energy is concentrated at one rhythm and its harmonic, which is what a real heartbeat looks like. Near 0 means the energy is spread across the band with no dominant rhythm, which is what noise looks like.</p>
+    <p data-t="19">Including the harmonic in the numerator is deliberate. Tier 1 established that a real pulse <em>necessarily</em> produces harmonics because its waveform is sharp. Treating that harmonic as noise would penalise exactly the signals you most want to reward.</p>
+    <p data-t="20">Drag the noise level below and watch the score track what your eye already tells you.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 1</span><span class="name" data-t="21">The quality metric, live</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-snr" height="360"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-noise">noise level</label><input type="range" id="sl-noise" min="0" max="3" step="0.02" value="0.5"></div>
+        <div class="ctl"><label for="sl-width">peak window w</label><input type="range" id="sl-width" min="1" max="16" step="1" value="5"></div>
+      </div>
+      <div class="readout">
+        <div><span class="k">signal power</span><span class="v good" id="ro-sp">0.00</span></div>
+        <div><span class="k">noise power</span><span class="v" id="ro-np">0.00</span></div>
+        <div><span class="k">quality score</span><span class="v hot" id="ro-q">0.00</span></div>
+        <div><span class="k">interpretation</span><span class="v" id="ro-qi">excellent</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="22"><span style="color:var(--signal);font-weight:600">Teal</span> shading is counted as signal: a window around the peak, plus a window around its harmonic. <span style="color:var(--accent);font-weight:600">Crimson</span> shading is everything else in the band, counted as noise. <strong>The peak window slider matters.</strong> Too narrow and you miss genuine signal energy in the peak's shoulders; too wide and you start counting noise as signal, so every recording looks good and the metric stops discriminating.</figcaption>
+  </figure>
+
+  <div class="aside-note">
+    <div class="lbl">Tune w honestly, and say how you did it</div>
+    <p data-t="23">The peak window <span class="m">w</span> is a free parameter, and free parameters invite the question "did you tune it to make your results look good?" Tune it on one dataset (UBFC-rPPG), then leave it fixed when you evaluate on another (PURE). Report that you did. That is a cross-dataset generalisation check, it is already listed as a stretch goal in Section 13 of your plan, and it turns a potential weakness in your methodology into a demonstrated strength.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">03 &mdash; Making the estimate stable</div>
+    <h2 data-t="24">Welch's method, and the variance you didn't know you had</h2>
+  </div>
+  <div class="prose">
+    <p data-t="25">There is a problem with computing that ratio from a single FFT, and it is subtle enough that most people never notice.</p>
+    <p data-t="26">A raw spectrum from one FFT (called a <strong>periodogram</strong>) is a <em>noisy estimate</em>. Not noisy because your signal is noisy, but noisy in itself: even with infinite data, each bin's value jitters around its true value and never settles down. Take a longer recording and you get more bins, each still just as jittery.</p>
+    <p data-t="27">That jitter propagates straight into your quality score, which will jump around from window to window even when conditions are perfectly stable. And a quality score that jumps randomly makes your fusion weights jump randomly, which is worse than no adaptation at all.</p>
+    <p data-t="84"><strong>Welch's method</strong> fixes it. Chop the signal into overlapping segments, FFT each one, and average the resulting spectra. Random jitter averages away; genuine peaks reinforce.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 2</span><span class="name" data-t="28">Periodogram vs Welch &mdash; trading resolution for stability</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-welch" height="340"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-seg">segments averaged</label><input type="range" id="sl-seg" min="1" max="12" step="1" value="1"></div>
+        <button id="btn-reroll">New noise draw</button>
+      </div>
+      <div class="readout">
+        <div><span class="k">segments</span><span class="v" id="ro-seg">1</span></div>
+        <div><span class="k">segment length</span><span class="v" id="ro-seglen">20.0 s</span></div>
+        <div><span class="k">resolution</span><span class="v" id="ro-wres">3.0 BPM</span></div>
+        <div><span class="k">estimate jitter</span><span class="v" id="ro-jit">high</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="29">At 1 segment you get the raw periodogram: spiky, jagged, and the floor is visibly random. Increase the segments and the floor smooths into something you can actually measure against, while the peak stays put. <strong>Press "New noise draw" repeatedly at 1 segment, then at 10</strong> &mdash; that is the jitter you are removing, and it is the jitter that would otherwise be shaking your fusion weights.</figcaption>
+  </figure>
+
+  <div class="keypoint" data-t="30">Welch trades <strong>resolution for stability</strong>. Shorter segments mean coarser frequency resolution but a calmer estimate. Since your quality metric needs a reliable <em>floor</em> more than it needs fine resolution, this is a trade worth making for the metric &mdash; while still using the full-length FFT for the BPM readout itself.</div>
+
+  <div class="prose">
+    <p data-t="31">In practice that means running two spectral computations per window, which sounds wasteful but costs almost nothing:</p>
+  </div>
+  <div class="math"><span class="dim"># full-length FFT — best resolution, for reading the BPM</span>
+freqs, power = periodogram(x, fs)
+bpm = freqs[argmax(power[band])] * 60
+
+<span class="dim"># Welch — stable floor, for judging quality</span>
+wf, wp = welch(x, fs, nperseg=len(x)//4)
+quality = bandRatio(wf, wp)</div>
+</section>
+
+<div class="part-break">
+  <div class="eyebrow">Part B</div>
+  <h2 data-t="32">Fusion</h2>
+</div>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">04 &mdash; The payoff</div>
+    <h2 data-t="33">Weighting three methods by how much you <em>trust</em> them</h2>
+  </div>
+  <div class="prose">
+    <p data-t="34">You now have a trust score for every method. Fusion is what you do with them, and it is deliberately simple arithmetic:</p>
+  </div>
+  <div class="math">q_green, q_chrom, q_pos  <span class="dim">← quality scores, each 0 to 1</span>
+
+w_i = q_i<span class="hi">^p</span> / Σ q_j<span class="hi">^p</span>              <span class="dim">← normalise so weights sum to 1</span>
+
+<span class="dim"># fuse in the frequency domain, not on the BPM numbers</span>
+fusedPower = Σ w_i · power_i
+bpm = freqs[argmax(fusedPower[band])] * 60</div>
+  <div class="prose">
+    <h3 data-t="35">Two design choices worth defending in your report</h3>
+    <p data-t="85"><strong>The sharpness exponent p.</strong> At <span class="m">p = 1</span> weights are proportional to quality, which is gentle: a method scoring 0.3 still contributes meaningfully. Raising <span class="m">p</span> concentrates weight on the leaders, and as <span class="m">p</span> grows large the system converges on simply picking the single best method each frame. Your fusion claim is that a blend beats winner-take-all, so <span class="m">p</span> is exactly the knob that claim lives on, and showing accuracy against <span class="m">p</span> is a genuine result rather than a parameter you tuned quietly.</p>
+    <p data-t="86"><strong>Fuse spectra, not BPM numbers.</strong> This is the more important choice. If two methods disagree, 70 and 140, averaging their BPM gives 105, which is a rate neither method saw and the subject does not have. Averaging their <em>spectra</em> keeps both peaks present and lets the strongest survive the final argmax. Averaging in the wrong domain can produce an answer that is worse than either input, and that is a real trap.</p>
+    <p data-t="36">Below, three methods run under changing conditions. Watch the weights redistribute.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 3</span><span class="name" data-t="37">TRACE in miniature &mdash; three methods, one adaptive answer</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-fuse" height="420"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-light">lighting quality</label><input type="range" id="sl-light" min="0" max="1" step="0.01" value="0.85"></div>
+        <div class="ctl"><label for="sl-motion">subject motion</label><input type="range" id="sl-motion" min="0" max="1" step="0.01" value="0.15"></div>
+      </div>
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-p">sharpness p</label><input type="range" id="sl-p" min="1" max="8" step="0.5" value="2"></div>
+        <button id="btn-scenario">Run a scenario</button>
+      </div>
+      <div class="readout">
+        <div><span class="k">green weight</span><span class="v" id="ro-wg">0.15</span></div>
+        <div><span class="k">chrom weight</span><span class="v" id="ro-wc">0.42</span></div>
+        <div><span class="k">pos weight</span><span class="v" id="ro-wp">0.43</span></div>
+        <div><span class="k">fused error</span><span class="v good" id="ro-fe">0.4 BPM</span></div>
+        <div><span class="k">best single</span><span class="v" id="ro-bs">0.9 BPM</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="38">Green degrades under motion (Tier 0 showed why: it is not perpendicular to brightness changes). CHROM and POS handle motion but need decent light. <strong>Drag lighting down and motion up</strong> and watch the weights shift to whichever method is coping. The bar at the bottom compares the fused error against always picking one fixed method &mdash; which is the exact claim your project has to defend.</figcaption>
+  </figure>
+
+  <div class="aside-note">
+    <div class="lbl">The honest risk in your project, stated plainly</div>
+    <p data-t="39">Fusion does not always beat the best single method. If one method is reliably best across all your test conditions, a fixed choice wins and your fusion adds complexity for nothing. Fusion pays off precisely when <strong>different methods win under different conditions</strong>, so no single fixed choice is right everywhere.</p>
+    <p data-t="40">That is why the video-call compression testing in Section 5.1 of your plan matters so much: it deliberately creates conditions where the ranking flips. Design your evaluation to include conditions where the winner changes, or your headline result may honestly come out as "fusion roughly matched POS," which is a much weaker paper.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">05 &mdash; Beyond the spectrum</div>
+    <h2 data-t="41">Three more quality signals worth fusing in</h2>
+  </div>
+  <div class="prose">
+    <p data-t="42">Spectral SNR is your primary metric, but it has a blind spot: it judges the <em>output</em> without looking at the <em>input</em>. A completely obscured face can still produce a spuriously peaky spectrum by chance. Cheap independent checks catch that.</p>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Signal</th><th>How to compute it</th><th>What it catches</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Motion magnitude</strong></td><td>Frame-to-frame displacement of the tracked face box</td><td>Talking, turning, fidgeting &mdash; the exact failure mode of the green channel</td></tr>
+        <tr><td><strong>Illumination stability</strong></td><td>Variance of mean ROI brightness over the window</td><td>Flicker, someone walking past a lamp, screens changing behind the subject</td></tr>
+        <tr><td><strong>Temporal consistency</strong></td><td>How far this window's BPM sits from the last few</td><td>Harmonic lock-ons and sudden implausible jumps</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="prose">
+    <p data-t="43">Combine them multiplicatively, so that any one of them going bad is enough to suppress a method:</p>
+  </div>
+  <div class="math">q_total = q_spectral × q_motion × q_illumination × q_consistency</div>
+  <div class="prose">
+    <p data-t="44">Multiplication rather than averaging is the right choice here. With an average, a method with a beautiful spectrum but wild motion still scores respectably. With multiplication, one near-zero factor drags the whole score to near zero, which is the behaviour you want from a trust score.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 4</span><span class="name" data-t="45">Combining quality signals &mdash; average vs multiply</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-comb" height="300"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="q1">spectral</label><input type="range" id="q1" min="0" max="1" step="0.01" value="0.9"></div>
+        <div class="ctl"><label for="q2">motion</label><input type="range" id="q2" min="0" max="1" step="0.01" value="0.85"></div>
+      </div>
+      <div class="ctl-row">
+        <div class="ctl"><label for="q3">lighting</label><input type="range" id="q3" min="0" max="1" step="0.01" value="0.8"></div>
+        <div class="ctl"><label for="q4">consistency</label><input type="range" id="q4" min="0" max="1" step="0.01" value="0.9"></div>
+      </div>
+      <div class="readout">
+        <div><span class="k">if averaged</span><span class="v" id="ro-avg">0.86</span></div>
+        <div><span class="k">if multiplied</span><span class="v hot" id="ro-mul">0.55</span></div>
+        <div><span class="k">weakest link</span><span class="v" id="ro-weak">lighting</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="46">Drag any single slider to near zero. <strong>The average barely moves; the product collapses.</strong> That collapse is correct behaviour: if the face is not visible, it does not matter how clean the spectrum looks. Multiplication encodes "all of these must be true," which is what trust actually requires.</figcaption>
+  </figure>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">06 &mdash; Reference</div>
+    <h2 data-t="47">Tier 3 vocabulary, plainly</h2>
+  </div>
+  <div class="gloss">
+    <div><dt data-t="48">Power</dt><dd data-t="49">Magnitude squared. Positive, additive, and weights strong components more.</dd></div>
+    <div><dt data-t="50">Power spectrum</dt><dd data-t="51">The ordinary spectrum with every value squared. What you sum over to measure energy.</dd></div>
+    <div><dt data-t="52">Parseval's theorem</dt><dd data-t="53">Total energy is the same whether you measure it in time or in frequency. Lets you ask "what fraction is in this band?" using bins alone.</dd></div>
+    <div><dt data-t="54">PSD</dt><dd data-t="55">Power spectral density: power per unit frequency, so the number does not change when you alter your bin spacing.</dd></div>
+    <div><dt data-t="56">Periodogram</dt><dd data-t="57">The power spectrum from a single FFT. Unbiased but permanently noisy.</dd></div>
+    <div><dt data-t="58">Welch's method</dt><dd data-t="59">Split into overlapping segments, FFT each, average the results. Calmer estimate, coarser resolution.</dd></div>
+    <div><dt data-t="60">Variance of an estimate</dt><dd data-t="61">How much a computed number jitters between runs on equivalent data. Different from noise in the signal, and easy to confuse with it.</dd></div>
+    <div><dt data-t="62">Spectral SNR</dt><dd data-t="63">In-band peak energy divided by total in-band energy. Your quality metric.</dd></div>
+    <div><dt data-t="64">Fusion weight</dt><dd data-t="65">How much a method's output counts toward the final answer. Derived from its quality score and normalised so the weights sum to 1.</dd></div>
+    <div><dt data-t="66">Winner-take-all</dt><dd data-t="67">Giving all the weight to the highest-scoring method. What TRACE becomes as the sharpness exponent grows large.</dd></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">07 &mdash; Before Tier 4</div>
+    <h2 data-t="68">Check yourself</h2>
+  </div>
+
+  <details>
+    <summary data-t="69">Conditions are stable but your quality score bounces between 0.4 and 0.7 window to window. What is happening?</summary>
+    <div class="ans">
+      <p data-t="70">You are measuring the variance of the periodogram, not a change in your signal. A single-FFT spectrum estimate is inherently jittery, and your metric is faithfully reporting that jitter.</p>
+      <p data-t="71">Use Welch for the quality computation. If the bouncing persists, add temporal smoothing to the score itself &mdash; an exponential moving average over the last few windows &mdash; since real recording conditions change over seconds, not milliseconds.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="72">Two methods report 70 and 140 BPM with roughly equal quality. Why must you not average those numbers?</summary>
+    <div class="ans">
+      <p data-t="73">Because you would output 105 BPM, a value neither method produced and the subject does not have. Averaging is only meaningful when the inputs are estimates of the same thing with independent errors, and here one of them has almost certainly locked onto a harmonic.</p>
+      <p data-t="74">Fuse the spectra instead. Both peaks stay present in the combined spectrum, and the final argmax picks a rate that at least one method actually observed. Better still, run the sub-harmonic check from Tier 1: the presence of 70 with strong energy is direct evidence that 140 is the harmonic.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="75">Why include the harmonic in the numerator of the quality metric?</summary>
+    <div class="ans">
+      <p data-t="76">Because a real pulse waveform is sharp, and Tier 1 showed that sharp shapes <em>require</em> harmonics. Energy at twice the heart rate is evidence of a genuine pulse, not evidence of contamination.</p>
+      <p data-t="77">Count it as noise and you systematically penalise the cleanest, sharpest pulse signals &mdash; the metric would score a crisp waveform worse than a mushy one, which is precisely backwards.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="78">Your fusion result is almost identical to POS alone across every test. Is the project a failure?</summary>
+    <div class="ans">
+      <p data-t="79">No, but it is an incomplete evaluation. That result means POS dominated in every condition you tested, so there was nothing for adaptation to do.</p>
+      <p data-t="80">The fix is to test conditions where the ranking actually flips: heavy compression, harsh or dim lighting, deliberate motion. That is exactly what Section 5.1 of your plan is for. And if fusion genuinely never wins, report that honestly with the conditions you tested &mdash; a negative result properly bounded is real science, and it reads far better than a result quietly tuned until it looked positive.</p>
+    </div>
+  </details>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">08 &mdash; Ahead</div>
+    <h2 data-t="81">What Tier 4 adds</h2>
+  </div>
+  <div class="prose">
+    <p data-t="82">Tier 4 is the second Fourier transform: not on the video signal, but on the <em>pattern of heartbeats over time</em>. Precise beat timing, why the interval series cannot be fed to an ordinary FFT, the LF and HF bands, and a scoping constraint in your current plan that you should fix before it embarrasses you in a demo.</p>
+  </div>
+</section>
+
+<footer class="foot">
+  <span>TRACE-rPPG &mdash; Tier 3 of 5</span>
+  <span>Parseval · Welch · spectral SNR · adaptive fusion</span>
+</footer>
+
+<script>
+"use strict";
+var C={};
+function refreshTheme(){
+  var s=getComputedStyle(document.documentElement);
+  ["paper","paper-2","paper-3","ink","ink-2","ink-3","rule","rule-2","accent","accent-2","signal","warn"]
+    .forEach(function(k){ C[k]=s.getPropertyValue("--"+k).trim(); });
+}
+refreshTheme();
+if(window.matchMedia){
+  var mq=window.matchMedia("(prefers-color-scheme: dark)");
+  if(mq.addEventListener) mq.addEventListener("change",function(){refreshTheme();redrawAll();});
+}
+new MutationObserver(function(){refreshTheme();redrawAll();})
+  .observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+var redraws=[];
+function redrawAll(){ redraws.forEach(function(f){f();}); }
+
+var _fitCache=new WeakMap();
+function fit(cv){
+  var st=_fitCache.get(cv);
+  if(!st){ st={cssH:parseInt(cv.getAttribute("height"),10),ctx:cv.getContext("2d"),w:0,dpr:0}; _fitCache.set(cv,st); }
+  var dpr=window.devicePixelRatio||1;
+  var w=cv.clientWidth||cv.parentNode.clientWidth||600;
+  if(w!==st.w||dpr!==st.dpr){
+    st.w=w; st.dpr=dpr;
+    cv.width=Math.round(w*dpr); cv.height=Math.round(st.cssH*dpr);
+    cv.style.height=st.cssH+"px";
+    st.ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  return {ctx:st.ctx,w:st.w,h:st.cssH};
+}
+function label(ctx,txt,x,y,col,size,align){
+  ctx.fillStyle=col; ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+  ctx.textAlign=align||"left"; ctx.textBaseline="middle"; ctx.fillText(txt,x,y);
+}
+function axis(ctx,x0,y,w,col){ ctx.strokeStyle=col; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x0,y); ctx.lineTo(x0+w,y); ctx.stroke(); }
+
+var _seed=99;
+function rnd(){ _seed=(_seed*1103515245+12345)%2147483648; return _seed/2147483648*2-1; }
+function reseed(s){ _seed=s; }
+
+/* ---------- FIG 1 : QUALITY METRIC ---------- */
+(function(){
+  var cv=document.getElementById("cv-snr");
+  var sn=document.getElementById("sl-noise"), sw=document.getElementById("sl-width");
+  var NB=170, PEAK=52, HARM=104;
+  var base=[];
+  reseed(4242);
+  for(var i=0;i<NB;i++) base.push(Math.abs(rnd())+Math.abs(rnd()));
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var nz=parseFloat(sn.value), wd=parseInt(sw.value,10);
+    var p=[];
+    for(var k=0;k<NB;k++){
+      var v=nz*base[k]*0.5;
+      v+=1.0*Math.exp(-Math.pow((k-PEAK)/3.4,2));
+      v+=0.42*Math.exp(-Math.pow((k-HARM)/3.8,2));
+      p.push(v*v);
+    }
+    var sig=0,tot=0;
+    for(var k2=0;k2<NB;k2++){
+      tot+=p[k2];
+      if(Math.abs(k2-PEAK)<=wd||Math.abs(k2-HARM)<=wd) sig+=p[k2];
+    }
+    var noise=tot-sig, q=sig/(tot||1);
+
+    var pad=32,pw=w-pad-14,y0=30,ph=h-y0-52;
+    label(ctx,"POWER SPECTRUM INSIDE THE HEART-RATE BAND",pad,12,C["ink-3"],10);
+    var mx=0; p.forEach(function(v){mx=Math.max(mx,v);});
+    var bw=pw/NB;
+    for(var k3=0;k3<NB;k3++){
+      var isSig=Math.abs(k3-PEAK)<=wd||Math.abs(k3-HARM)<=wd;
+      var bh=(p[k3]/mx)*(ph-6);
+      ctx.fillStyle=isSig?C.signal:C.accent;
+      ctx.globalAlpha=isSig?0.9:0.45;
+      ctx.fillRect(pad+k3*bw,y0+ph-bh,Math.max(1,bw-0.5),bh);
+      ctx.globalAlpha=1;
+    }
+    axis(ctx,pad,y0+ph,pw,C.rule);
+    label(ctx,"peak",pad+PEAK*bw,y0+8,C.signal,10,"center");
+    label(ctx,"harmonic",pad+HARM*bw,y0+8,C.signal,10,"center");
+
+    [[0,"42"],[42,"72"],[85,"110"],[128,"150"],[169,"190"]].forEach(function(t){
+      var xx=pad+t[0]*bw;
+      label(ctx,t[1],xx,y0+ph+13,C["ink-3"],9.5,"center");
+    });
+    label(ctx,"BPM",pad+pw,y0+ph+28,C["ink-3"],9.5,"right");
+
+    /* quality bar */
+    var by=y0+ph+34, bwid=pw;
+    ctx.fillStyle=C.rule; ctx.fillRect(pad,by,bwid,10);
+    ctx.fillStyle= q>0.5?C.signal : (q>0.25?C.warn:C.accent);
+    ctx.fillRect(pad,by,bwid*q,10);
+
+    document.getElementById("ro-sp").textContent=sig.toFixed(1);
+    document.getElementById("ro-np").textContent=noise.toFixed(1);
+    document.getElementById("ro-q").textContent=q.toFixed(3);
+    var qi=document.getElementById("ro-qi");
+    var txt = q>0.6?"excellent" : q>0.4?"usable" : q>0.22?"marginal" : "reject";
+    qi.textContent=txt;
+    qi.className="v"+(q>0.4?" good":q>0.22?" warn":" hot");
+    document.getElementById("ro-q").className="v"+(q>0.4?" good":" hot");
+  }
+  [sn,sw].forEach(function(e){e.addEventListener("input",draw);});
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 2 : PERIODOGRAM VS WELCH ---------- */
+(function(){
+  var cv=document.getElementById("cv-welch");
+  var ss=document.getElementById("sl-seg");
+  var NB=200, PEAK=62, seedBase=777;
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var S=parseInt(ss.value,10);
+    var acc=new Array(NB).fill(0);
+    for(var s=0;s<S;s++){
+      reseed(seedBase+s*8191);
+      for(var k=0;k<NB;k++){
+        var n=Math.abs(rnd())+Math.abs(rnd());
+        var v=0.55*n + 1.0*Math.exp(-Math.pow((k-PEAK)/(3.0+S*0.25),2));
+        acc[k]+=v*v;
+      }
+    }
+    for(var k2=0;k2<NB;k2++) acc[k2]/=S;
+
+    var pad=30,pw=w-pad-14,y0=34,ph=h-y0-46;
+    label(ctx, S===1 ? "PERIODOGRAM  ·  one FFT, permanently jittery floor"
+                     : "WELCH  ·  "+S+" segments averaged, floor settling down",
+          pad,12, S===1?C.warn:C.signal, 10);
+    var mx=0; acc.forEach(function(v){mx=Math.max(mx,v);});
+    axis(ctx,pad,y0+ph,pw,C.rule);
+    ctx.strokeStyle=C.accent; ctx.lineWidth=1.8; ctx.lineJoin="round"; ctx.beginPath();
+    for(var k3=0;k3<NB;k3++){
+      var px=pad+(k3/(NB-1))*pw, py=y0+ph-(acc[k3]/mx)*(ph-6);
+      if(k3===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+
+    /* mean floor line, excluding the peak */
+    var fl=0,c=0;
+    for(var k4=0;k4<NB;k4++){ if(Math.abs(k4-PEAK)>10){ fl+=acc[k4]; c++; } }
+    fl/=c;
+    var fy=y0+ph-(fl/mx)*(ph-6);
+    ctx.strokeStyle=C.signal; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(pad,fy); ctx.lineTo(pad+pw,fy); ctx.stroke(); ctx.setLineDash([]);
+    label(ctx,"mean noise floor",pad+4,fy-9,C.signal,9.5);
+
+    /* floor roughness */
+    var rough=0;
+    for(var k5=1;k5<NB;k5++) if(Math.abs(k5-PEAK)>10) rough+=Math.abs(acc[k5]-acc[k5-1]);
+    rough/=mx;
+
+    document.getElementById("ro-seg").textContent=S;
+    document.getElementById("ro-seglen").textContent=(20/S).toFixed(1)+" s";
+    document.getElementById("ro-wres").textContent=(3*S).toFixed(1)+" BPM";
+    var j=document.getElementById("ro-jit");
+    var lev = rough>26?"high" : rough>14?"moderate" : "low";
+    j.textContent=lev;
+    j.className="v"+(lev==="low"?" good":lev==="moderate"?" warn":" hot");
+  }
+  ss.addEventListener("input",draw);
+  document.getElementById("btn-reroll").addEventListener("click",function(){
+    seedBase=Math.floor(Math.random()*100000); draw();
+  });
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 3 : FUSION ---------- */
+(function(){
+  var cv=document.getElementById("cv-fuse");
+  var sl=document.getElementById("sl-light"), sm=document.getElementById("sl-motion"), sp=document.getElementById("sl-p");
+  var scen=null, scenT=0;
+
+  function qualities(L,M){
+    return {
+      green: Math.max(0.02, L*0.95 * Math.pow(1-M,2.6)),
+      chrom: Math.max(0.02, Math.pow(L,1.5)*0.9 * (1-M*0.35)),
+      pos:   Math.max(0.02, Math.pow(L,1.3)*0.88 * (1-M*0.28))
+    };
+  }
+  function errOf(q){ return 0.25 + 6.5*Math.pow(1-q,2.2); }
+
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var L=parseFloat(sl.value), M=parseFloat(sm.value), p=parseFloat(sp.value);
+    var Q=qualities(L,M);
+    var names=["green","chrom","pos"], cols=[C.warn,C.accent,C.signal];
+    var qs=[Q.green,Q.chrom,Q.pos];
+    var pw2=qs.map(function(q){return Math.pow(q,p);});
+    var sum=pw2.reduce(function(a,b){return a+b;},0);
+    var W=pw2.map(function(v){return v/sum;});
+    var errs=qs.map(errOf);
+    var fused=0;
+    for(var i=0;i<3;i++) fused+=W[i]*errs[i];
+    fused*=0.72;
+    var best=Math.min.apply(null,errs);
+
+    var pad=10, pw=w-pad*2;
+    var rowH=64, y=26;
+    label(ctx,"PER-METHOD QUALITY AND RESULTING FUSION WEIGHT",pad,10,C["ink-3"],10);
+    for(var i2=0;i2<3;i2++){
+      var yy=y+i2*rowH;
+      label(ctx,names[i2].toUpperCase(),pad,yy+8,cols[i2],11);
+      var barX=pad+72, barW=pw-72-96;
+      ctx.fillStyle=C.rule; ctx.fillRect(barX,yy,barW,13);
+      ctx.fillStyle=cols[i2]; ctx.globalAlpha=.42;
+      ctx.fillRect(barX,yy,barW*qs[i2],13); ctx.globalAlpha=1;
+      label(ctx,"quality "+qs[i2].toFixed(2),barX+4,yy+7,C["ink-2"],9.5);
+
+      ctx.fillStyle=C.rule; ctx.fillRect(barX,yy+19,barW,17);
+      ctx.fillStyle=cols[i2];
+      ctx.fillRect(barX,yy+19,barW*W[i2],17);
+      label(ctx,"weight "+(W[i2]*100).toFixed(0)+"%",barX+4,yy+27,
+            W[i2]>0.14?C.paper:C["ink-2"],9.5);
+      label(ctx,"err "+errs[i2].toFixed(1),pad+pw,yy+16,C["ink-3"],10,"right");
+    }
+
+    var cy=y+3*rowH+14;
+    label(ctx,"ERROR:  FUSED  vs  EACH STATIC CHOICE  (lower is better)",pad,cy-6,C["ink-3"],10);
+    var maxE=Math.max(8,Math.max.apply(null,errs));
+    var barsY=cy+10, bH=20, gap=8;
+    var items=[["FUSED",fused,C.signal]].concat(
+      names.map(function(n,i3){ return [n,errs[i3],cols[i3]]; }));
+    items.forEach(function(it,i4){
+      var yy2=barsY+i4*(bH+gap);
+      label(ctx,it[0].toUpperCase(),pad,yy2+bH/2,it[2],10);
+      var bx=pad+64, bw3=(pw-64-56)*(it[1]/maxE);
+      ctx.fillStyle=it[2]; ctx.globalAlpha=i4===0?1:.5;
+      ctx.fillRect(bx,yy2,Math.max(2,bw3),bH); ctx.globalAlpha=1;
+      label(ctx,it[1].toFixed(1)+" BPM",pad+pw,yy2+bH/2,C["ink-2"],10,"right");
+    });
+
+    document.getElementById("ro-wg").textContent=W[0].toFixed(2);
+    document.getElementById("ro-wc").textContent=W[1].toFixed(2);
+    document.getElementById("ro-wp").textContent=W[2].toFixed(2);
+    document.getElementById("ro-fe").textContent=fused.toFixed(1)+" BPM";
+    document.getElementById("ro-bs").textContent=best.toFixed(1)+" BPM";
+    document.getElementById("ro-fe").className="v"+(fused<best?" good":" hot");
+  }
+  [sl,sm,sp].forEach(function(e){e.addEventListener("input",draw);});
+  document.getElementById("btn-scenario").addEventListener("click",function(){
+    if(scen){ clearInterval(scen); scen=null; this.classList.remove("on"); this.textContent="Run a scenario"; return; }
+    this.classList.add("on"); this.textContent="Stop";
+    scenT=0;
+    scen=setInterval(function(){
+      scenT+=0.02;
+      sl.value=(0.55+0.4*Math.cos(scenT*1.1)).toFixed(2);
+      sm.value=(0.45+0.42*Math.sin(scenT*0.7)).toFixed(2);
+      draw();
+      if(scenT>12){ clearInterval(scen); scen=null;
+        var b=document.getElementById("btn-scenario");
+        b.classList.remove("on"); b.textContent="Run a scenario"; }
+    },40);
+  });
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 4 : COMBINING ---------- */
+(function(){
+  var cv=document.getElementById("cv-comb");
+  var ids=["q1","q2","q3","q4"], names=["spectral","motion","lighting","consistency"];
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var q=ids.map(function(i){return parseFloat(document.getElementById(i).value);});
+    var avg=q.reduce(function(a,b){return a+b;},0)/4;
+    var mul=q.reduce(function(a,b){return a*b;},1);
+
+    var pad=10,pw=w-pad*2;
+    label(ctx,"THE FOUR INPUT SIGNALS",pad,10,C["ink-3"],10);
+    var y=26,rowH=26;
+    q.forEach(function(v,i){
+      var yy=y+i*rowH;
+      label(ctx,names[i],pad,yy+8,C["ink-2"],10);
+      var bx=pad+94, bw=pw-94-46;
+      ctx.fillStyle=C.rule; ctx.fillRect(bx,yy,bw,14);
+      ctx.fillStyle= v<0.3?C.accent : v<0.6?C.warn : C.signal;
+      ctx.fillRect(bx,yy,bw*v,14);
+      label(ctx,v.toFixed(2),pad+pw,yy+7,C["ink-3"],10,"right");
+    });
+
+    var cy=y+4*rowH+18;
+    label(ctx,"COMBINED SCORE",pad,cy-6,C["ink-3"],10);
+    [["averaged",avg,C["ink-3"]],["multiplied",mul,C.accent]].forEach(function(it,i2){
+      var yy2=cy+10+i2*32;
+      label(ctx,it[0],pad,yy2+11,it[2],11);
+      var bx2=pad+104, bw2=pw-104-56;
+      ctx.fillStyle=C.rule; ctx.fillRect(bx2,yy2,bw2,22);
+      ctx.fillStyle=it[2]; ctx.globalAlpha=i2===1?1:.45;
+      ctx.fillRect(bx2,yy2,bw2*it[1],22); ctx.globalAlpha=1;
+      label(ctx,it[1].toFixed(2),pad+pw,yy2+11,C["ink-2"],11,"right");
+    });
+
+    var wi=0; for(var i3=1;i3<4;i3++) if(q[i3]<q[wi]) wi=i3;
+    document.getElementById("ro-avg").textContent=avg.toFixed(2);
+    document.getElementById("ro-mul").textContent=mul.toFixed(2);
+    document.getElementById("ro-weak").textContent=names[wi];
+  }
+  ids.forEach(function(i){ document.getElementById(i).addEventListener("input",draw); });
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+</script>
+
+<script>
+(function(){
+  var BN = {"0": "একটা spectrum দেখে সেটাকে কতটা বিশ্বাস করা যায় তার জন্য একটা সৎ সংখ্যা কীভাবে বানাবেন &mdash; সেই quality metric যার উপর আপনার পুরো অবদান দাঁড়িয়ে।", "1": "কেন এই tier-টাই আসলে প্রজেক্ট", "2": "আপনার প্রজেক্টের নাম Signal-Quality-Adaptive Fusion। নামটা খুলে দেখলে এটা একটা নির্দিষ্ট প্রতিশ্রুতি দেয়:", "3": "<strong>Signal-Quality</strong> &mdash; সিস্টেম সরাসরি মাপে যে এই মুহূর্তে প্রতিটা extraction পদ্ধতি কতটা বিশ্বাসযোগ্য।", "4": "<strong>Adaptive</strong> &mdash; পরিস্থিতি বদলানোর সাথে সাথে ওই মাপগুলোও frame ধরে ধরে বদলায়।", "5": "<strong>Fusion</strong> &mdash; একটা স্থির পদ্ধতির উপর বাজি না ধরে, চূড়ান্ত উত্তরটা ওই মাপ অনুযায়ী ওজন দেওয়া একটা মিশ্রণ।", "6": "সবকিছু নির্ভর করে প্রথম অংশটার উপর। আপনার quality metric খারাপ হলে অভিযোজনটা এলোমেলো হয়ে যায় আর fusion একটা ভালো পদ্ধতি বেছে সেটাতেই লেগে থাকার চেয়েও খারাপ হয়। Metric ভালো হলে পুরোটা কাজ করে আর আপনার হাতে একটা সত্যিকারের ফলাফল থাকে।", "7": "তাই এই tier-এ নতুন তত্ত্ব কম, আর একটা জিনিস ঠিকভাবে করা নিয়ে অনেক কিছু।", "8": "সুখবর: quality metric-টা <strong>সরাসরি আপনার আগে থেকেই হিসাব করা FFT থেকেই আসে।</strong> নতুন কোনো রূপান্তর নেই, ডেটার উপর বাড়তি pass নেই, প্রশিক্ষিত কোনো model নেই। এটা দুইটা যোগফলের অনুপাত।", "9": "Parseval-এর উপপাদ্য, অথবা: <em>শক্তি হলো শক্তি</em>", "10": "একটা ছোট ফলাফল পুরো tier-টা খুলে দেয়।", "11": "আপনার সিগন্যালের নমুনাগুলোর বর্গ যোগ করুন, আর আপনি সেই একই মোট পাবেন যা এর spectrum-এর মানগুলোর বর্গ যোগ করলে পাওয়া যায়। Fourier transform শক্তিকে frequency-র মধ্যে এদিক-ওদিক সরায়, কিন্তু কখনো তৈরি বা ধ্বংস করে না।", "12": "এটা কেন কাজের: এর মানে আপনি জিজ্ঞেস করতে পারেন <strong>\"আমার সিগন্যালের শক্তির কত ভাগ হার্ট-রেট ব্যান্ডে আছে?\"</strong> আর পুরোপুরি frequency ডোমেইনে, শুধু bin যোগ করে, উত্তর দিতে পারেন। আর ওই ভগ্নাংশটাই ঠিক মানের একটা পরিমাপ।", "13": "একটা পরিষ্কার পালস তার প্রায় সব শক্তি একটা সরু চূড়ায় জড়ো করে। বেশি ভগ্নাংশ।", "14": "Noise শক্তি সব জায়গায় সমানভাবে ছড়িয়ে দেয়। কম ভগ্নাংশ।", "15": "ওই একটা অনুপাতই আপনার metric। নিচের সবটাই পরিমার্জনা।", "16": "Spectral <em>SNR</em>: শক্তির কতটুকু পালস?", "17": "এই হলো metric-টা, পুরোটা:", "18": "ফলাফল ০ আর ১-এর মধ্যে পড়ে। ১-এর কাছাকাছি মানে প্রায় সব শক্তি একটা ছন্দ আর তার harmonic-এ জড়ো, যেটা একটা আসল হৃৎস্পন্দন দেখতে যেমন। ০-এর কাছাকাছি মানে শক্তি ব্যান্ড জুড়ে ছড়িয়ে আছে আর কোনো প্রধান ছন্দ নেই, যেটা noise দেখতে যেমন।", "19": "লব-এ harmonic রাখাটা ইচ্ছাকৃত। Tier 1 প্রতিষ্ঠা করেছে যে একটা আসল পালস <em>অবশ্যই</em> harmonic তৈরি করে, কারণ তার তরঙ্গ ধারালো। ওই harmonic-কে noise ধরলে আপনি ঠিক সেই সিগন্যালগুলোকেই শাস্তি দেবেন যাদের সবচেয়ে বেশি পুরস্কৃত করা উচিত।", "20": "নিচে noise-এর মাত্রা টানুন আর দেখুন score-টা ঠিক তাই দেখাচ্ছে যা আপনার চোখ আগেই বলে দিচ্ছে।", "21": "Quality metric, সরাসরি", "22": "<span style=\"color:var(--signal);font-weight:600\">সবুজ</span> ছায়াটা signal হিসেবে গোনা হয়: চূড়ার চারপাশে একটা জানালা, আর তার harmonic-এর চারপাশে আরেকটা জানালা। <span style=\"color:var(--accent);font-weight:600\">লাল</span> ছায়াটা ব্যান্ডের বাকি সবকিছু, noise হিসেবে গোনা। <strong>চূড়ার জানালার স্লাইডারটা গুরুত্বপূর্ণ।</strong> খুব সরু হলে আপনি চূড়ার কাঁধে থাকা আসল শক্তি হারাবেন; খুব চওড়া হলে আপনি noise-কে signal গুনতে শুরু করবেন, তাই প্রতিটা রেকর্ডিং ভালো দেখাবে আর metric-টা পার্থক্য করাই বন্ধ করে দেবে।", "23": "চূড়ার জানালা <span class=\"m\">w</span> একটা মুক্ত parameter, আর মুক্ত parameter এই প্রশ্ন ডেকে আনে \"তুমি কি ফলাফল ভালো দেখানোর জন্য এটা মিলিয়েছ?\" একটা dataset-এ (UBFC-rPPG) এটা ঠিক করুন, তারপর আরেকটায় (PURE) মূল্যায়নের সময় স্থির রাখুন। যে করেছেন সেটা জানান। এটা একটা cross-dataset generalisation পরীক্ষা, আপনার পরিকল্পনার Section 13-এ এটা ইতিমধ্যেই একটা stretch goal হিসেবে আছে, আর এটা আপনার পদ্ধতির সম্ভাব্য দুর্বলতাকে প্রমাণিত শক্তিতে বদলে দেয়।", "24": "Welch-এর পদ্ধতি, আর যে variance-এর কথা আপনি জানতেন না", "25": "একটামাত্র FFT থেকে ওই অনুপাত হিসাব করায় একটা সমস্যা আছে, আর সেটা এতটাই সূক্ষ্ম যে বেশিরভাগ মানুষ কখনো খেয়ালই করে না।", "26": "একটা FFT থেকে পাওয়া কাঁচা spectrum (যাকে বলে <strong>periodogram</strong>) একটা <em>noisy অনুমান</em>। আপনার সিগন্যাল noisy বলে না, বরং নিজেই noisy: অসীম ডেটা থাকলেও প্রতিটা bin-এর মান তার আসল মানের চারপাশে কাঁপতে থাকে, কখনো থিতু হয় না। লম্বা রেকর্ডিং নিলে আপনি আরও bin পাবেন, প্রতিটাই ঠিক ততটাই কাঁপুনে।", "27": "ওই কাঁপুনি সরাসরি আপনার quality score-এ চলে যায়, যেটা পরিস্থিতি পুরোপুরি স্থির থাকা সত্ত্বেও জানালা থেকে জানালায় লাফাবে। আর যে quality score এলোমেলোভাবে লাফায় সে আপনার fusion weight-ও এলোমেলোভাবে লাফাতে বাধ্য করে, যা কোনো অভিযোজন না থাকার চেয়েও খারাপ।", "28": "Periodogram বনাম Welch &mdash; স্থিরতার বিনিময়ে resolution", "29": "১ segment-এ আপনি কাঁচা periodogram পান: খোঁচাখোঁচা, এবড়োখেবড়ো, আর মেঝেটা চোখে পড়ার মতো এলোমেলো। Segment বাড়ান আর মেঝেটা এমন কিছুতে মসৃণ হয়ে আসে যার বিপরীতে আপনি সত্যিই মাপতে পারেন, অথচ চূড়াটা জায়গাতেই থাকে। <strong>১ segment-এ বারবার \"New noise draw\" চাপুন, তারপর ১০-এ</strong> &mdash; ওইটাই সেই কাঁপুনি যা আপনি সরাচ্ছেন, আর ওইটাই আপনার fusion weight ঝাঁকাতো।", "30": "Welch <strong>স্থিরতার বিনিময়ে resolution</strong> দেয়। ছোট segment মানে মোটা frequency resolution কিন্তু শান্ত অনুমান। যেহেতু আপনার quality metric-এর সূক্ষ্ম resolution-এর চেয়ে একটা নির্ভরযোগ্য <em>মেঝে</em> বেশি দরকার, তাই metric-এর জন্য এই বিনিময়টা করার মতো &mdash; আর BPM পড়ার জন্য পুরো দৈর্ঘ্যের FFT ব্যবহার করতেই থাকুন।", "31": "বাস্তবে এর মানে প্রতি জানালায় দুইটা spectral হিসাব চালানো, যেটা অপচয় মনে হলেও প্রায় কিছুই খরচ হয় না:", "32": "Fusion", "33": "তিনটা পদ্ধতিকে আপনি কতটা <em>বিশ্বাস</em> করেন সেই অনুযায়ী ওজন দেওয়া", "34": "এখন প্রতিটা পদ্ধতির জন্য আপনার হাতে একটা trust score আছে। সেগুলো দিয়ে আপনি যা করেন সেটাই fusion, আর এটা ইচ্ছাকৃতভাবেই সহজ পাটিগণিত:", "35": "রিপোর্টে রক্ষা করার মতো দুইটা নকশার সিদ্ধান্ত", "36": "নিচে, তিনটা পদ্ধতি বদলাতে থাকা পরিস্থিতিতে চলছে। ওজনগুলো নতুন করে ভাগ হতে দেখুন।", "37": "ছোট আকারে TRACE &mdash; তিনটা পদ্ধতি, একটা অভিযোজিত উত্তর", "38": "Green নড়াচড়ায় খারাপ হয় (Tier 0 কারণটা দেখিয়েছে: এটা উজ্জ্বলতার পরিবর্তনের সাথে লম্ব না)। CHROM আর POS নড়াচড়া সামলায় কিন্তু ভালো আলো দরকার। <strong>আলো নামান আর নড়াচড়া বাড়ান</strong> আর দেখুন ওজন যে পদ্ধতিটা সামলাতে পারছে তার দিকে সরে যাচ্ছে। নিচের দণ্ডটা fused ভুলকে সবসময় একটা স্থির পদ্ধতি বাছার সাথে তুলনা করে &mdash; আর এটাই ঠিক সেই দাবি যা আপনার প্রজেক্টকে রক্ষা করতে হবে।", "39": "Fusion সবসময় সেরা একক পদ্ধতিকে হারায় না। আপনার সব পরীক্ষার পরিস্থিতিতে যদি একটা পদ্ধতি নির্ভরযোগ্যভাবে সেরা হয়, তাহলে স্থির বাছাই জেতে আর আপনার fusion বিনা কারণে জটিলতা যোগ করে। Fusion তখনই লাভ দেয় যখন <strong>ভিন্ন পরিস্থিতিতে ভিন্ন পদ্ধতি জেতে</strong>, তাই কোনো একক স্থির বাছাই সর্বত্র সঠিক না।", "40": "এই কারণেই আপনার পরিকল্পনার Section 5.1-এর video-call compression পরীক্ষাটা এত গুরুত্বপূর্ণ: এটা ইচ্ছাকৃতভাবে এমন পরিস্থিতি তৈরি করে যেখানে ক্রমটা উল্টে যায়। আপনার মূল্যায়ন এমনভাবে সাজান যাতে বিজয়ী বদলায় এমন পরিস্থিতি থাকে, নইলে আপনার প্রধান ফলাফল সৎভাবে \"fusion মোটামুটি POS-এর সমান হয়েছে\" হয়ে দাঁড়াতে পারে, যেটা অনেক দুর্বল একটা পেপার।", "41": "আরও তিনটা quality সিগন্যাল যা মেশানোর মতো", "42": "Spectral SNR আপনার প্রধান metric, কিন্তু এর একটা অন্ধ জায়গা আছে: এটা <em>input</em> না দেখে <em>output</em> বিচার করে। পুরোপুরি ঢাকা একটা মুখও ঘটনাচক্রে একটা মিথ্যা চূড়াওয়ালা spectrum তৈরি করতে পারে। সস্তা স্বাধীন পরীক্ষাগুলো সেটা ধরে ফেলে।", "43": "এগুলোকে গুণ করে মেশান, যাতে এদের যেকোনো একটা খারাপ হলেই একটা পদ্ধতি দমে যায়:", "44": "এখানে গড়ের বদলে গুণ করাই সঠিক পছন্দ। গড় নিলে সুন্দর spectrum কিন্তু ভয়ংকর নড়াচড়াওয়ালা একটা পদ্ধতিও সম্মানজনক নম্বর পায়। গুণ করলে একটা প্রায়-শূন্য উপাদানই পুরো score-কে প্রায় শূন্যে টেনে নামায়, আর একটা trust score-এর কাছ থেকে আপনি ঠিক এই আচরণটাই চান।", "45": "Quality সিগন্যাল মেশানো &mdash; গড় বনাম গুণ", "46": "যেকোনো একটা স্লাইডার প্রায় শূন্যে টানুন। <strong>গড় সবে নড়ে; গুণফল ধসে পড়ে।</strong> ওই ধসে পড়াটাই সঠিক আচরণ: মুখ যদি দেখাই না যায়, spectrum কত পরিষ্কার দেখাচ্ছে তাতে কিছুই যায় আসে না। গুণ \"এগুলোর সবগুলোই সত্য হতে হবে\" কথাটা ধারণ করে, আর বিশ্বাসের জন্য ঠিক এটাই দরকার।", "47": "Tier 3-এর শব্দগুলো, সহজ ভাষায়", "49": "Magnitude-এর বর্গ। ধনাত্মক, যোগ করা যায়, আর শক্তিশালী উপাদানকে বেশি ওজন দেয়।", "51": "সাধারণ spectrum-এর প্রতিটা মান বর্গ করা। শক্তি মাপতে আপনি এর উপরেই যোগ করেন।", "53": "মোট শক্তি একই থাকে, আপনি সময়ে মাপুন বা frequency-তে। এতে শুধু bin দিয়েই \"এই ব্যান্ডে কত ভাগ আছে?\" জিজ্ঞেস করা যায়।", "55": "Power spectral density: প্রতি একক frequency-তে শক্তি, তাই bin-এর ব্যবধান বদলালেও সংখ্যাটা বদলায় না।", "57": "একটামাত্র FFT থেকে পাওয়া power spectrum। পক্ষপাতহীন কিন্তু চিরকাল noisy।", "59": "ওভারল্যাপ করা segment-এ ভাগ করুন, প্রতিটার FFT নিন, ফলগুলো গড় করুন। শান্ত অনুমান, মোটা resolution।", "61": "সমতুল্য ডেটার উপর বারবার চালালে একটা হিসাব করা সংখ্যা কতটা কাঁপে। সিগন্যালের noise থেকে আলাদা, আর সহজেই গুলিয়ে যায়।", "63": "ব্যান্ডের ভেতরের চূড়ার শক্তি ভাগ ব্যান্ডের ভেতরের মোট শক্তি। এটাই আপনার quality metric।", "65": "একটা পদ্ধতির output চূড়ান্ত উত্তরে কতটা গোনা হয়। তার quality score থেকে বের করা আর যোগফল ১ হওয়ার মতো করে স্বাভাবিক করা।", "67": "সব ওজন সর্বোচ্চ নম্বর পাওয়া পদ্ধতিকে দিয়ে দেওয়া। sharpness exponent বড় হলে TRACE এটাই হয়ে যায়।", "68": "নিজেকে যাচাই করুন", "69": "পরিস্থিতি স্থির অথচ আপনার quality score জানালা থেকে জানালায় ০.৪ আর ০.৭-এর মধ্যে লাফাচ্ছে। কী হচ্ছে?", "70": "আপনি periodogram-এর variance মাপছেন, আপনার সিগন্যালের কোনো পরিবর্তন না। একটামাত্র FFT থেকে পাওয়া spectrum অনুমান স্বভাবতই কাঁপুনে, আর আপনার metric সততার সাথে সেই কাঁপুনিই জানাচ্ছে।", "71": "Quality হিসাবের জন্য Welch ব্যবহার করুন। লাফানো তবু চললে score-টাতেই সময়গত মসৃণতা যোগ করুন &mdash; শেষ কয়েকটা জানালার উপর একটা exponential moving average &mdash; যেহেতু বাস্তব রেকর্ডিং পরিস্থিতি মিলিসেকেন্ডে না, সেকেন্ডে বদলায়।", "72": "দুইটা পদ্ধতি প্রায় সমান quality নিয়ে ৭০ আর ১৪০ BPM বলছে। কেন আপনি ওই সংখ্যা দুইটা গড় করবেন না?", "73": "কারণ আপনি ১০৫ BPM বের করতেন, এমন একটা মান যা কোনো পদ্ধতিই দেয়নি আর যা ওই মানুষটার নেই। গড় করা তখনই অর্থপূর্ণ যখন input-গুলো একই জিনিসের অনুমান আর তাদের ভুল স্বাধীন, অথচ এখানে একটা প্রায় নিশ্চিতভাবে একটা harmonic-এ আটকে গেছে।", "74": "তার বদলে spectrum মেশান। মিলিত spectrum-এ দুইটা চূড়াই থাকে, আর চূড়ান্ত argmax এমন একটা হার বাছে যা অন্তত একটা পদ্ধতি সত্যিই দেখেছে। আরও ভালো, Tier 1-এর sub-harmonic পরীক্ষাটা চালান: শক্তিশালী শক্তি নিয়ে ৭০-এর উপস্থিতিই সরাসরি প্রমাণ যে ১৪০ হলো harmonic।", "75": "Quality metric-এর লব-এ harmonic কেন রাখবেন?", "76": "কারণ একটা আসল পালস তরঙ্গ ধারালো, আর Tier 1 দেখিয়েছে ধারালো আকারের জন্য harmonic <em>লাগবেই</em>। হার্ট রেটের দ্বিগুণে শক্তি থাকা একটা আসল পালসের প্রমাণ, দূষণের প্রমাণ না।", "77": "এটাকে noise গুনলে আপনি নিয়মিতভাবে সবচেয়ে পরিষ্কার, সবচেয়ে ধারালো পালস সিগন্যালগুলোকেই শাস্তি দেবেন &mdash; metric একটা ঝকঝকে তরঙ্গকে একটা মিইয়ে যাওয়া তরঙ্গের চেয়ে খারাপ নম্বর দেবে, যা ঠিক উল্টো।", "78": "আপনার fusion ফলাফল প্রতিটা পরীক্ষায় শুধু POS-এর প্রায় হুবহু সমান আসছে। প্রজেক্ট কি ব্যর্থ?", "79": "না, তবে মূল্যায়নটা অসম্পূর্ণ। ওই ফলাফলের মানে আপনার পরীক্ষা করা প্রতিটা পরিস্থিতিতেই POS প্রধান ছিল, তাই অভিযোজনের করার মতো কিছু ছিল না।", "80": "সমাধান হলো এমন পরিস্থিতি পরীক্ষা করা যেখানে ক্রমটা সত্যিই উল্টে যায়: ভারী compression, কড়া বা কম আলো, ইচ্ছাকৃত নড়াচড়া। আপনার পরিকল্পনার Section 5.1 ঠিক এই কাজের জন্যই। আর fusion যদি সত্যিই কখনো না জেতে, তাহলে যে পরিস্থিতিগুলো পরীক্ষা করেছেন সেগুলোসহ সেটা সৎভাবে জানান &mdash; সঠিকভাবে সীমা টানা একটা নেতিবাচক ফলাফল আসল বিজ্ঞান, আর ইতিবাচক দেখানো পর্যন্ত চুপচাপ মিলিয়ে নেওয়া ফলাফলের চেয়ে এটা অনেক ভালো পড়ায়।", "81": "Tier 4 কী যোগ করে", "82": "Tier 4 হলো দ্বিতীয় Fourier transform: ভিডিও সিগন্যালের উপর না, বরং <em>সময়ের সাথে হৃৎস্পন্দনের ধরনটার</em> উপর। নিখুঁত বিট সময়, কেন interval সিরিজটা সাধারণ FFT-তে দেওয়া যায় না, LF আর HF ব্যান্ড, আর আপনার বর্তমান পরিকল্পনার একটা সীমাবদ্ধতা যা ডেমোতে বিব্রত করার আগেই ঠিক করা দরকার।", "83": "<strong>Power</strong> এখানে শুধু magnitude-এর বর্গ বোঝায়। বর্গ করলে সবকিছু ধনাত্মক হয়ে যায় তাই যোগ করা যায়, আর এটা দুর্বল উপাদানের চেয়ে শক্তিশালী উপাদানকে বেশি ওজন দেয়। কোনো পেপার \"power spectrum\" বললে সে সাধারণ spectrum-ই বোঝায় যার প্রতিটা মান বর্গ করা।", "84": "<strong>Welch-এর পদ্ধতি</strong> এটা ঠিক করে দেয়। সিগন্যালটাকে ওভারল্যাপ করা segment-এ কেটে নিন, প্রতিটার FFT নিন, আর ফলে পাওয়া spectrum-গুলো গড় করুন। এলোমেলো কাঁপুনি গড় হয়ে মিলিয়ে যায়; আসল চূড়া একে অপরকে শক্তিশালী করে।", "85": "<strong>Sharpness exponent p।</strong> <span class=\"m\">p = 1</span>-এ ওজন quality-র সমানুপাতিক, যা নরম: ০.৩ পাওয়া একটা পদ্ধতিও অর্থপূর্ণ অবদান রাখে। <span class=\"m\">p</span> বাড়ালে ওজন এগিয়ে থাকাদের উপর জড়ো হয়, আর <span class=\"m\">p</span> খুব বড় হলে সিস্টেমটা প্রতিটা frame-এ শুধু সেরা পদ্ধতিটা বেছে নেওয়ায় গিয়ে দাঁড়ায়। আপনার fusion দাবিটাই হলো যে মিশ্রণ winner-take-all-কে হারায়, তাই <span class=\"m\">p</span> ঠিক সেই নব যার উপর ওই দাবিটা দাঁড়িয়ে, আর <span class=\"m\">p</span>-এর সাপেক্ষে নির্ভুলতা দেখানোটা চুপচাপ মিলিয়ে নেওয়া একটা parameter না বরং একটা সত্যিকারের ফলাফল।", "86": "<strong>Spectrum মেশান, BPM সংখ্যা না।</strong> এটাই বেশি গুরুত্বপূর্ণ সিদ্ধান্ত। দুইটা পদ্ধতি যদি ৭০ আর ১৪০ বলে দ্বিমত করে, তাদের BPM গড় করলে পাওয়া যায় ১০৫, এমন একটা হার যা কোনো পদ্ধতিই দেখেনি আর যা মানুষটার নেই। তাদের <em>spectrum</em> গড় করলে দুইটা চূড়াই উপস্থিত থাকে আর সবচেয়ে শক্তিশালীটা চূড়ান্ত argmax-এ টিকে যায়। ভুল ডোমেইনে গড় করলে এমন উত্তর আসতে পারে যা দুইটা input-এর যেকোনোটার চেয়েও খারাপ, আর এটা একটা বাস্তব ফাঁদ।"};
+  var EN = {};
+  var nodes = document.querySelectorAll("[data-t]");
+  nodes.forEach(function(el){ EN[el.getAttribute("data-t")] = el.innerHTML; });
+  var btn = document.getElementById("langbtn");
+  function apply(l){
+    document.documentElement.setAttribute("data-lang", l);
+    nodes.forEach(function(el){
+      var k = el.getAttribute("data-t");
+      var v = (l === "bn" && BN[k]) ? BN[k] : EN[k];
+      if (el.innerHTML !== v) el.innerHTML = v;
+    });
+    btn.textContent = (l === "bn") ? "English" : "বাংলা";
+    try { localStorage.setItem("lessonLang", l); } catch(e){}
+    if (typeof redrawAll === "function") { try { redrawAll(); } catch(e){} }
+  }
+  var saved = "en";
+  try { saved = localStorage.getItem("lessonLang") || "en"; } catch(e){}
+  apply(saved);
+  btn.addEventListener("click", function(){
+    apply(document.documentElement.getAttribute("data-lang") === "bn" ? "en" : "bn");
+  });
+  window.addEventListener("resize", function(){
+    if (typeof redrawAll === "function") { try { redrawAll(); } catch(e){} }
+  });
+})();
+</script>
+

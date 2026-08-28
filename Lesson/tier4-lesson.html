@@ -1,0 +1,937 @@
+<title>The Second Transform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap">
+
+<style>
+:root {
+  --paper:#FAF7F8; --paper-2:#F2EDEF; --paper-3:#E9E1E5;
+  --ink:#1F1720; --ink-2:#5A4E58; --ink-3:#8C7F88;
+  --rule:#E0D6DB; --rule-2:#CDBFC7;
+  --accent:#B01B3F; --accent-2:#8E1533; --accent-soft:#F7DEE5;
+  --signal:#10796B; --signal-soft:#DBEFEA;
+  --warn:#9C5A12; --warn-soft:#F7E8D4;
+  --shadow:0 1px 2px rgba(31,23,32,.05), 0 8px 24px -12px rgba(31,23,32,.18);
+  --sp-1:.35rem; --sp-2:.7rem; --sp-3:1.1rem; --sp-4:1.7rem; --sp-5:2.6rem; --sp-6:4rem;
+  --font-display:"Spectral",Georgia,"Times New Roman",serif;
+  --font-body:"Archivo",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --spine:40rem; --wide:60rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#16111A; --paper-2:#1F1824; --paper-3:#29202F;
+    --ink:#F0E9EE; --ink-2:#B3A5AE; --ink-3:#7D6F79;
+    --rule:#322A38; --rule-2:#443A4B;
+    --accent:#FF6B8A; --accent-2:#FF93A9; --accent-soft:#3B1D28;
+    --signal:#45D6B0; --signal-soft:#123029;
+    --warn:#E0A050; --warn-soft:#33260F;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"] {
+  --paper:#16111A; --paper-2:#1F1824; --paper-3:#29202F;
+  --ink:#F0E9EE; --ink-2:#B3A5AE; --ink-3:#7D6F79;
+  --rule:#322A38; --rule-2:#443A4B;
+  --accent:#FF6B8A; --accent-2:#FF93A9; --accent-soft:#3B1D28;
+  --signal:#45D6B0; --signal-soft:#123029;
+  --warn:#E0A050; --warn-soft:#33260F;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.65;margin:0;padding:0 var(--sp-3) var(--sp-6);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--font-display);text-wrap:balance;line-height:1.2;margin:0}
+p{margin:0}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+code,.m{font-family:var(--font-mono);font-size:.92em;font-variant-ligatures:none}
+.m{color:var(--accent);font-weight:500}
+.masthead{max-width:var(--wide);margin:0 auto;padding:var(--sp-6) 0 var(--sp-5);border-bottom:1px solid var(--rule);display:flex;flex-direction:column;gap:var(--sp-3)}
+.eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:500}
+.masthead h1{font-size:clamp(2.6rem,7vw,4.4rem);font-weight:700;letter-spacing:-.02em}
+.masthead .standfirst{font-family:var(--font-display);font-size:clamp(1.05rem,2.2vw,1.3rem);color:var(--ink-2);max-width:34rem;line-height:1.5}
+.meta-row{display:flex;flex-wrap:wrap;gap:var(--sp-3) var(--sp-4);font-family:var(--font-mono);font-size:.76rem;color:var(--ink-3);letter-spacing:.04em;padding-top:var(--sp-2)}
+.meta-row span strong{color:var(--ink-2);font-weight:500}
+.sec{max-width:var(--wide);margin:0 auto;padding-top:var(--sp-6);display:flex;flex-direction:column;gap:var(--sp-4)}
+.sec-head{display:flex;flex-direction:column;gap:var(--sp-2)}
+.sec-num{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.16em;color:var(--ink-3);text-transform:uppercase}
+.sec-head h2{font-size:clamp(1.7rem,3.6vw,2.4rem);font-weight:600;letter-spacing:-.015em}
+.sec-head h2 em{font-style:italic;color:var(--accent)}
+.prose{max-width:var(--spine);display:flex;flex-direction:column;gap:var(--sp-3)}
+.prose h3{font-size:1.18rem;font-weight:600;margin-top:var(--sp-2)}
+.prose ul,.prose ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:var(--sp-2)}
+.prose strong{font-weight:600}
+.part-break{max-width:var(--wide);margin:var(--sp-6) auto 0;padding-top:var(--sp-5);border-top:2px solid var(--ink);display:flex;flex-direction:column;gap:var(--sp-2)}
+.part-break .eyebrow{color:var(--ink-3)}
+.part-break h2{font-size:clamp(2rem,4.6vw,3rem);font-weight:700;letter-spacing:-.02em}
+.plain{background:var(--paper-2);border-left:3px solid var(--signal);padding:var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-1);max-width:var(--spine)}
+.plain .lbl{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--signal);font-weight:600}
+.plain p{color:var(--ink-2);font-size:.95rem}
+.keypoint{background:var(--accent-soft);padding:var(--sp-3) var(--sp-4);max-width:var(--spine);border-radius:2px;font-family:var(--font-display);font-size:1.1rem;line-height:1.5}
+.keypoint strong{font-weight:700;color:var(--accent-2)}
+.aside-note{border:1px solid var(--rule);border-radius:3px;padding:var(--sp-3);max-width:var(--spine);font-size:.92rem;color:var(--ink-2);display:flex;flex-direction:column;gap:var(--sp-2)}
+.aside-note .lbl{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--warn);font-weight:600}
+.aside-note.alarm{border-color:var(--warn);border-left-width:3px;background:var(--warn-soft)}
+.fig{border:1px solid var(--rule-2);border-radius:4px;background:var(--paper-2);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;margin:0}
+.fig-bar{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-2) var(--sp-3);background:var(--paper-3);border-bottom:1px solid var(--rule-2);flex-wrap:wrap}
+.fig-bar .tag{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.fig-bar .name{font-family:var(--font-body);font-size:.85rem;color:var(--ink-2);font-weight:500}
+.fig-canvas-wrap{padding:var(--sp-3);background:var(--paper)}
+.fig canvas{display:block;width:100%;height:auto;touch-action:none}
+.fig-controls{border-top:1px solid var(--rule);padding:var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-3)}
+.ctl-row{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2) var(--sp-3)}
+.ctl{display:flex;align-items:center;gap:var(--sp-2);flex:1 1 15rem}
+.ctl label{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.06em;color:var(--ink-2);text-transform:uppercase;white-space:nowrap}
+.ctl input[type=range]{flex:1;min-width:5rem;accent-color:var(--accent);height:1.4rem}
+button{font-family:var(--font-mono);font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;font-weight:500;padding:.42rem .8rem;background:var(--paper);color:var(--ink);border:1px solid var(--rule-2);border-radius:3px;cursor:pointer;transition:background .12s,border-color .12s,color .12s}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button[aria-pressed="true"],button.on{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+.chk{display:inline-flex;align-items:center;gap:.45rem;font-family:var(--font-mono);font-size:.73rem;color:var(--ink-2);cursor:pointer;text-transform:uppercase;letter-spacing:.05em}
+.chk input{accent-color:var(--signal);width:1rem;height:1rem}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(7.5rem,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+.readout div{background:var(--paper);padding:var(--sp-2);display:flex;flex-direction:column;gap:.15rem}
+.readout .k{font-family:var(--font-mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.readout .v{font-family:var(--font-mono);font-size:1.02rem;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.readout .v.hot{color:var(--accent)}
+.readout .v.good{color:var(--signal)}
+.readout .v.warn{color:var(--warn)}
+.fig-note{padding:var(--sp-2) var(--sp-3) var(--sp-3);font-size:.86rem;color:var(--ink-2);border-top:1px dashed var(--rule);background:var(--paper-2)}
+.fig-note strong{color:var(--ink);font-weight:600}
+.math{font-family:var(--font-mono);font-size:.95rem;background:var(--paper-2);border:1px solid var(--rule);border-radius:3px;padding:var(--sp-3);overflow-x:auto;max-width:var(--spine);line-height:1.75;white-space:pre;color:var(--ink)}
+.math .hi{color:var(--accent);font-weight:600}
+.math .dim{color:var(--ink-3)}
+.math .ok{color:var(--signal);font-weight:600}
+.tbl-wrap{overflow-x:auto;max-width:var(--spine)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:26rem}
+th,td{text-align:left;padding:.5rem .7rem;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:500;border-bottom:1px solid var(--rule-2)}
+td.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.gloss{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--rule);max-width:var(--spine)}
+.gloss>div{padding:var(--sp-3) 0;border-bottom:1px solid var(--rule);display:grid;grid-template-columns:11rem 1fr;gap:var(--sp-3)}
+.gloss dt{font-family:var(--font-mono);font-size:.82rem;font-weight:600;color:var(--accent);margin:0}
+.gloss dd{margin:0;font-size:.93rem;color:var(--ink-2)}
+@media (max-width:34rem){.gloss>div{grid-template-columns:1fr;gap:var(--sp-1)}}
+details{border:1px solid var(--rule);border-radius:3px;background:var(--paper-2);padding:var(--sp-3);max-width:var(--spine)}
+details+details{margin-top:var(--sp-2)}
+summary{cursor:pointer;font-weight:600;font-family:var(--font-display);font-size:1.05rem;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸ ";color:var(--accent);font-family:var(--font-mono)}
+details[open] summary::before{content:"▾ "}
+details .ans{margin-top:var(--sp-3);padding-top:var(--sp-3);border-top:1px dashed var(--rule-2);font-size:.95rem;color:var(--ink-2);display:flex;flex-direction:column;gap:var(--sp-2)}
+.foot{max-width:var(--wide);margin:var(--sp-6) auto 0;padding-top:var(--sp-4);border-top:1px solid var(--rule);font-family:var(--font-mono);font-size:.76rem;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:var(--sp-3);justify-content:space-between}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+
+/* ---- bilingual ---- */
+:root[data-lang="bn"] body,
+:root[data-lang="bn"] .prose,
+:root[data-lang="bn"] .sec-head h2,
+:root[data-lang="bn"] .keypoint,
+:root[data-lang="bn"] .fig-note,
+:root[data-lang="bn"] .plain p,
+:root[data-lang="bn"] .aside-note,
+:root[data-lang="bn"] .gloss dd,
+:root[data-lang="bn"] details,
+:root[data-lang="bn"] .masthead .standfirst {
+  font-family: "Hind Siliguri", "Noto Sans Bengali", var(--font-body);
+}
+:root[data-lang="bn"] .prose p,
+:root[data-lang="bn"] .prose li { line-height: 1.9; }
+:root[data-lang="bn"] .keypoint { line-height: 1.75; }
+#langbtn{
+  position:fixed; top:.75rem; right:.75rem; z-index:200;
+  font-family:var(--font-mono); font-size:.75rem; letter-spacing:.06em;
+  padding:.45rem .85rem; border-radius:4px; cursor:pointer;
+  background:var(--accent); color:var(--paper); border:1px solid var(--accent);
+  box-shadow:0 2px 10px -4px rgba(0,0,0,.4);
+}
+#langbtn:hover{ filter:brightness(1.08); }
+@media print{ #langbtn{ display:none; } }
+</style>
+<button id="langbtn" type="button" aria-label="Switch language">বাংলা</button>
+
+
+<header class="masthead">
+  <div class="eyebrow">TRACE-rPPG · Foundations · Tier 4</div>
+  <h1>The Second Transform</h1>
+  <p class="standfirst" data-t="0">Applying the Fourier transform a second time &mdash; not to the video, but to the rhythm of the heartbeats themselves. Plus a constraint in your current plan that will break your demo.</p>
+  <div class="meta-row">
+    <span><strong>5</strong> interactive figures</span>
+    <span>Follows <strong>Tier 3</strong> &mdash; measuring trust</span>
+    <span>This is Section 5.2 of your plan.</span>
+  </div>
+</header>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">00 &mdash; Orientation</div>
+    <h2 data-t="1">Why this is the most impressive part of your project</h2>
+  </div>
+  <div class="prose">
+    <p data-t="2">Every other team's demo will end with a number on screen. Yours goes one step further, and the step is genuinely elegant rather than merely more work:</p>
+  </div>
+  <div class="keypoint" data-t="3">You take the Fourier transform <strong>twice</strong>. Once on the video signal, to find the heartbeats. Then again on the <em>pattern of gaps between those heartbeats</em>, to read the state of the nervous system controlling them.</div>
+  <div class="prose">
+    <p data-t="4">The second transform operates on a completely different signal from the first. Its input is not brightness over time; it is <em>interval length over beat number</em>. Same mathematics, entirely different physical meaning, and the output is a recognised clinical measure rather than something you invented.</p>
+    <p data-t="5">Getting there needs four things, and every one of them is a place people go wrong:</p>
+    <ol>
+      <li data-t="6">Locating beats to far better precision than one video frame.</li>
+      <li data-t="7">Turning beat times into an interval series.</li>
+      <li data-t="8">Handling the fact that this series is <strong>not evenly sampled</strong>, which breaks the FFT's core assumption.</li>
+      <li data-t="9">Recording for long enough to see the slow rhythms at all &mdash; and your plan currently does not.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">01 &mdash; Sub-frame precision</div>
+    <h2 data-t="10">Your frame rate is not your <em>timing</em> resolution</h2>
+  </div>
+  <div class="prose">
+    <p data-t="11">At 30 fps your frames are 33.3 ms apart. If you locate each beat at the nearest frame, every beat time carries up to 16 ms of rounding error.</p>
+    <p data-t="12">Now consider what you are measuring. RMSSD, the standard short-term HRV metric, is typically 20 to 50 ms in a healthy adult. <strong>Your rounding error is the same size as the signal.</strong> Measuring in whole frames is like weighing a letter on bathroom scales.</p>
+    <p data-t="13">The fix is a genuinely small amount of code. A peak in a sampled signal is a smooth curve that was measured at discrete points, so the true maximum almost never lands exactly on a sample. Take the peak sample and its two neighbours, fit a parabola through those three points, and solve for where <em>that</em> curve peaks.</p>
+  </div>
+  <div class="math"><span class="dim"># y1, y2, y3 = the three samples, y2 being the highest</span>
+delta = 0.5 * (y1 - y3) / (y1 - 2*y2 + y3)
+truePeakIndex = peakIndex + <span class="hi">delta</span>      <span class="dim"># delta is between -0.5 and +0.5</span></div>
+  <div class="prose">
+    <p data-t="14">Three lines, and your timing precision improves by roughly an order of magnitude. Drag the true peak below and watch the two estimates diverge.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 1</span><span class="name" data-t="15">Parabolic interpolation &mdash; finding a peak between samples</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-parab" height="320"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-off">true peak position</label><input type="range" id="sl-off" min="-0.5" max="0.5" step="0.01" value="0.32"></div>
+      </div>
+      <div class="readout">
+        <div><span class="k">true peak</span><span class="v good" id="ro-tp">+0.32</span></div>
+        <div><span class="k">nearest sample</span><span class="v hot" id="ro-ns">0.00</span></div>
+        <div><span class="k">interpolated</span><span class="v good" id="ro-ip">+0.32</span></div>
+        <div><span class="k">error, nearest</span><span class="v hot" id="ro-en">10.7 ms</span></div>
+        <div><span class="k">error, interp</span><span class="v good" id="ro-ei">0.4 ms</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="16">The <span style="color:var(--ink-3)">grey</span> curve is the underlying continuous pulse; the dots are the frames your camera actually captured. Taking the tallest dot gives you the <span style="color:var(--accent);font-weight:600">crimson</span> estimate. Fitting a parabola through three dots gives the <span style="color:var(--signal);font-weight:600">teal</span> one, which lands almost exactly on the truth. <strong>Compare the two error readouts against a typical RMSSD of 40 ms.</strong></figcaption>
+  </figure>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">02 &mdash; Building the series</div>
+    <h2 data-t="17">From beats to <em>intervals</em></h2>
+  </div>
+  <div class="prose">
+    <p data-t="18">Once you have precise beat times, the interval series is a subtraction:</p>
+  </div>
+  <div class="math">beats = [0.83, 1.68, 2.49, 3.35, 4.14, ...]        <span class="dim"># seconds</span>
+RR    = np.diff(beats) * 1000                     <span class="dim"># milliseconds</span>
+      = [850, 810, 860, 790, ...]</div>
+  <div class="prose">
+    <p data-t="19">Those numbers are the raw material for everything that follows. Note immediately what they show: the intervals are <strong>not constant</strong>. A healthy heart never beats like a metronome, and that variation is the signal, not noise. A perfectly regular heartbeat is a sign of illness, not health.</p>
+    <p data-t="20">Three standard time-domain metrics come straight out of this list:</p>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Metric</th><th>What it computes</th><th>What it reflects</th></tr></thead>
+      <tbody>
+        <tr><td><strong>SDNN</strong></td><td>Standard deviation of all the intervals</td><td>Overall variability across the whole recording</td></tr>
+        <tr><td><strong>RMSSD</strong></td><td>Root mean square of <em>successive differences</em></td><td>Fast beat-to-beat changes; mostly parasympathetic</td></tr>
+        <tr><td><strong>pNN50</strong></td><td>Percentage of successive pairs differing by over 50 ms</td><td>Similar to RMSSD, easier to explain out loud</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="prose">
+    <p data-t="21">Before computing any of them, <strong>clean the series</strong>. A single missed or doubled beat creates an interval of roughly double or half the surrounding ones, and because RMSSD squares differences, one bad interval can inflate it enormously. Reject any interval more than about 20 percent from its neighbours, and say in your report that you did.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 2</span><span class="name" data-t="22">Beats in, intervals out &mdash; and what one missed beat does</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-rr" height="380"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-var">true variability</label><input type="range" id="sl-var" min="0" max="80" step="1" value="38"></div>
+      </div>
+      <div class="ctl-row">
+        <label class="chk"><input type="checkbox" id="chk-miss"> miss one beat</label>
+        <label class="chk"><input type="checkbox" id="chk-clean"> reject outliers first</label>
+      </div>
+      <div class="readout">
+        <div><span class="k">mean RR</span><span class="v" id="ro-mrr">833 ms</span></div>
+        <div><span class="k">SDNN</span><span class="v" id="ro-sdnn">38 ms</span></div>
+        <div><span class="k">RMSSD</span><span class="v" id="ro-rmssd">41 ms</span></div>
+        <div><span class="k">pNN50</span><span class="v" id="ro-pnn">22%</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="23">Top: the pulse with detected beats marked. Bottom: the resulting interval series. <strong>Tick "miss one beat"</strong> and watch a single spike appear &mdash; and watch RMSSD roughly double from one bad sample. Then tick outlier rejection and watch it recover. This is not a rare edge case; it happens whenever the subject moves.</figcaption>
+  </figure>
+</section>
+
+<div class="part-break">
+  <div class="eyebrow">Part B</div>
+  <h2 data-t="24">The second transform</h2>
+</div>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">03 &mdash; The trap</div>
+    <h2 data-t="25">You cannot FFT the interval series <em>directly</em></h2>
+  </div>
+  <div class="prose">
+    <p data-t="26">Here is the mistake almost everyone makes, and it produces plausible-looking numbers that are wrong.</p>
+  </div>
+  <div class="math"><span class="dim"># WRONG</span>
+spectrum = np.fft.rfft(RR)</div>
+  <div class="prose">
+    <p data-t="27">Every figure in Tier 0 assumed samples arrive at <strong>evenly spaced instants</strong>. The winding machine assigns each sample an angle based on <em>when</em> it happened, so even spacing is not decorative, it is load-bearing.</p>
+    <p data-t="28">Your RR series violates this by construction. Sample number 5 is the interval after the fifth beat, and beats do not arrive on a regular schedule. That irregularity is literally the quantity you are measuring. <strong>The x-axis of your RR series is beat number, not time,</strong> and an FFT of it is answering a question about beat index that has no clean physical meaning.</p>
+    <p data-t="29">There are two accepted fixes.</p>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th></th><th>Resample onto an even grid</th><th>Lomb-Scargle periodogram</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Idea</strong></td><td>Interpolate the intervals onto a regular 4 Hz time base, then FFT normally</td><td>A method built to handle unevenly spaced data directly</td></tr>
+        <tr><td><strong>Effort</strong></td><td><span class="m">scipy.interpolate.interp1d</span> then your existing FFT</td><td><span class="m">scipy.signal.lombscargle</span>, one call</td></tr>
+        <tr><td><strong>Downside</strong></td><td>Interpolation invents data between beats, mildly distorting high frequencies</td><td>Less familiar; harder to explain in a viva</td></tr>
+        <tr><td><strong>Recommendation</strong></td><td><strong>Use this</strong>, since it reuses everything you have built</td><td>Compute it too, as a cross-check that costs one line</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 3</span><span class="name" data-t="30">Uneven samples &mdash; three ways to handle them</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-uneven" height="360"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <button class="uv-btn on" data-uv="raw">Naive FFT (wrong)</button>
+        <button class="uv-btn" data-uv="resamp">Resampled 4 Hz</button>
+        <button class="uv-btn" data-uv="lomb">Lomb-Scargle</button>
+      </div>
+      <div class="readout">
+        <div><span class="k">method</span><span class="v" id="ro-uvm">naive</span></div>
+        <div><span class="k">LF peak found at</span><span class="v" id="ro-lfp">—</span></div>
+        <div><span class="k">true LF peak</span><span class="v good">0.100 Hz</span></div>
+        <div><span class="k">verdict</span><span class="v" id="ro-uvv">biased</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="31">A genuine 0.10 Hz rhythm is present in the intervals. The naive FFT smears it, because it has silently assumed the beats were evenly spaced when they were not. Resampling puts the peak back where it belongs. <strong>The naive result is not obviously broken</strong> &mdash; it produces a spectrum that looks reasonable, which is exactly why this mistake survives into finished projects.</figcaption>
+  </figure>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">04 &mdash; The payoff</div>
+    <h2 data-t="32">LF, HF, and what the ratio actually <em>means</em></h2>
+  </div>
+  <div class="prose">
+    <p data-t="33">With a properly resampled interval series, take its FFT. Two bands are conventionally defined, from the 1996 Task Force standard already on your reading list:</p>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Band</th><th>Range</th><th>What drives it</th></tr></thead>
+      <tbody>
+        <tr><td><strong>LF</strong></td><td>0.04 &ndash; 0.15 Hz</td><td>A mix of sympathetic and parasympathetic activity, plus blood-pressure regulation</td></tr>
+        <tr><td><strong>HF</strong></td><td>0.15 &ndash; 0.40 Hz</td><td>Parasympathetic activity, tightly coupled to breathing</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="prose">
+    <p data-t="34">The HF band deserves a moment, because it makes the whole thing concrete. Its range corresponds to 9 to 24 breaths per minute, which is exactly normal breathing. Your heart genuinely speeds up slightly as you inhale and slows as you exhale, an effect called respiratory sinus arrhythmia. <strong>So the HF peak in your plot is the subject's breathing, visible in their heartbeat, extracted from a video of their face.</strong> That is a striking thing to be able to point at during a demo.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 4</span><span class="name" data-t="35">The HRV spectrum &mdash; LF, HF, and the ratio</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-lfhf" height="340"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-state">autonomic state</label><input type="range" id="sl-state" min="0" max="1" step="0.01" value="0.35"></div>
+        <div class="ctl"><label for="sl-breath">breathing rate</label><input type="range" id="sl-breath" min="9" max="22" step="0.5" value="15"></div>
+      </div>
+      <div class="readout">
+        <div><span class="k">LF power</span><span class="v" id="ro-lf">1240</span></div>
+        <div><span class="k">HF power</span><span class="v" id="ro-hf">980</span></div>
+        <div><span class="k">LF/HF ratio</span><span class="v hot" id="ro-ratio">1.27</span></div>
+        <div><span class="k">breathing</span><span class="v good" id="ro-br">15.0 /min</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="36"><span style="color:var(--warn);font-weight:600">Amber</span> is the LF band, <span style="color:var(--signal);font-weight:600">teal</span> is HF. Drag the breathing slider and watch the HF peak move with it &mdash; that peak <em>is</em> the breath. Drag the state slider toward stress and watch weight shift into LF.</figcaption>
+  </figure>
+
+  <div class="aside-note">
+    <div class="lbl">Stay honest about what LF/HF means</div>
+    <p data-t="37">LF/HF is often described as "sympathetic versus parasympathetic balance." That interpretation is contested in the current literature, because LF is not purely sympathetic. Your plan already gets this right by framing the output as a wellness indicator with an explicit non-diagnostic caveat.</p>
+    <p data-t="38">Keep that discipline, and consider going one better: state in your Discussion that the simple sympathovagal reading is disputed, and that you report the ratio as a relative indicator rather than a physiological claim. Knowing the limitations of your own metric is exactly the kind of thing that separates a strong report from a competent one.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">05 &mdash; Fix this in your plan</div>
+    <h2 data-t="39">Thirty seconds is <em>not enough</em> for LF</h2>
+  </div>
+  <div class="prose">
+    <p data-t="40">Section 7 step 1 of your plan says "capture 20 to 30 seconds of face video." For BPM that is a sensible choice. For LF/HF it does not work, and the arithmetic is unforgiving.</p>
+  </div>
+  <div class="math">LF band starts at <span class="hi">0.04 Hz</span>
+one cycle of 0.04 Hz takes <span class="hi">25 seconds</span>
+
+in a 30-second window you capture <span class="hi">1.2 cycles</span>
+              <span class="dim">→ you cannot measure a rhythm you have barely seen once</span></div>
+  <div class="prose">
+    <p data-t="41">Tier 0 established that resolution is <span class="m">1/T</span>. At 30 seconds that is 0.033 Hz, and the entire LF band is only 0.11 Hz wide. You would be describing the whole band with about three bins, two of which are contaminated by the edges.</p>
+    <p data-t="42">The 1996 Task Force standard specifies <strong>5-minute</strong> recordings for short-term LF/HF, and that is not a conservative safety margin, it is roughly the minimum for a stable estimate.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 5</span><span class="name" data-t="43">How long you must record for each metric</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-dur" height="330"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-dur">recording length</label><input type="range" id="sl-dur" min="10" max="360" step="5" value="30"></div>
+      </div>
+      <div class="readout">
+        <div><span class="k">duration</span><span class="v" id="ro-dur">30 s</span></div>
+        <div><span class="k">resolution</span><span class="v" id="ro-dres">0.033 Hz</span></div>
+        <div><span class="k">bins across LF</span><span class="v" id="ro-lfbins">3.3</span></div>
+        <div><span class="k">beats captured</span><span class="v" id="ro-nb">36</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="44">Each bar turns <span style="color:var(--signal);font-weight:600">teal</span> once the recording is long enough for that metric to be trustworthy. BPM and RMSSD go teal almost immediately. <strong>LF/HF needs to get past roughly 120 seconds before it means anything, and past 300 to match the published standard.</strong></figcaption>
+  </figure>
+
+  <div class="keypoint" data-t="45">Your demo needs <strong>two capture modes</strong>: a live 20 to 30 second window that continuously updates BPM, and a separate longer "HRV reading" of at least two minutes, ideally five, that the subject sits still for.</div>
+
+  <div class="prose">
+    <p data-t="46">This is good news for your demo rather than bad. It gives the presentation a natural two-act structure: the instant live readout for the "wait, how?" moment, then a deliberate stillness while the deeper measurement accumulates. That is a more interesting thing to watch than a single number ticking, and it accurately reflects how real clinical HRV measurement is done.</p>
+    <p data-t="47">One concrete change to make now: update Section 7 step 1 and Section 5.2 of your plan to specify the two capture modes and cite the Task Force 5-minute standard as the justification. Better to have designed it that way than to discover it when the LF/HF number refuses to settle.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">06 &mdash; Reference</div>
+    <h2 data-t="48">Tier 4 vocabulary, plainly</h2>
+  </div>
+  <div class="gloss">
+    <div><dt data-t="49">RR interval</dt><dd data-t="50">The gap between consecutive heartbeats, in milliseconds. Named for the R wave of an ECG.</dd></div>
+    <div><dt data-t="51">IBI</dt><dd data-t="52">Inter-beat interval. The same thing, used when the source is not an ECG. Your papers will use both words.</dd></div>
+    <div><dt data-t="53">HRV</dt><dd data-t="54">Heart rate variability. The study of how those gaps fluctuate. High variability is generally healthy.</dd></div>
+    <div><dt data-t="55">SDNN</dt><dd data-t="56">Standard deviation of the intervals. Overall variability.</dd></div>
+    <div><dt data-t="57">RMSSD</dt><dd data-t="58">Root mean square of successive differences. Captures fast beat-to-beat changes. Typically 20 to 50 ms.</dd></div>
+    <div><dt data-t="59">pNN50</dt><dd data-t="60">Percentage of consecutive interval pairs differing by more than 50 ms.</dd></div>
+    <div><dt data-t="61">Parabolic interpolation</dt><dd data-t="62">Fitting a curve through three samples to locate a peak between them. Three lines of code, roughly ten times better timing.</dd></div>
+    <div><dt data-t="63">Uneven sampling</dt><dd data-t="64">Samples not equally spaced in time. Breaks the FFT's core assumption. Unavoidable in an interval series.</dd></div>
+    <div><dt data-t="65">Lomb-Scargle</dt><dd data-t="66">A periodogram designed for unevenly spaced data. Borrowed from astronomy, where observations happen when the telescope is free.</dd></div>
+    <div><dt data-t="67">LF band</dt><dd data-t="68">0.04 to 0.15 Hz. Mixed autonomic influences and blood-pressure regulation.</dd></div>
+    <div><dt data-t="69">HF band</dt><dd data-t="70">0.15 to 0.40 Hz. Parasympathetic, and tied directly to breathing.</dd></div>
+    <div><dt data-t="71">RSA</dt><dd data-t="72">Respiratory sinus arrhythmia: heart rate rising on inhale and falling on exhale. The physical cause of the HF peak.</dd></div>
+    <div><dt data-t="73">LF/HF ratio</dt><dd data-t="74">A widely reported balance indicator whose simple interpretation is contested. Report it, and say so.</dd></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">07 &mdash; Before Tier 5</div>
+    <h2 data-t="75">Check yourself</h2>
+  </div>
+
+  <details>
+    <summary data-t="76">Your RMSSD comes out around 90 ms when you expected roughly 40. Name two likely causes.</summary>
+    <div class="ans">
+      <p data-t="89"><strong>A missed or doubled beat.</strong> RMSSD squares successive differences, so one bad interval contributes enormously. Apply outlier rejection before computing anything, and inspect the interval series by eye during development.</p>
+      <p data-t="90"><strong>Whole-frame peak detection.</strong> At 30 fps, rounding to the nearest frame injects up to 16 ms of random error into every beat time, and RMSSD is precisely a measure of beat-to-beat jitter, so it absorbs that error directly. Use parabolic interpolation.</p>
+      <p data-t="77">Also worth ruling out: single-pass filtering instead of <span class="m">filtfilt</span>, from Tier 2, which shifts beats by a frequency-dependent amount.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="78">Why can't you just FFT the RR series directly?</summary>
+    <div class="ans">
+      <p data-t="79">Because its x-axis is beat number, not time, and those two are only the same thing if the heart beats perfectly regularly &mdash; which would mean zero HRV, the exact opposite of what you are measuring.</p>
+      <p data-t="80">The FFT would place sample 5 at time 5 units, when it actually occurred at whatever moment the fifth beat happened. Every dot goes onto the winding circle at slightly the wrong angle, smearing the result. Resample onto a uniform 4 Hz grid first.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="81">Your teacher asks what the HF peak physically represents. What do you say?</summary>
+    <div class="ans">
+      <p data-t="82">It is the subject's breathing. Heart rate rises slightly on inhalation and falls on exhalation, an effect called respiratory sinus arrhythmia, so the breathing rhythm shows up directly in the beat intervals.</p>
+      <p data-t="83">You can prove it live: ask them to breathe slowly and deliberately, and the HF peak visibly moves to a lower frequency. That is a strong demo moment, because it is a verifiable prediction rather than an assertion, and it takes ten seconds.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="84">Why won't a 30-second recording give a usable LF/HF ratio?</summary>
+    <div class="ans">
+      <p data-t="85">LF starts at 0.04 Hz, whose period is 25 seconds. Thirty seconds contains barely one cycle, and you cannot characterise a rhythm you have seen once.</p>
+      <p data-t="86">In resolution terms, 1/30 s gives 0.033 Hz bins while the entire LF band is 0.11 Hz wide, so you would describe it with about three bins. The Task Force standard specifies 5 minutes. Build a separate longer capture mode for the HRV reading and keep the short window for live BPM.</p>
+    </div>
+  </details>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">08 &mdash; Ahead</div>
+    <h2 data-t="87">What Tier 5 adds</h2>
+  </div>
+  <div class="prose">
+    <p data-t="88">Your system now produces numbers. Tier 5 is about proving they are right: why reporting mean absolute error alone can hide a serious systematic bias, how Bland-Altman analysis exposes it, and why video compression specifically attacks the colour information rPPG depends on &mdash; which is the theory underneath your Section 5.1 robustness experiment.</p>
+  </div>
+</section>
+
+<footer class="foot">
+  <span>TRACE-rPPG &mdash; Tier 4 of 5</span>
+  <span>Beat timing · uneven sampling · LF/HF · the second FFT</span>
+</footer>
+
+<script>
+"use strict";
+var C={};
+function refreshTheme(){
+  var s=getComputedStyle(document.documentElement);
+  ["paper","paper-2","paper-3","ink","ink-2","ink-3","rule","rule-2","accent","accent-2","signal","warn"]
+    .forEach(function(k){ C[k]=s.getPropertyValue("--"+k).trim(); });
+}
+refreshTheme();
+if(window.matchMedia){
+  var mq=window.matchMedia("(prefers-color-scheme: dark)");
+  if(mq.addEventListener) mq.addEventListener("change",function(){refreshTheme();redrawAll();});
+}
+new MutationObserver(function(){refreshTheme();redrawAll();})
+  .observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+var redraws=[];
+function redrawAll(){ redraws.forEach(function(f){f();}); }
+
+var _fitCache=new WeakMap();
+function fit(cv){
+  var st=_fitCache.get(cv);
+  if(!st){ st={cssH:parseInt(cv.getAttribute("height"),10),ctx:cv.getContext("2d"),w:0,dpr:0}; _fitCache.set(cv,st); }
+  var dpr=window.devicePixelRatio||1;
+  var w=cv.clientWidth||cv.parentNode.clientWidth||600;
+  if(w!==st.w||dpr!==st.dpr){
+    st.w=w; st.dpr=dpr;
+    cv.width=Math.round(w*dpr); cv.height=Math.round(st.cssH*dpr);
+    cv.style.height=st.cssH+"px";
+    st.ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  return {ctx:st.ctx,w:st.w,h:st.cssH};
+}
+function label(ctx,txt,x,y,col,size,align){
+  ctx.fillStyle=col; ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+  ctx.textAlign=align||"left"; ctx.textBaseline="middle"; ctx.fillText(txt,x,y);
+}
+function axis(ctx,x0,y,w,col){ ctx.strokeStyle=col; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x0,y); ctx.lineTo(x0+w,y); ctx.stroke(); }
+var _seed=31337;
+function rnd(){ _seed=(_seed*1103515245+12345)%2147483648; return _seed/2147483648*2-1; }
+function reseed(s){ _seed=s; }
+
+/* ---------- FIG 1 : PARABOLIC INTERPOLATION ---------- */
+(function(){
+  var cv=document.getElementById("cv-parab");
+  var sl=document.getElementById("sl-off");
+  var FS=30;
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var off=parseFloat(sl.value);
+    function curve(x){ return Math.exp(-Math.pow((x-off)/1.55,2)); }
+
+    var pad=44,pw=w-pad-20,y0=26,ph=h-y0-52;
+    var xmin=-4,xmax=4;
+    function X(x){ return pad+((x-xmin)/(xmax-xmin))*pw; }
+    function Y(v){ return y0+ph-v*(ph-10); }
+
+    axis(ctx,pad,y0+ph,pw,C.rule);
+    label(ctx,"ONE PULSE PEAK, MAGNIFIED  ·  dots are the frames your camera captured",pad,10,C["ink-3"],10);
+
+    ctx.strokeStyle=C["ink-3"]; ctx.lineWidth=1.6; ctx.globalAlpha=.75; ctx.beginPath();
+    for(var i=0;i<=400;i++){
+      var x=xmin+(xmax-xmin)*i/400;
+      if(i===0)ctx.moveTo(X(x),Y(curve(x))); else ctx.lineTo(X(x),Y(curve(x)));
+    }
+    ctx.stroke(); ctx.globalAlpha=1;
+
+    var ys={};
+    for(var s=-4;s<=4;s++){
+      var v=curve(s); ys[s]=v;
+      ctx.strokeStyle=C["rule-2"]; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(X(s),y0+ph); ctx.lineTo(X(s),Y(v)); ctx.stroke();
+      ctx.fillStyle=C.ink;
+      ctx.beginPath(); ctx.arc(X(s),Y(v),4,0,6.2832); ctx.fill();
+      label(ctx,s,X(s),y0+ph+13,C["ink-3"],9,"center");
+    }
+
+    var pk=0,best=-1;
+    for(var s2=-4;s2<=4;s2++) if(ys[s2]>best){best=ys[s2];pk=s2;}
+    var y1=ys[pk-1],y2=ys[pk],y3=ys[pk+1];
+    var den=(y1-2*y2+y3);
+    var delta=Math.abs(den)<1e-9?0:0.5*(y1-y3)/den;
+    var interp=pk+delta;
+
+    ctx.strokeStyle=C.signal; ctx.lineWidth=2; ctx.globalAlpha=.85; ctx.beginPath();
+    for(var i2=0;i2<=200;i2++){
+      var xx=(pk-1.4)+(2.8)*i2/200;
+      var a=(y1-2*y2+y3)/2, b=(y3-y1)/2, c=y2;
+      var t=xx-pk;
+      var vv=a*t*t+b*t+c;
+      if(i2===0)ctx.moveTo(X(xx),Y(vv)); else ctx.lineTo(X(xx),Y(vv));
+    }
+    ctx.stroke(); ctx.globalAlpha=1;
+
+    ctx.strokeStyle=C.accent; ctx.lineWidth=2; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(X(pk),y0); ctx.lineTo(X(pk),y0+ph); ctx.stroke();
+    ctx.setLineDash([]);
+    label(ctx,"nearest sample",X(pk)+6,y0+10,C.accent,9.5);
+
+    ctx.strokeStyle=C.signal; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.moveTo(X(interp),y0); ctx.lineTo(X(interp),y0+ph); ctx.stroke();
+    label(ctx,"interpolated",X(interp)+6,y0+26,C.signal,9.5);
+
+    var msPerSample=1000/FS;
+    var eN=Math.abs(off-pk)*msPerSample;
+    var eI=Math.abs(off-interp)*msPerSample;
+    document.getElementById("ro-tp").textContent=(off>=0?"+":"")+off.toFixed(2);
+    document.getElementById("ro-ns").textContent=pk.toFixed(2);
+    document.getElementById("ro-ip").textContent=(interp>=0?"+":"")+interp.toFixed(2);
+    document.getElementById("ro-en").textContent=eN.toFixed(1)+" ms";
+    document.getElementById("ro-ei").textContent=eI.toFixed(1)+" ms";
+  }
+  sl.addEventListener("input",draw);
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 2 : RR SERIES ---------- */
+(function(){
+  var cv=document.getElementById("cv-rr");
+  var sv=document.getElementById("sl-var");
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var V=parseFloat(sv.value);
+    var miss=document.getElementById("chk-miss").checked;
+    var clean=document.getElementById("chk-clean").checked;
+
+    reseed(5150);
+    var beats=[0], rr=[];
+    for(var i=0;i<26;i++){
+      var base=833;
+      var wob=V*(0.6*Math.sin(i*0.55)+0.4*rnd());
+      rr.push(base+wob);
+      beats.push(beats[beats.length-1]+(base+wob)/1000);
+    }
+    var shown=rr.slice();
+    if(miss){ shown[12]=shown[12]+shown[13]; shown.splice(13,1); }
+    var used=shown.slice();
+    if(clean){
+      used=[];
+      for(var k=0;k<shown.length;k++){
+        var nb=[];
+        if(k>0)nb.push(shown[k-1]); if(k<shown.length-1)nb.push(shown[k+1]);
+        var m=nb.reduce(function(a,b){return a+b;},0)/(nb.length||1);
+        if(Math.abs(shown[k]-m)/m<0.2) used.push(shown[k]);
+      }
+    }
+
+    var pad=8,pw=w-pad*2;
+    var b1=(h-56)*0.42, b2=(h-56)*0.58;
+
+    label(ctx,"PULSE SIGNAL WITH DETECTED BEATS",pad,9,C["ink-3"],10);
+    var y1=22;
+    axis(ctx,pad,y1+b1*0.72,pw,C.rule);
+    var total=beats[beats.length-1];
+    ctx.strokeStyle=C["ink-3"]; ctx.lineWidth=1.5; ctx.beginPath();
+    for(var s=0;s<=700;s++){
+      var t=s/700*total, px=pad+(t/total)*pw;
+      var bi=0; while(bi<beats.length-1&&beats[bi+1]<t)bi++;
+      var ph2=(t-beats[bi])/((beats[bi+1]||total)-beats[bi]);
+      var vv=Math.exp(-Math.pow((ph2-0.2)/0.09,2))-0.3*Math.exp(-Math.pow((ph2-0.42)/0.11,2));
+      var py=y1+b1*0.72-vv*(b1*0.55);
+      if(s===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+    beats.forEach(function(bt,idx){
+      if(miss&&idx===13)return;
+      var px2=pad+(bt/total)*pw;
+      ctx.strokeStyle=(miss&&idx===13)?C.warn:C.signal; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(px2,y1); ctx.lineTo(px2,y1+10); ctx.stroke();
+    });
+    if(miss){
+      var pxm=pad+(beats[13]/total)*pw;
+      ctx.strokeStyle=C.warn; ctx.lineWidth=2; ctx.setLineDash([2,3]);
+      ctx.beginPath(); ctx.moveTo(pxm,y1); ctx.lineTo(pxm,y1+b1*0.72); ctx.stroke(); ctx.setLineDash([]);
+      label(ctx,"beat missed",pxm+5,y1+18,C.warn,9.5);
+    }
+
+    var y2=y1+b1+22;
+    label(ctx,"RR INTERVAL SERIES  (ms)",pad,y2-8,C["ink-3"],10);
+    var mn=Math.min.apply(null,used)-30, mx=Math.max.apply(null,used)+30;
+    ctx.strokeStyle=C.accent; ctx.lineWidth=2; ctx.lineJoin="round"; ctx.beginPath();
+    used.forEach(function(v,i2){
+      var px3=pad+(i2/(used.length-1))*pw;
+      var py3=y2+b2-((v-mn)/(mx-mn))*(b2-10);
+      if(i2===0)ctx.moveTo(px3,py3); else ctx.lineTo(px3,py3);
+    });
+    ctx.stroke();
+    used.forEach(function(v,i3){
+      var px4=pad+(i3/(used.length-1))*pw;
+      var py4=y2+b2-((v-mn)/(mx-mn))*(b2-10);
+      ctx.fillStyle=C.accent;
+      ctx.beginPath(); ctx.arc(px4,py4,3,0,6.2832); ctx.fill();
+    });
+    axis(ctx,pad,y2+b2,pw,C.rule);
+    label(ctx,Math.round(mn)+" ms",pad+2,y2+b2-6,C["ink-3"],9);
+    label(ctx,Math.round(mx)+" ms",pad+2,y2+8,C["ink-3"],9);
+
+    var mean=used.reduce(function(a,b){return a+b;},0)/used.length;
+    var sd=Math.sqrt(used.reduce(function(a,b){return a+(b-mean)*(b-mean);},0)/used.length);
+    var ss=0,n50=0;
+    for(var i4=1;i4<used.length;i4++){
+      var d=used[i4]-used[i4-1]; ss+=d*d; if(Math.abs(d)>50)n50++;
+    }
+    var rmssd=Math.sqrt(ss/(used.length-1));
+    var pnn=n50/(used.length-1)*100;
+
+    document.getElementById("ro-mrr").textContent=Math.round(mean)+" ms";
+    document.getElementById("ro-sdnn").textContent=Math.round(sd)+" ms";
+    document.getElementById("ro-rmssd").textContent=Math.round(rmssd)+" ms";
+    document.getElementById("ro-pnn").textContent=Math.round(pnn)+"%";
+    document.getElementById("ro-rmssd").className="v"+(rmssd>70?" hot":" good");
+  }
+  sv.addEventListener("input",draw);
+  ["chk-miss","chk-clean"].forEach(function(i){ document.getElementById(i).addEventListener("change",draw); });
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 3 : UNEVEN SAMPLING ---------- */
+(function(){
+  var cv=document.getElementById("cv-uneven");
+  var mode="raw";
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    reseed(2468);
+    var beats=[0], rr=[];
+    var TRUE=0.10;
+    for(var i=0;i<70;i++){
+      var t=beats[beats.length-1];
+      var v=833+70*Math.sin(2*Math.PI*TRUE*t)+22*Math.sin(2*Math.PI*0.25*t)+9*rnd();
+      rr.push(v); beats.push(t+v/1000);
+    }
+    var pad=34,pw=w-pad-14;
+    var b1=(h-64)*0.36, b2=(h-64)*0.64;
+
+    label(ctx,"THE INTERVAL SERIES  ·  note the beats are NOT evenly spaced in time",pad,9,C["ink-3"],10);
+    var y1=22, total=beats[beats.length-1];
+    axis(ctx,pad,y1+b1,pw,C.rule);
+    var mn=Math.min.apply(null,rr),mx=Math.max.apply(null,rr);
+    rr.forEach(function(v,i2){
+      var px = mode==="raw"
+        ? pad+(i2/(rr.length-1))*pw
+        : pad+(beats[i2]/total)*pw;
+      var py=y1+b1-((v-mn)/(mx-mn))*(b1-8);
+      ctx.fillStyle=C.accent;
+      ctx.beginPath(); ctx.arc(px,py,2.6,0,6.2832); ctx.fill();
+    });
+    label(ctx, mode==="raw" ? "x-axis = BEAT NUMBER  ← the mistake" : "x-axis = TIME  ← correct",
+          pad, y1+b1+13, mode==="raw"?C.warn:C.signal, 9.5);
+
+    var y2=y1+b1+34;
+    label(ctx,"RESULTING HRV SPECTRUM",pad,y2-8,C["ink-3"],10);
+    var fmin=0.01,fmax=0.5,steps=280,vals=[],mxv=0.0001;
+    for(var s=0;s<=steps;s++){
+      var ff=fmin+(fmax-fmin)*s/steps;
+      var sx=0,sy=0;
+      for(var n=0;n<rr.length;n++){
+        var tt = mode==="raw" ? n*0.833 : beats[n];
+        var a=-2*Math.PI*ff*tt;
+        var val=rr[n]-833;
+        sx+=val*Math.cos(a); sy+=val*Math.sin(a);
+      }
+      var m2=Math.hypot(sx,sy)/rr.length;
+      if(mode==="raw") m2*=(1+0.55*Math.abs(Math.sin(ff*47)));
+      vals.push(m2); if(m2>mxv)mxv=m2;
+    }
+    axis(ctx,pad,y2+b2,pw,C.rule);
+    ctx.fillStyle=C.warn; ctx.globalAlpha=.1;
+    ctx.fillRect(pad+((0.04-fmin)/(fmax-fmin))*pw,y2,((0.11)/(fmax-fmin))*pw,b2);
+    ctx.globalAlpha=1;
+    ctx.strokeStyle=C.accent; ctx.lineWidth=2.2; ctx.beginPath();
+    for(var s2=0;s2<=steps;s2++){
+      var px2=pad+(s2/steps)*pw, py2=y2+b2-(vals[s2]/mxv)*(b2-8);
+      if(s2===0)ctx.moveTo(px2,py2); else ctx.lineTo(px2,py2);
+    }
+    ctx.stroke();
+    var tx=pad+((TRUE-fmin)/(fmax-fmin))*pw;
+    ctx.strokeStyle=C.signal; ctx.lineWidth=2; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(tx,y2); ctx.lineTo(tx,y2+b2); ctx.stroke(); ctx.setLineDash([]);
+    label(ctx,"true 0.10 Hz",tx+5,y2+10,C.signal,9.5);
+    [0.05,0.1,0.2,0.3,0.4,0.5].forEach(function(t2){
+      var xx=pad+((t2-fmin)/(fmax-fmin))*pw;
+      label(ctx,t2.toFixed(2),xx,y2+b2+13,C["ink-3"],9,"center");
+    });
+    label(ctx,"Hz",pad+pw,y2+b2+27,C["ink-3"],9.5,"right");
+
+    var bi=0; for(var i3=1;i3<vals.length;i3++) if(vals[i3]>vals[bi])bi=i3;
+    var pf=fmin+(fmax-fmin)*bi/steps;
+    document.getElementById("ro-uvm").textContent = mode==="raw"?"naive":mode==="resamp"?"resampled":"lomb-scargle";
+    document.getElementById("ro-lfp").textContent=pf.toFixed(3)+" Hz";
+    var ok=Math.abs(pf-TRUE)<0.02;
+    var vv2=document.getElementById("ro-uvv");
+    vv2.textContent=ok?"correct":"biased";
+    vv2.className="v"+(ok?" good":" hot");
+    document.getElementById("ro-lfp").className="v"+(ok?" good":" hot");
+  }
+  document.querySelectorAll(".uv-btn").forEach(function(b){
+    b.addEventListener("click",function(){
+      document.querySelectorAll(".uv-btn").forEach(function(o){o.classList.remove("on");});
+      b.classList.add("on"); mode=b.getAttribute("data-uv"); draw();
+    });
+  });
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 4 : LF / HF ---------- */
+(function(){
+  var cv=document.getElementById("cv-lfhf");
+  var ss=document.getElementById("sl-state"), sb=document.getElementById("sl-breath");
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var st=parseFloat(ss.value), br=parseFloat(sb.value);
+    var brHz=br/60;
+    var fmin=0.0,fmax=0.5,steps=340;
+    var vals=[],mxv=0.0001,freqs=[];
+    for(var s=0;s<=steps;s++){
+      var ff=fmin+(fmax-fmin)*s/steps;
+      var lf=(0.5+st*1.4)*Math.exp(-Math.pow((ff-0.098)/0.026,2));
+      var hf=(1.25-st*0.95)*Math.exp(-Math.pow((ff-brHz)/0.028,2));
+      var vlf=0.85*Math.exp(-Math.pow(ff/0.022,2));
+      var v=lf+hf+vlf+0.02;
+      freqs.push(ff); vals.push(v*v*900); if(v*v*900>mxv)mxv=v*v*900;
+    }
+    var pad=40,pw=w-pad-14,y0=30,ph=h-y0-52;
+    label(ctx,"POWER SPECTRUM OF THE RR INTERVAL SERIES",pad,12,C["ink-3"],10);
+    function X(ff){ return pad+((ff-fmin)/(fmax-fmin))*pw; }
+
+    ctx.fillStyle=C.warn; ctx.globalAlpha=.13;
+    ctx.fillRect(X(0.04),y0,X(0.15)-X(0.04),ph); ctx.globalAlpha=1;
+    ctx.fillStyle=C.signal; ctx.globalAlpha=.13;
+    ctx.fillRect(X(0.15),y0,X(0.40)-X(0.15),ph); ctx.globalAlpha=1;
+    label(ctx,"LF",X(0.095),y0+12,C.warn,12,"center");
+    label(ctx,"HF",X(0.27),y0+12,C.signal,12,"center");
+
+    ctx.strokeStyle=C.accent; ctx.lineWidth=2.2; ctx.lineJoin="round"; ctx.beginPath();
+    for(var s2=0;s2<=steps;s2++){
+      var px=X(freqs[s2]), py=y0+ph-(vals[s2]/mxv)*(ph-14);
+      if(s2===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+
+    var bx=X(brHz);
+    ctx.strokeStyle=C.signal; ctx.lineWidth=2; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(bx,y0); ctx.lineTo(bx,y0+ph); ctx.stroke(); ctx.setLineDash([]);
+    label(ctx,"breathing",bx+5,y0+30,C.signal,9.5);
+
+    var LF=0,HF=0;
+    for(var s3=0;s3<=steps;s3++){
+      if(freqs[s3]>=0.04&&freqs[s3]<0.15) LF+=vals[s3];
+      if(freqs[s3]>=0.15&&freqs[s3]<=0.40) HF+=vals[s3];
+    }
+    [0,0.1,0.2,0.3,0.4,0.5].forEach(function(t){
+      label(ctx,t.toFixed(2),X(t),y0+ph+13,C["ink-3"],9,"center");
+    });
+    label(ctx,"Hz",pad+pw,y0+ph+28,C["ink-3"],9.5,"right");
+
+    document.getElementById("ro-lf").textContent=Math.round(LF/10);
+    document.getElementById("ro-hf").textContent=Math.round(HF/10);
+    var r=LF/(HF||1);
+    document.getElementById("ro-ratio").textContent=r.toFixed(2);
+    document.getElementById("ro-br").textContent=br.toFixed(1)+" /min";
+  }
+  [ss,sb].forEach(function(e){e.addEventListener("input",draw);});
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 5 : DURATION ---------- */
+(function(){
+  var cv=document.getElementById("cv-dur");
+  var sl=document.getElementById("sl-dur");
+  var items=[
+    {n:"BPM (average rate)",need:10},
+    {n:"RMSSD / pNN50",need:30},
+    {n:"SDNN",need:60},
+    {n:"HF band (breathing)",need:60},
+    {n:"LF band",need:120},
+    {n:"LF/HF, Task Force standard",need:300}
+  ];
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var T=parseFloat(sl.value);
+    var pad=10,pw=w-pad*2;
+    label(ctx,"IS YOUR RECORDING LONG ENOUGH FOR THIS METRIC?",pad,10,C["ink-3"],10);
+    var y=28,rowH=(h-58)/items.length;
+    var MAXN=360;
+    items.forEach(function(it,i){
+      var yy=y+i*rowH;
+      var ok=T>=it.need;
+      label(ctx,it.n,pad,yy+11,ok?C.signal:C["ink-3"],10.5);
+      var bx=pad+218, bw=pw-218-52;
+      if(bw<60){ bx=pad; bw=pw-52; yy+=12; }
+      ctx.fillStyle=C.rule; ctx.fillRect(bx,yy+2,bw,15);
+      ctx.fillStyle=ok?C.signal:C.accent;
+      ctx.globalAlpha=ok?.9:.45;
+      ctx.fillRect(bx,yy+2,bw*Math.min(1,T/MAXN),15);
+      ctx.globalAlpha=1;
+      var nx=bx+bw*(it.need/MAXN);
+      ctx.strokeStyle=C.ink; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(nx,yy); ctx.lineTo(nx,yy+19); ctx.stroke();
+      label(ctx, ok?"OK":"needs "+it.need+"s", pad+pw, yy+10, ok?C.signal:C.accent, 9.5, "right");
+    });
+    label(ctx,"black ticks mark the minimum duration each metric requires",pad,h-14,C["ink-3"],9.5);
+
+    document.getElementById("ro-dur").textContent=Math.round(T)+" s";
+    document.getElementById("ro-dres").textContent=(1/T).toFixed(3)+" Hz";
+    document.getElementById("ro-lfbins").textContent=(0.11/(1/T)).toFixed(1);
+    document.getElementById("ro-nb").textContent=Math.round(T*1.2);
+    document.getElementById("ro-lfbins").className="v"+((0.11/(1/T))>8?" good":" hot");
+  }
+  sl.addEventListener("input",draw);
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+</script>
+
+<script>
+(function(){
+  var BN = {"0": "দ্বিতীয়বার Fourier transform প্রয়োগ করা &mdash; ভিডিওর উপর না, বরং হৃৎস্পন্দনগুলোর নিজস্ব ছন্দের উপর। সাথে আপনার বর্তমান পরিকল্পনার একটা সীমাবদ্ধতা যা আপনার ডেমো ভেঙে দেবে।", "1": "কেন এটাই আপনার প্রজেক্টের সবচেয়ে চমকপ্রদ অংশ", "2": "বাকি প্রতিটা দলের ডেমো শেষ হবে স্ক্রিনে একটা সংখ্যা দিয়ে। আপনারটা আরও এক ধাপ এগোয়, আর ধাপটা শুধু বাড়তি পরিশ্রম না, সত্যিই সুন্দর:", "3": "আপনি Fourier transform নেন <strong>দুইবার</strong>। একবার ভিডিও সিগন্যালের উপর, হৃৎস্পন্দন খুঁজতে। তারপর আবার <em>ওই হৃৎস্পন্দনগুলোর মাঝের ফাঁকের ধরনটার</em> উপর, যে স্নায়ুতন্ত্র সেগুলো নিয়ন্ত্রণ করছে তার অবস্থা পড়তে।", "4": "দ্বিতীয় রূপান্তরটা প্রথমটার থেকে সম্পূর্ণ ভিন্ন একটা সিগন্যালের উপর চলে। এর input সময়ের সাপেক্ষে উজ্জ্বলতা না; এটা <em>বিট নম্বরের সাপেক্ষে ফাঁকের দৈর্ঘ্য</em>। একই গণিত, একেবারে ভিন্ন ভৌত অর্থ, আর output আপনার বানানো কিছু না বরং একটা স্বীকৃত ক্লিনিক্যাল পরিমাপ।", "5": "সেখানে পৌঁছাতে চারটা জিনিস লাগে, আর প্রতিটাই এমন জায়গা যেখানে মানুষ ভুল করে:", "6": "একটা ভিডিও frame-এর চেয়ে অনেক বেশি নিখুঁতভাবে বিটের অবস্থান বের করা।", "7": "বিটের সময়গুলোকে একটা interval সিরিজে পরিণত করা।", "8": "এই সিরিজটা যে <strong>সমান ব্যবধানে নমুনায়িত না</strong> সেটা সামলানো, যা FFT-এর মূল ধারণাটাই ভেঙে দেয়।", "9": "ধীর ছন্দগুলো আদৌ দেখার মতো যথেষ্ট সময় ধরে রেকর্ড করা &mdash; আর আপনার পরিকল্পনা এখন সেটা করে না।", "10": "আপনার frame rate আপনার <em>সময়ের</em> resolution না", "11": "৩০ fps-এ আপনার frame-গুলোর ব্যবধান ৩৩.৩ ms। প্রতিটা বিট যদি নিকটতম frame-এ বসান, তাহলে প্রতিটা বিটের সময়ে ১৬ ms পর্যন্ত গোল করার ভুল থাকে।", "12": "এবার ভাবুন আপনি কী মাপছেন। RMSSD, প্রমিত স্বল্পমেয়াদি HRV metric, একজন সুস্থ প্রাপ্তবয়স্কের ক্ষেত্রে সাধারণত ২০ থেকে ৫০ ms। <strong>আপনার গোল করার ভুলটা সিগন্যালের সমান আকারের।</strong> পূর্ণ frame-এ মাপা মানে বাথরুমের দাঁড়িপাল্লায় একটা চিঠি ওজন করা।", "13": "সমাধানটা সত্যিই অল্প কোডের। নমুনায়িত সিগন্যালের একটা চূড়া আসলে একটা মসৃণ রেখা যা বিচ্ছিন্ন বিন্দুতে মাপা হয়েছে, তাই আসল সর্বোচ্চ বিন্দুটা প্রায় কখনোই ঠিক একটা নমুনার উপর পড়ে না। চূড়ার নমুনা আর তার দুই প্রতিবেশী নিন, ওই তিন বিন্দুর মধ্য দিয়ে একটা পরাবৃত্ত বসান, আর <em>ওই</em> রেখাটার চূড়া কোথায় সেটা বের করুন।", "14": "তিন লাইন, আর আপনার সময়ের নিখুঁততা প্রায় দশ গুণ ভালো হয়ে যায়। নিচে আসল চূড়াটা টানুন আর দেখুন দুইটা অনুমান আলাদা হয়ে যাচ্ছে।", "15": "Parabolic interpolation &mdash; নমুনার মাঝখানে একটা চূড়া খুঁজে পাওয়া", "16": "<span style=\"color:var(--ink-3)\">ধূসর</span> রেখাটা অন্তর্নিহিত অবিচ্ছিন্ন পালস; বিন্দুগুলো আপনার ক্যামেরা যে frame-গুলো সত্যিই ধরেছে। সবচেয়ে লম্বা বিন্দুটা নিলে আপনি <span style=\"color:var(--accent);font-weight:600\">লাল</span> অনুমানটা পান। তিনটা বিন্দুর মধ্য দিয়ে একটা পরাবৃত্ত বসালে পান <span style=\"color:var(--signal);font-weight:600\">সবুজ</span>টা, যা প্রায় হুবহু সত্যের উপর পড়ে। <strong>দুইটা ভুলের রিডআউট মোটামুটি ৪০ ms-এর সাধারণ RMSSD-র সাথে তুলনা করুন।</strong>", "17": "বিট থেকে <em>interval</em>", "18": "নিখুঁত বিট সময় পেয়ে গেলে interval সিরিজটা একটা বিয়োগ মাত্র:", "19": "ওই সংখ্যাগুলোই এরপরের সবকিছুর কাঁচামাল। এখনই লক্ষ্য করুন এরা কী দেখাচ্ছে: interval-গুলো <strong>স্থির না</strong>। একটা সুস্থ হৃৎপিণ্ড কখনো মেট্রোনোমের মতো বাজে না, আর ওই তারতম্যটাই সিগন্যাল, noise না। পুরোপুরি নিয়মিত হৃৎস্পন্দন সুস্থতার না, অসুস্থতার লক্ষণ।", "20": "এই তালিকা থেকেই সরাসরি তিনটা প্রমিত time-domain metric বেরিয়ে আসে:", "21": "এদের যেকোনোটা হিসাব করার আগে <strong>সিরিজটা পরিষ্কার করুন</strong>। একটা মাত্র মিস করা বা দ্বিগুণ গোনা বিট আশপাশের তুলনায় প্রায় দ্বিগুণ বা অর্ধেক একটা interval তৈরি করে, আর যেহেতু RMSSD পার্থক্যগুলো বর্গ করে, একটামাত্র খারাপ interval সেটাকে বিশাল বাড়িয়ে দিতে পারে। প্রতিবেশীদের থেকে প্রায় ২০ শতাংশের বেশি দূরের যেকোনো interval বাতিল করুন, আর রিপোর্টে লিখুন যে করেছেন।", "22": "বিট ভেতরে, interval বাইরে &mdash; আর একটা মিস করা বিট কী করে", "23": "উপরে: শনাক্ত করা বিট চিহ্নিত করা পালস। নিচে: ফলে পাওয়া interval সিরিজ। <strong>\"miss one beat\"-এ টিক দিন</strong> আর দেখুন একটা চূড়া গজিয়ে উঠছে &mdash; আর দেখুন একটামাত্র খারাপ নমুনায় RMSSD প্রায় দ্বিগুণ হয়ে যাচ্ছে। তারপর outlier বাতিলে টিক দিন আর দেখুন সেটা সেরে উঠছে। এটা কোনো বিরল ব্যতিক্রম না; মানুষ নড়লেই এটা ঘটে।", "24": "দ্বিতীয় রূপান্তর", "25": "আপনি interval সিরিজটার <em>সরাসরি</em> FFT নিতে পারবেন না", "26": "এই হলো সেই ভুল যা প্রায় সবাই করে, আর এটা বিশ্বাসযোগ্য দেখতে সংখ্যা তৈরি করে যেগুলো আসলে ভুল।", "27": "Tier 0-এর প্রতিটা ছবি ধরে নিয়েছিল নমুনাগুলো <strong>সময়ে সমান ব্যবধানে</strong> আসে। Winding machine প্রতিটা নমুনাকে কোণ দেয় সেটা <em>কখন</em> ঘটেছে তার ভিত্তিতে, তাই সমান ব্যবধান সাজসজ্জা না, ভার বহনকারী।", "28": "আপনার RR সিরিজ গঠনগতভাবেই এটা লঙ্ঘন করে। ৫ নম্বর নমুনা হলো পঞ্চম বিটের পরের interval, আর বিট নিয়মিত সময়সূচি মেনে আসে না। ওই অনিয়মটাই আক্ষরিক অর্থে আপনি যে রাশিটা মাপছেন। <strong>আপনার RR সিরিজের x-অক্ষ হলো বিট নম্বর, সময় না</strong>, আর এর FFT বিট index সম্পর্কে এমন একটা প্রশ্নের উত্তর দিচ্ছে যার কোনো পরিষ্কার ভৌত অর্থ নেই।", "29": "দুইটা স্বীকৃত সমাধান আছে।", "30": "অসমান নমুনা &mdash; সামলানোর তিনটা উপায়", "31": "Interval-গুলোতে একটা আসল ০.১০ Hz ছন্দ উপস্থিত। সহজ FFT সেটা ছড়িয়ে দেয়, কারণ সে চুপচাপ ধরে নিয়েছে বিটগুলো সমান ব্যবধানে ছিল, অথচ ছিল না। Resample করলে চূড়াটা তার জায়গায় ফিরে আসে। <strong>সহজ ফলাফলটা স্পষ্টভাবে ভাঙা মনে হয় না</strong> &mdash; এটা যুক্তিসঙ্গত দেখতে একটা spectrum তৈরি করে, আর ঠিক এই কারণেই এই ভুলটা শেষ করা প্রজেক্ট পর্যন্ত টিকে যায়।", "32": "LF, HF, আর অনুপাতটা আসলে কী <em>বোঝায়</em>", "33": "ঠিকভাবে resample করা একটা interval সিরিজ নিয়ে তার FFT নিন। প্রচলিতভাবে দুইটা ব্যান্ড সংজ্ঞায়িত, ১৯৯৬ সালের Task Force মান থেকে, যা আগে থেকেই আপনার পড়ার তালিকায় আছে:", "34": "HF ব্যান্ডটা একটু সময় দাবি করে, কারণ এটাই পুরো জিনিসটাকে বাস্তব করে তোলে। এর পরিসর মিনিটে ৯ থেকে ২৪ শ্বাসের সমান, যা ঠিক স্বাভাবিক শ্বাস-প্রশ্বাস। আপনি শ্বাস নিলে আপনার হৃৎপিণ্ড সত্যিই একটু দ্রুত হয় আর ছাড়লে ধীর হয়, এই প্রভাবটার নাম respiratory sinus arrhythmia. <strong>তাই আপনার প্লটের HF চূড়াটা হলো ওই মানুষটার শ্বাস, একটা মুখের ভিডিও থেকে বের করা।</strong> ডেমোতে আঙুল দিয়ে দেখানোর জন্য এটা দারুণ একটা জিনিস।", "35": "HRV spectrum &mdash; LF, HF, আর অনুপাত", "36": "<span style=\"color:var(--warn);font-weight:600\">অ্যাম্বার</span> হলো LF ব্যান্ড, <span style=\"color:var(--signal);font-weight:600\">সবুজ</span> হলো HF। শ্বাসের স্লাইডার টানুন আর দেখুন HF চূড়াটা তার সাথে সরছে &mdash; ওই চূড়াটাই <em>হলো</em> শ্বাস। State স্লাইডার চাপের দিকে টানুন আর দেখুন ওজন LF-এ সরে যাচ্ছে।", "37": "LF/HF-কে প্রায়ই \"sympathetic বনাম parasympathetic ভারসাম্য\" বলা হয়। বর্তমান গবেষণায় ওই ব্যাখ্যাটা বিতর্কিত, কারণ LF বিশুদ্ধভাবে sympathetic না। আপনার পরিকল্পনা এটা আগে থেকেই ঠিক করেছে, output-কে স্পষ্ট non-diagnostic সতর্কতাসহ একটা wellness indicator হিসেবে উপস্থাপন করে।", "38": "ওই শৃঙ্খলা বজায় রাখুন, আর আরও এক ধাপ এগোনোর কথা ভাবুন: আপনার Discussion-এ লিখুন যে সহজ sympathovagal ব্যাখ্যাটা বিতর্কিত, আর আপনি অনুপাতটা কোনো শারীরবৃত্তীয় দাবি হিসেবে না, বরং একটা আপেক্ষিক নির্দেশক হিসেবে জানাচ্ছেন। নিজের metric-এর সীমাবদ্ধতা জানাটাই একটা শক্তিশালী রিপোর্টকে একটা দক্ষ রিপোর্ট থেকে আলাদা করে।", "39": "ত্রিশ সেকেন্ড LF-এর জন্য <em>যথেষ্ট না</em>", "40": "আপনার পরিকল্পনার Section 7 ধাপ ১ বলে \"২০ থেকে ৩০ সেকেন্ড মুখের ভিডিও নিন\"। BPM-এর জন্য এটা যুক্তিসঙ্গত বাছাই। LF/HF-এর জন্য এটা কাজ করে না, আর হিসাবটা ক্ষমাহীন।", "41": "Tier 0 প্রতিষ্ঠা করেছে যে resolution হলো <span class=\"m\">1/T</span>। ৩০ সেকেন্ডে সেটা ০.০৩৩ Hz, আর পুরো LF ব্যান্ডটাই মাত্র ০.১১ Hz চওড়া। আপনি পুরো ব্যান্ডটাকে প্রায় তিনটা bin দিয়ে বর্ণনা করতেন, যার দুইটা আবার প্রান্তের দূষণে আক্রান্ত।", "42": "১৯৯৬ সালের Task Force মান স্বল্পমেয়াদি LF/HF-এর জন্য <strong>৫ মিনিটের</strong> রেকর্ডিং নির্দিষ্ট করে, আর সেটা রক্ষণশীল নিরাপত্তা-ব্যবধান না, একটা স্থিতিশীল অনুমানের জন্য মোটামুটি ন্যূনতম।", "43": "প্রতিটা metric-এর জন্য আপনাকে কতক্ষণ রেকর্ড করতে হবে", "44": "রেকর্ডিং যখন ওই metric-এর জন্য যথেষ্ট লম্বা হয়, প্রতিটা দণ্ড তখন <span style=\"color:var(--signal);font-weight:600\">সবুজ</span> হয়ে যায়। BPM আর RMSSD প্রায় সাথে সাথেই সবুজ হয়। <strong>LF/HF-এর মানে দাঁড়ানোর আগে প্রায় ১২০ সেকেন্ড পার হতে হয়, আর প্রকাশিত মানের সমান হতে ৩০০ সেকেন্ড।</strong>", "45": "আপনার ডেমোতে <strong>দুইটা capture mode</strong> দরকার: একটা live ২০ থেকে ৩০ সেকেন্ডের জানালা যা ক্রমাগত BPM হালনাগাদ করে, আর অন্তত দুই মিনিটের, আদর্শভাবে পাঁচ মিনিটের একটা আলাদা \"HRV reading\" যার জন্য মানুষটা স্থির হয়ে বসে থাকে।", "46": "এটা আপনার ডেমোর জন্য খারাপ না, বরং ভালো খবর। এটা উপস্থাপনাকে একটা স্বাভাবিক দুই-অঙ্কের গঠন দেয়: \"দাঁড়াও, কীভাবে?\" মুহূর্তের জন্য তাৎক্ষণিক live রিডিং, তারপর গভীর পরিমাপটা জমা হওয়ার সময় একটা ইচ্ছাকৃত স্থিরতা। একটা সংখ্যা টিকটিক করার চেয়ে এটা দেখতে বেশি আকর্ষণীয়, আর এটা সঠিকভাবে দেখায় বাস্তব ক্লিনিক্যাল HRV পরিমাপ আসলে কীভাবে হয়।", "47": "এখনই করার মতো একটা সুনির্দিষ্ট পরিবর্তন: আপনার পরিকল্পনার Section 7 ধাপ ১ আর Section 5.2 হালনাগাদ করে দুইটা capture mode নির্দিষ্ট করুন আর যুক্তি হিসেবে Task Force-এর ৫ মিনিটের মানটা উল্লেখ করুন। LF/HF সংখ্যাটা থিতু হতে অস্বীকার করার সময় আবিষ্কার করার চেয়ে আগে থেকেই ওভাবে নকশা করা ভালো।", "48": "Tier 4-এর শব্দগুলো, সহজ ভাষায়", "50": "পরপর দুইটা হৃৎস্পন্দনের মাঝের ফাঁক, মিলিসেকেন্ডে। ECG-র R তরঙ্গের নামে নামকরণ।", "52": "Inter-beat interval। একই জিনিস, উৎস ECG না হলে ব্যবহার করা হয়। আপনার পেপারগুলো দুইটা শব্দই ব্যবহার করবে।", "54": "Heart rate variability। ওই ফাঁকগুলো কীভাবে ওঠানামা করে তার চর্চা। বেশি তারতম্য সাধারণত সুস্থতার লক্ষণ।", "56": "Interval-গুলোর আদর্শ বিচ্যুতি। সামগ্রিক তারতম্য।", "58": "পরপর পার্থক্যগুলোর বর্গমূল-গড়-বর্গ। দ্রুত বিট-থেকে-বিট পরিবর্তন ধরে। সাধারণত ২০ থেকে ৫০ ms।", "60": "পরপর interval জোড়ার মধ্যে ৫০ ms-এর বেশি পার্থক্যওয়ালাদের শতকরা হার।", "62": "তিনটা নমুনার মধ্য দিয়ে একটা রেখা বসিয়ে তাদের মাঝখানে একটা চূড়া খুঁজে বের করা। তিন লাইন কোড, প্রায় দশ গুণ ভালো সময়।", "64": "নমুনা সময়ে সমান ব্যবধানে না। FFT-এর মূল ধারণা ভেঙে দেয়। একটা interval সিরিজে এটা অনিবার্য।", "66": "অসমান ব্যবধানের ডেটার জন্য বানানো একটা periodogram। জ্যোতির্বিজ্ঞান থেকে ধার করা, যেখানে টেলিস্কোপ ফাঁকা থাকলেই পর্যবেক্ষণ হয়।", "68": "০.০৪ থেকে ০.১৫ Hz। মিশ্র স্বয়ংক্রিয় স্নায়বিক প্রভাব আর রক্তচাপ নিয়ন্ত্রণ।", "70": "০.১৫ থেকে ০.৪০ Hz। Parasympathetic, আর সরাসরি শ্বাসের সাথে যুক্ত।", "72": "Respiratory sinus arrhythmia: শ্বাস নিলে হার্ট রেট বাড়ে আর ছাড়লে কমে। HF চূড়ার ভৌত কারণ।", "74": "একটা বহুল প্রচলিত ভারসাম্য নির্দেশক যার সহজ ব্যাখ্যাটা বিতর্কিত। জানান, আর সেটাও বলে দিন।", "75": "নিজেকে যাচাই করুন", "76": "আপনার RMSSD প্রায় ৯০ ms আসছে যেখানে আপনি প্রায় ৪০ আশা করেছিলেন। দুইটা সম্ভাব্য কারণ বলুন।", "77": "এটাও বাদ দেওয়ার মতো: Tier 2-এর সেই <span class=\"m\">filtfilt</span>-এর বদলে single-pass filtering, যা বিটগুলোকে frequency-নির্ভর পরিমাণে সরিয়ে দেয়।", "78": "RR সিরিজটার সরাসরি FFT কেন নেওয়া যায় না?", "79": "কারণ এর x-অক্ষ হলো বিট নম্বর, সময় না, আর এই দুইটা তখনই এক হয় যখন হৃৎপিণ্ড পুরোপুরি নিয়মিতভাবে চলে &mdash; যার মানে শূন্য HRV, অর্থাৎ আপনি যা মাপছেন ঠিক তার উল্টো।", "80": "FFT ৫ নম্বর নমুনাকে ৫ একক সময়ে বসাত, অথচ সেটা আসলে ঘটেছিল পঞ্চম বিট যে মুহূর্তে হয়েছিল সেই মুহূর্তে। প্রতিটা বিন্দু winding বৃত্তে একটু ভুল কোণে বসে আর ফলাফল ঝাপসা হয়ে যায়। আগে একটা সমান ৪ Hz গ্রিডে resample করুন।", "81": "আপনার শিক্ষক জিজ্ঞেস করলেন HF চূড়াটা ভৌতভাবে কী নির্দেশ করে। আপনি কী বলবেন?", "82": "এটা ওই মানুষটার শ্বাস। শ্বাস নিলে হার্ট রেট সামান্য বাড়ে আর ছাড়লে কমে, এই প্রভাবটার নাম respiratory sinus arrhythmia, তাই শ্বাসের ছন্দ সরাসরি বিটের interval-এ দেখা যায়।", "83": "আপনি সরাসরি প্রমাণ করতে পারেন: তাঁকে ধীরে ও ইচ্ছাকৃতভাবে শ্বাস নিতে বলুন, আর HF চূড়াটা চোখে পড়ার মতো নিচু frequency-তে সরে যাবে। এটা একটা শক্তিশালী ডেমো মুহূর্ত, কারণ এটা দাবি না বরং একটা যাচাইযোগ্য ভবিষ্যদ্বাণী, আর সময় লাগে দশ সেকেন্ড।", "84": "৩০ সেকেন্ডের রেকর্ডিং কেন ব্যবহারযোগ্য LF/HF অনুপাত দেবে না?", "85": "LF শুরু হয় ০.০৪ Hz-এ, যার পর্যায়কাল ২৫ সেকেন্ড। ত্রিশ সেকেন্ডে সবে একটা চক্র থাকে, আর একবার দেখা কোনো ছন্দকে আপনি বর্ণনা করতে পারেন না।", "86": "Resolution-এর হিসাবে, ১/৩০ সেকেন্ড দেয় ০.০৩৩ Hz bin অথচ পুরো LF ব্যান্ড ০.১১ Hz চওড়া, তাই আপনি সেটাকে প্রায় তিনটা bin দিয়ে বর্ণনা করতেন। Task Force মান ৫ মিনিট নির্দিষ্ট করে। HRV রিডিংয়ের জন্য একটা আলাদা লম্বা capture mode বানান আর live BPM-এর জন্য ছোট জানালাটা রাখুন।", "87": "Tier 5 কী যোগ করে", "88": "আপনার সিস্টেম এখন সংখ্যা তৈরি করে। Tier 5 হলো সেগুলো সঠিক প্রমাণ করা নিয়ে: কেন শুধু mean absolute error জানালে একটা গুরুতর নিয়মতান্ত্রিক পক্ষপাত লুকিয়ে থাকতে পারে, Bland-Altman বিশ্লেষণ কীভাবে সেটা ফাঁস করে, আর কেন video compression ঠিক সেই রঙের তথ্যেই আঘাত করে যার উপর rPPG নির্ভর করে &mdash; যেটা আপনার Section 5.1 robustness পরীক্ষার নিচের তত্ত্ব।", "89": "<strong>একটা মিস করা বা দ্বিগুণ গোনা বিট।</strong> RMSSD পরপর পার্থক্যগুলো বর্গ করে, তাই একটা খারাপ interval বিশাল অবদান রাখে। কিছু হিসাব করার আগে outlier বাতিল প্রয়োগ করুন, আর উন্নয়নের সময় interval সিরিজটা চোখে দেখে পরীক্ষা করুন।", "90": "<strong>পূর্ণ frame-এ peak detection।</strong> ৩০ fps-এ নিকটতম frame-এ গোল করলে প্রতিটা বিটের সময়ে ১৬ ms পর্যন্ত এলোমেলো ভুল ঢোকে, আর RMSSD ঠিক বিট-থেকে-বিট কাঁপুনিরই পরিমাপ, তাই সে ওই ভুলটা সরাসরি শুষে নেয়। Parabolic interpolation ব্যবহার করুন।"};
+  var EN = {};
+  var nodes = document.querySelectorAll("[data-t]");
+  nodes.forEach(function(el){ EN[el.getAttribute("data-t")] = el.innerHTML; });
+  var btn = document.getElementById("langbtn");
+  function apply(l){
+    document.documentElement.setAttribute("data-lang", l);
+    nodes.forEach(function(el){
+      var k = el.getAttribute("data-t");
+      var v = (l === "bn" && BN[k]) ? BN[k] : EN[k];
+      if (el.innerHTML !== v) el.innerHTML = v;
+    });
+    btn.textContent = (l === "bn") ? "English" : "বাংলা";
+    try { localStorage.setItem("lessonLang", l); } catch(e){}
+    if (typeof redrawAll === "function") { try { redrawAll(); } catch(e){} }
+  }
+  var saved = "en";
+  try { saved = localStorage.getItem("lessonLang") || "en"; } catch(e){}
+  apply(saved);
+  btn.addEventListener("click", function(){
+    apply(document.documentElement.getAttribute("data-lang") === "bn" ? "en" : "bn");
+  });
+  window.addEventListener("resize", function(){
+    if (typeof redrawAll === "function") { try { redrawAll(); } catch(e){} }
+  });
+})();
+</script>
+

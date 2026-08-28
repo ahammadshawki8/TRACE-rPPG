@@ -1,0 +1,1074 @@
+<title>The Harmonic Trap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap">
+
+<style>
+:root {
+  --paper:#FAF7F8; --paper-2:#F2EDEF; --paper-3:#E9E1E5;
+  --ink:#1F1720; --ink-2:#5A4E58; --ink-3:#8C7F88;
+  --rule:#E0D6DB; --rule-2:#CDBFC7;
+  --accent:#B01B3F; --accent-2:#8E1533; --accent-soft:#F7DEE5;
+  --signal:#10796B; --signal-soft:#DBEFEA;
+  --warn:#9C5A12; --warn-soft:#F7E8D4;
+  --shadow:0 1px 2px rgba(31,23,32,.05), 0 8px 24px -12px rgba(31,23,32,.18);
+  --sp-1:.35rem; --sp-2:.7rem; --sp-3:1.1rem; --sp-4:1.7rem; --sp-5:2.6rem; --sp-6:4rem;
+  --font-display:"Spectral",Georgia,"Times New Roman",serif;
+  --font-body:"Archivo",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --spine:40rem; --wide:60rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#16111A; --paper-2:#1F1824; --paper-3:#29202F;
+    --ink:#F0E9EE; --ink-2:#B3A5AE; --ink-3:#7D6F79;
+    --rule:#322A38; --rule-2:#443A4B;
+    --accent:#FF6B8A; --accent-2:#FF93A9; --accent-soft:#3B1D28;
+    --signal:#45D6B0; --signal-soft:#123029;
+    --warn:#E0A050; --warn-soft:#33260F;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"] {
+  --paper:#16111A; --paper-2:#1F1824; --paper-3:#29202F;
+  --ink:#F0E9EE; --ink-2:#B3A5AE; --ink-3:#7D6F79;
+  --rule:#322A38; --rule-2:#443A4B;
+  --accent:#FF6B8A; --accent-2:#FF93A9; --accent-soft:#3B1D28;
+  --signal:#45D6B0; --signal-soft:#123029;
+  --warn:#E0A050; --warn-soft:#33260F;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.65;margin:0;padding:0 var(--sp-3) var(--sp-6);-webkit-font-smoothing:antialiased}
+.spine{max-width:var(--spine);margin-inline:auto}
+h1,h2,h3,h4{font-family:var(--font-display);text-wrap:balance;line-height:1.2;margin:0}
+p{margin:0}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+code,.m{font-family:var(--font-mono);font-size:.92em;font-variant-ligatures:none}
+.m{color:var(--accent);font-weight:500}
+.m-sig{color:var(--signal);font-weight:500;font-family:var(--font-mono);font-size:.92em}
+.masthead{max-width:var(--wide);margin:0 auto;padding:var(--sp-6) 0 var(--sp-5);border-bottom:1px solid var(--rule);display:flex;flex-direction:column;gap:var(--sp-3)}
+.eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:500}
+.masthead h1{font-size:clamp(2.6rem,7vw,4.4rem);font-weight:700;letter-spacing:-.02em}
+.masthead .standfirst{font-family:var(--font-display);font-size:clamp(1.05rem,2.2vw,1.3rem);color:var(--ink-2);max-width:34rem;line-height:1.5}
+.meta-row{display:flex;flex-wrap:wrap;gap:var(--sp-3) var(--sp-4);font-family:var(--font-mono);font-size:.76rem;color:var(--ink-3);letter-spacing:.04em;padding-top:var(--sp-2)}
+.meta-row span strong{color:var(--ink-2);font-weight:500}
+.sec{max-width:var(--wide);margin:0 auto;padding-top:var(--sp-6);display:flex;flex-direction:column;gap:var(--sp-4)}
+.sec-head{display:flex;flex-direction:column;gap:var(--sp-2)}
+.sec-num{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.16em;color:var(--ink-3);text-transform:uppercase}
+.sec-head h2{font-size:clamp(1.7rem,3.6vw,2.4rem);font-weight:600;letter-spacing:-.015em}
+.sec-head h2 em{font-style:italic;color:var(--accent)}
+.prose{max-width:var(--spine);display:flex;flex-direction:column;gap:var(--sp-3)}
+.prose h3{font-size:1.18rem;font-weight:600;margin-top:var(--sp-2)}
+.prose ul,.prose ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:var(--sp-2)}
+.prose strong{font-weight:600}
+.part-break{max-width:var(--wide);margin:var(--sp-6) auto 0;padding-top:var(--sp-5);border-top:2px solid var(--ink);display:flex;flex-direction:column;gap:var(--sp-2)}
+.part-break .eyebrow{color:var(--ink-3)}
+.part-break h2{font-size:clamp(2rem,4.6vw,3rem);font-weight:700;letter-spacing:-.02em}
+.plain{background:var(--paper-2);border-left:3px solid var(--signal);padding:var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-1);max-width:var(--spine)}
+.plain .lbl{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--signal);font-weight:600}
+.plain p{color:var(--ink-2);font-size:.95rem}
+.keypoint{background:var(--accent-soft);padding:var(--sp-3) var(--sp-4);max-width:var(--spine);border-radius:2px;font-family:var(--font-display);font-size:1.1rem;line-height:1.5}
+.keypoint strong{font-weight:700;color:var(--accent-2)}
+.aside-note{border:1px solid var(--rule);border-radius:3px;padding:var(--sp-3);max-width:var(--spine);font-size:.92rem;color:var(--ink-2);display:flex;flex-direction:column;gap:var(--sp-2)}
+.aside-note .lbl{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--warn);font-weight:600}
+.fig{border:1px solid var(--rule-2);border-radius:4px;background:var(--paper-2);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;margin:0}
+.fig-bar{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-2) var(--sp-3);background:var(--paper-3);border-bottom:1px solid var(--rule-2);flex-wrap:wrap}
+.fig-bar .tag{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.fig-bar .name{font-family:var(--font-body);font-size:.85rem;color:var(--ink-2);font-weight:500}
+.fig-canvas-wrap{padding:var(--sp-3);background:var(--paper)}
+.fig canvas{display:block;width:100%;height:auto;touch-action:none}
+.fig-controls{border-top:1px solid var(--rule);padding:var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-3)}
+.ctl-row{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2) var(--sp-3)}
+.ctl{display:flex;align-items:center;gap:var(--sp-2);flex:1 1 15rem}
+.ctl label{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.06em;color:var(--ink-2);text-transform:uppercase;white-space:nowrap}
+.ctl input[type=range]{flex:1;min-width:5rem;accent-color:var(--accent);height:1.4rem}
+button{font-family:var(--font-mono);font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;font-weight:500;padding:.42rem .8rem;background:var(--paper);color:var(--ink);border:1px solid var(--rule-2);border-radius:3px;cursor:pointer;transition:background .12s,border-color .12s,color .12s}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button[aria-pressed="true"],button.on{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+.chk{display:inline-flex;align-items:center;gap:.45rem;font-family:var(--font-mono);font-size:.73rem;color:var(--ink-2);cursor:pointer;text-transform:uppercase;letter-spacing:.05em}
+.chk input{accent-color:var(--signal);width:1rem;height:1rem}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(7.5rem,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+.readout div{background:var(--paper);padding:var(--sp-2);display:flex;flex-direction:column;gap:.15rem}
+.readout .k{font-family:var(--font-mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.readout .v{font-family:var(--font-mono);font-size:1.02rem;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.readout .v.hot{color:var(--accent)}
+.readout .v.good{color:var(--signal)}
+.fig-note{padding:var(--sp-2) var(--sp-3) var(--sp-3);font-size:.86rem;color:var(--ink-2);border-top:1px dashed var(--rule);background:var(--paper-2)}
+.fig-note strong{color:var(--ink);font-weight:600}
+.math{font-family:var(--font-mono);font-size:.95rem;background:var(--paper-2);border:1px solid var(--rule);border-radius:3px;padding:var(--sp-3);overflow-x:auto;max-width:var(--spine);line-height:1.75;white-space:pre;color:var(--ink)}
+.math .hi{color:var(--accent);font-weight:600}
+.math .dim{color:var(--ink-3)}
+.math .ok{color:var(--signal);font-weight:600}
+.tbl-wrap{overflow-x:auto;max-width:var(--spine)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:26rem}
+th,td{text-align:left;padding:.5rem .7rem;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:500;border-bottom:1px solid var(--rule-2)}
+td.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.gloss{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--rule);max-width:var(--spine)}
+.gloss>div{padding:var(--sp-3) 0;border-bottom:1px solid var(--rule);display:grid;grid-template-columns:11rem 1fr;gap:var(--sp-3)}
+.gloss dt{font-family:var(--font-mono);font-size:.82rem;font-weight:600;color:var(--accent);margin:0}
+.gloss dd{margin:0;font-size:.93rem;color:var(--ink-2)}
+@media (max-width:34rem){.gloss>div{grid-template-columns:1fr;gap:var(--sp-1)}}
+details{border:1px solid var(--rule);border-radius:3px;background:var(--paper-2);padding:var(--sp-3);max-width:var(--spine)}
+details+details{margin-top:var(--sp-2)}
+summary{cursor:pointer;font-weight:600;font-family:var(--font-display);font-size:1.05rem;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸ ";color:var(--accent);font-family:var(--font-mono)}
+details[open] summary::before{content:"▾ "}
+details .ans{margin-top:var(--sp-3);padding-top:var(--sp-3);border-top:1px dashed var(--rule-2);font-size:.95rem;color:var(--ink-2);display:flex;flex-direction:column;gap:var(--sp-2)}
+.foot{max-width:var(--wide);margin:var(--sp-6) auto 0;padding-top:var(--sp-4);border-top:1px solid var(--rule);font-family:var(--font-mono);font-size:.76rem;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:var(--sp-3);justify-content:space-between}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+
+/* ---- bilingual ---- */
+:root[data-lang="bn"] body,
+:root[data-lang="bn"] .prose,
+:root[data-lang="bn"] .sec-head h2,
+:root[data-lang="bn"] .keypoint,
+:root[data-lang="bn"] .fig-note,
+:root[data-lang="bn"] .plain p,
+:root[data-lang="bn"] .aside-note,
+:root[data-lang="bn"] .gloss dd,
+:root[data-lang="bn"] details,
+:root[data-lang="bn"] .masthead .standfirst {
+  font-family: "Hind Siliguri", "Noto Sans Bengali", var(--font-body);
+}
+:root[data-lang="bn"] .prose p,
+:root[data-lang="bn"] .prose li { line-height: 1.9; }
+:root[data-lang="bn"] .keypoint { line-height: 1.75; }
+#langbtn{
+  position:fixed; top:.75rem; right:.75rem; z-index:200;
+  font-family:var(--font-mono); font-size:.75rem; letter-spacing:.06em;
+  padding:.45rem .85rem; border-radius:4px; cursor:pointer;
+  background:var(--accent); color:var(--paper); border:1px solid var(--accent);
+  box-shadow:0 2px 10px -4px rgba(0,0,0,.4);
+}
+#langbtn:hover{ filter:brightness(1.08); }
+@media print{ #langbtn{ display:none; } }
+</style>
+<button id="langbtn" type="button" aria-label="Switch language">বাংলা</button>
+
+
+<header class="masthead">
+  <div class="eyebrow">TRACE-rPPG · Foundations · Tier 1</div>
+  <h1>The Harmonic Trap</h1>
+  <p class="standfirst" data-t="0">Fourier series, the Fourier transform, convolution and sampling &mdash; and the reason your finished system will occasionally insist a resting adult has a heart rate of 144.</p>
+  <div class="meta-row">
+    <span><strong>6</strong> interactive figures</span>
+    <span>Follows <strong>Tier 0</strong> &mdash; the winding machine</span>
+    <span>The backbone tier. Everything else builds on this.</span>
+  </div>
+</header>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">00 &mdash; Orientation</div>
+    <h2 data-t="1">What changes here</h2>
+  </div>
+  <div class="prose">
+    <p data-t="2">Tier 0 gave you one machine: wind a signal around a circle at a test rhythm, and see whether the dots pile up. That machine is enough to find a heart rate in a clean laboratory recording.</p>
+    <p data-t="3">It is not enough for a real one. Six things go wrong, and this tier is those six things:</p>
+    <ul>
+      <li data-t="4">Real pulses are not sine waves, so they produce <strong>more than one spike</strong>. Picking the biggest is not always picking the right one.</li>
+      <li data-t="5">Filtering, which you will do constantly, is an operation called <strong>convolution</strong>, and you need to know what it actually does to a signal.</li>
+      <li data-t="6">There is a shortcut for doing convolution through the FFT, and it has a <strong>trap at the edges</strong> that silently corrupts your data.</li>
+      <li data-t="7">Your camera samples the world 30 times a second, and if it ever <strong>drops frames</strong> the assumption underneath every figure in Tier 0 quietly breaks.</li>
+      <li data-t="8">The floor of your spectrum is never flat. It is lumpy, and that lumpiness has a name and a fix.</li>
+      <li data-t="9">One popular trick looks like it improves your resolution and <strong>does not</strong>.</li>
+    </ul>
+  </div>
+</section>
+
+<div class="part-break">
+  <div class="eyebrow">Part A</div>
+  <h2 data-t="10">Fourier series</h2>
+</div>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">01 &mdash; Building blocks</div>
+    <h2 data-t="11">Any repeating shape is a stack of <em>sine waves</em></h2>
+  </div>
+  <div class="prose">
+    <p data-t="12">Tier 0 dealt with one rhythm at a time. Fourier series makes a bolder claim:</p>
+  </div>
+  <div class="keypoint" data-t="13">Take <strong>any</strong> shape that repeats. It can be built by adding together sine waves whose frequencies are all whole-number multiples of one base rate.</div>
+  <div class="prose">
+    <p data-t="14">The base rate is the <strong>fundamental</strong>. The multiples are <strong>harmonics</strong>. A 1.2 Hz fundamental has harmonics at 2.4 Hz, 3.6 Hz, 4.8 Hz and so on.</p>
+    <p data-t="15">This matters enormously to you, because a heartbeat is emphatically not a sine wave. It is a sharp upstroke, a fast fall, a small secondary bump, then a flat stretch until the next beat. To build a shape that sharp out of smooth sine waves, you need harmonics, and lots of them.</p>
+    <p data-t="16">Add harmonics one at a time below and watch a rounded blob sharpen into something that looks like a real pulse.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 1</span><span class="name" data-t="17">Harmonic builder &mdash; stack sine waves into a pulse shape</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-harm" height="330"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <button data-hpre="1,0,0,0,0,0">Pure sine</button>
+        <button data-hpre="1,.5,.33,.25,.2,.17">Sawtooth-ish</button>
+        <button data-hpre="1,.62,.38,.24,.15,.09" class="on">Realistic pulse</button>
+        <button data-hpre="1,.9,.8,.7,.6,.5">Very sharp</button>
+      </div>
+      <div class="ctl-row">
+        <div class="ctl"><label for="h1">1st (fund)</label><input type="range" id="h1" min="0" max="1" step=".01" value="1"></div>
+        <div class="ctl"><label for="h2">2nd</label><input type="range" id="h2" min="0" max="1" step=".01" value=".62"></div>
+        <div class="ctl"><label for="h3">3rd</label><input type="range" id="h3" min="0" max="1" step=".01" value=".38"></div>
+      </div>
+      <div class="ctl-row">
+        <div class="ctl"><label for="h4">4th</label><input type="range" id="h4" min="0" max="1" step=".01" value=".24"></div>
+        <div class="ctl"><label for="h5">5th</label><input type="range" id="h5" min="0" max="1" step=".01" value=".15"></div>
+        <div class="ctl"><label for="h6">6th</label><input type="range" id="h6" min="0" max="1" step=".01" value=".09"></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="18">Left: the waveform in time, which is what your skin-brightness signal actually looks like. Right: its spectrum, one bar per harmonic. <strong>Sharper shapes need taller harmonic bars.</strong> Drag the 1st slider to zero while leaving the others: the shape survives, and your fundamental spike vanishes. Hold on to that, because it is the whole of the next section.</figcaption>
+  </figure>
+
+  <div class="plain">
+    <div class="lbl">Plain English</div>
+    <p data-t="118"><strong>Fundamental</strong> is the actual repeat rate &mdash; the heart rate. <strong>Harmonic</strong> is an echo at a whole multiple of it: twice the rate, three times, and so on. They are not separate heartbeats. They are the mathematical price of the pulse shape being sharp rather than smooth.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">02 &mdash; The bug you will hit</div>
+    <h2 data-t="19">Why your system will report <em>144 BPM</em> for a healthy adult</h2>
+  </div>
+  <div class="prose">
+    <p data-t="20">Here is the naive algorithm, and it is what almost every student project ships:</p>
+  </div>
+  <div class="math">bpm = freqs[<span class="hi">np.argmax</span>(power)] * 60     <span class="dim"># find the tallest spike</span></div>
+  <div class="prose">
+    <p data-t="21">It works beautifully until it doesn't. The pulse has a spike at 72 BPM and a second spike at 144 BPM from the second harmonic. Normally the fundamental is taller and <span class="m">argmax</span> picks correctly.</p>
+    <p data-t="22">But the fundamental is the <em>lowest</em> frequency in your signal, which puts it right next to the slow lighting drift and breathing motion your filters are fighting. Aggressive high-pass filtering, poor lighting, or a subject whose pulse waveform is unusually sharp can all knock the fundamental down below its own harmonic. Then <span class="m">argmax</span> confidently returns 144, and your demo tells your teacher that a calm person is in tachycardia.</p>
+    <p data-t="23">Drag the slider below to weaken the fundamental and watch the naive answer flip.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 2</span><span class="name" data-t="24">The harmonic trap &mdash; watch argmax pick the wrong spike</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-trap" height="300"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-fund">fundamental strength</label><input type="range" id="sl-fund" min="0.1" max="1.6" step="0.01" value="1.3"></div>
+      </div>
+      <div class="readout">
+        <div><span class="k">true rate</span><span class="v good">72 BPM</span></div>
+        <div><span class="k">naive argmax says</span><span class="v" id="ro-naive">72 BPM</span></div>
+        <div><span class="k">fundamental</span><span class="v" id="ro-f1">1.30</span></div>
+        <div><span class="k">2nd harmonic</span><span class="v" id="ro-f2">0.80</span></div>
+        <div><span class="k">status</span><span class="v" id="ro-trap">correct</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="25">The <span style="color:var(--signal);font-weight:600">teal</span> marker is the truth. The <span style="color:var(--accent);font-weight:600">crimson</span> marker is what <span class="m">argmax</span> reports. Around the two-thirds point they part company and never recover.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <h3 data-t="26">Three ways to defend against it</h3>
+    <ol>
+      <li data-t="27"><strong>Search only inside a plausible band.</strong> You already restrict to 0.7 to 4 Hz. Tightening to something like 0.7 to 2.5 Hz when you have context about the subject removes many harmonic candidates outright.</li>
+      <li data-t="28"><strong>Check for a sub-harmonic.</strong> Before accepting a peak at frequency <span class="m">f</span>, look at <span class="m">f/2</span>. If there is meaningful energy there, you have probably locked onto a harmonic and the real answer is half your candidate.</li>
+      <li data-t="29"><strong>Enforce continuity across windows.</strong> Heart rate does not double between one second and the next. A tracker that rejects implausible jumps catches this almost for free, and it costs about ten lines.</li>
+    </ol>
+    <p data-t="30">Any of these is worth a paragraph in your Discussion section. Documenting a failure mode you anticipated and defended against reads far stronger than a results table with no failure analysis at all.</p>
+  </div>
+</section>
+
+<div class="part-break">
+  <div class="eyebrow">Part B</div>
+  <h2 data-t="31">Convolution</h2>
+</div>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">03 &mdash; The operation</div>
+    <h2 data-t="32">Convolution is <em>flip, slide, multiply, sum</em></h2>
+  </div>
+  <div class="prose">
+    <p data-t="33">Every filter you will write is a convolution. Detrending is a convolution. Bandpass filtering is a convolution. Your project checklist requires you to demonstrate a property of it. So it is worth ten minutes of genuine understanding rather than treating <span class="m">np.convolve</span> as a black box.</p>
+    <p data-t="34">The recipe has four steps, and only the first is surprising:</p>
+    <ol>
+      <li data-t="35"><strong>Flip</strong> the kernel back to front.</li>
+      <li data-t="36"><strong>Slide</strong> it to position <span class="m">n</span>.</li>
+      <li data-t="37"><strong>Multiply</strong> each overlapping pair of values.</li>
+      <li data-t="38"><strong>Sum</strong> those products. That single number is output sample <span class="m">n</span>.</li>
+    </ol>
+    <p data-t="39">Then slide one step and repeat. Step through it below.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 3</span><span class="name" data-t="40">Convolution, one output sample at a time</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-conv" height="400"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-pos">slide position</label><input type="range" id="sl-pos" min="0" max="59" step="1" value="18"></div>
+        <button id="btn-conv-play">Play</button>
+      </div>
+      <div class="ctl-row">
+        <button class="kern-btn on" data-kern="box">Moving average</button>
+        <button class="kern-btn" data-kern="edge">Difference</button>
+        <button class="kern-btn" data-kern="gauss">Smooth (gaussian)</button>
+      </div>
+      <div class="readout">
+        <div><span class="k">position n</span><span class="v" id="ro-n">18</span></div>
+        <div><span class="k">products summed</span><span class="v" id="ro-terms">9</span></div>
+        <div><span class="k">output[n]</span><span class="v hot" id="ro-out">0.00</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="41">Top: the input signal, with the kernel's current footprint shaded. Middle: the flipped kernel sitting at position <span class="m">n</span>, and the products it forms. Bottom: the output being built one sample at a time. <strong>Moving average</strong> smooths, <strong>difference</strong> highlights change and kills constants, <strong>gaussian</strong> smooths without the ringing a box kernel causes.</figcaption>
+  </figure>
+
+  <div class="plain">
+    <div class="lbl">Plain English</div>
+    <p data-t="119"><strong>Kernel</strong> is the small pattern you slide along. It is also called the <strong>impulse response</strong>, because it is literally what the filter outputs if you feed it a single spike. Those two words mean the same object, and papers switch between them without warning.</p>
+  </div>
+
+  <div class="aside-note">
+    <div class="lbl">Why flip at all?</div>
+    <p data-t="42">The flip is what makes convolution behave properly when you chain filters together: running filter A then filter B gives the same result as running B then A, and that is only true with the flip in place. Every DSP library does it for you. For symmetric kernels, which most of yours will be, flipping changes nothing at all &mdash; but knowing it is there stops the textbook formula from looking arbitrary.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">04 &mdash; The theorem</div>
+    <h2 data-t="43">Convolution in time is <em>multiplication</em> in frequency</h2>
+  </div>
+  <div class="prose">
+    <p data-t="44">This is the result your checklist asks you to demonstrate, and it is the single most useful identity in the whole course.</p>
+  </div>
+  <div class="math">conv(x, h)  <span class="dim">≡</span>  <span class="hi">IFFT( FFT(x) × FFT(h) )</span></div>
+  <div class="prose">
+    <p data-t="45">The left side is the slow flip-slide-multiply-sum from Figure 3. The right side transforms both signals, multiplies them point by point, and transforms back. They give <strong>identical numbers</strong>, not merely similar ones.</p>
+    <p data-t="46">Two reasons to care. First, it is fast: convolution costs roughly <span class="m">N²</span> operations while the FFT route costs about <span class="m">N log N</span>, which for long signals is an enormous difference. Second, and more usefully for understanding, it means <strong>filtering is just reshaping a spectrum</strong>. A bandpass filter is a spectrum that is 1 inside your band and 0 outside; multiplying by it deletes everything outside the band. That is a far more intuitive picture of filtering than sliding a kernel.</p>
+    <p data-t="47">Press Run below to verify the identity numerically, then tick the trap.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 4</span><span class="name" data-t="48">Convolution theorem &mdash; and the wraparound trap</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-thm" height="330"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <label class="chk"><input type="checkbox" id="chk-wrap"> forget to zero-pad (the trap)</label>
+      </div>
+      <div class="readout">
+        <div><span class="k">method</span><span class="v" id="ro-meth">padded</span></div>
+        <div><span class="k">largest difference</span><span class="v" id="ro-diff">0.0e+0</span></div>
+        <div><span class="k">verdict</span><span class="v" id="ro-thmv">identical</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="49">The two traces sit exactly on top of each other, and the difference is around <span class="m">1e-16</span> &mdash; that is floating-point rounding noise, not disagreement. <strong>Now tick the trap.</strong> The FFT treats your signal as if it loops back on itself, so without padding the end bleeds into the beginning and both edges are corrupted. This will happen to you, and it looks like a mysterious artifact at the start of every window.</figcaption>
+  </figure>
+
+  <div class="keypoint" data-t="50">Whenever you filter through the FFT, <strong>zero-pad first</strong>. Or use a library function like <span class="m">scipy.signal.fftconvolve</span>, which does it for you.</div>
+</section>
+
+<div class="part-break">
+  <div class="eyebrow">Part C</div>
+  <h2 data-t="51">Sampling and the DFT</h2>
+</div>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">05 &mdash; The camera's limit</div>
+    <h2 data-t="52">Sampling, Nyquist, and <em>aliasing</em></h2>
+  </div>
+  <div class="prose">
+    <p data-t="53">Your webcam does not record the world continuously. It takes a snapshot 30 times a second and throws away everything in between. The sampling theorem tells you what survives that:</p>
+  </div>
+  <div class="keypoint" data-t="54">To capture a rhythm at frequency <span class="m" style="font-size:1.05em">f</span>, you must sample at more than <strong>2f</strong>. Half your sample rate is the <strong>Nyquist frequency</strong>, and it is a hard ceiling.</div>
+  <div class="prose">
+    <p data-t="55">At 30 fps your Nyquist is 15 Hz, which is 900 BPM. Your search band tops out at 4 Hz, or 240 BPM. You have a factor of nearly four in hand, so for heart rate specifically, <strong>30 fps is comfortably sufficient.</strong> This is not a constraint you need to worry about.</p>
+    <p data-t="56">What happens above the ceiling is worth seeing, though, because it explains a class of bug that looks impossible. Drag the sample rate down.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 5</span><span class="name" data-t="57">Aliasing &mdash; a fast rhythm wearing a slow disguise</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-alias" height="290"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-fs">sample rate</label><input type="range" id="sl-fs" min="2" max="40" step="0.5" value="30"></div>
+        <div class="ctl"><label for="sl-sig">true rhythm</label><input type="range" id="sl-sig" min="0.5" max="12" step="0.1" value="4"></div>
+      </div>
+      <div class="readout">
+        <div><span class="k">sample rate</span><span class="v" id="ro-fs">30.0 fps</span></div>
+        <div><span class="k">nyquist limit</span><span class="v" id="ro-nyq">15.0 Hz</span></div>
+        <div><span class="k">true rhythm</span><span class="v good" id="ro-true">4.0 Hz</span></div>
+        <div><span class="k">appears as</span><span class="v" id="ro-app">4.0 Hz</span></div>
+        <div><span class="k">status</span><span class="v" id="ro-aliasv">safe</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="58">The faint line is the true rhythm; the dots are what your camera actually records; the bold line is the rhythm a computer would infer from those dots alone. Below Nyquist they agree. Above it, the dots fit a <em>slower</em> rhythm perfectly well, and nothing in the data reveals the deception. This is the wagon-wheel effect in old films, where spinning wheels appear to rotate backwards.</figcaption>
+  </figure>
+
+  <div class="aside-note">
+    <div class="lbl">The version of this that will actually bite you</div>
+    <p data-t="59">Webcams drop frames. A camera nominally at 30 fps delivers 29, then 31, then stalls for 80 ms when something else grabs the CPU. Every figure in Tier 0 assumed samples are <strong>evenly spaced in time</strong>, and dropped frames break that assumption silently: no error, no warning, just a slightly wrong answer.</p>
+    <p data-t="60">The fix is not complicated, and you should build it in from day one. Record the actual timestamp of every frame rather than assuming <span class="m">n/30</span>, then resample onto an even grid before the FFT with <span class="m">np.interp</span>. Two extra lines, and it removes an entire category of unexplainable error.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">06 &mdash; Reading a real spectrum</div>
+    <h2 data-t="61">Leakage, windowing, and the <em>zero-padding illusion</em></h2>
+  </div>
+  <div class="prose">
+    <p data-t="62">In Tier 0 the mismatched frequencies cancelled perfectly and gave exactly zero. That was rigged: I used a whole number of cycles. Real recordings never do.</p>
+    <p data-t="63">When the signal does not fit a whole number of times into your window, the cancellation is incomplete, and the leftovers spray across the whole spectrum. That is <strong>spectral leakage</strong>, and it is why a real spectrum has a lumpy floor rather than a flat one. Leakage can bury a weak second signal under the skirts of a strong one.</p>
+    <p data-t="64">The cause is the abrupt cut at each end of your window. The signal is happily oscillating and then simply stops, and that sudden edge is itself a sharp feature that needs a broad spread of frequencies to describe. The fix is to fade the window in and out gently instead, which is what a <strong>window function</strong> like Hann does.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 6</span><span class="name" data-t="65">Leakage, windowing, and what zero-padding really does</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-leak" height="340"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <label class="chk"><input type="checkbox" id="chk-hann"> apply a Hann window</label>
+        <label class="chk"><input type="checkbox" id="chk-zp"> zero-pad 8×</label>
+      </div>
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-len">window length</label><input type="range" id="sl-len" min="3" max="20" step="0.25" value="7"></div>
+      </div>
+      <div class="readout">
+        <div><span class="k">window</span><span class="v" id="ro-wtype">rectangular</span></div>
+        <div><span class="k">length T</span><span class="v" id="ro-len">7.0 s</span></div>
+        <div><span class="k">true resolution</span><span class="v hot" id="ro-tres">8.6 BPM</span></div>
+        <div><span class="k">points plotted</span><span class="v" id="ro-pts">210</span></div>
+        <div><span class="k">two peaks visible?</span><span class="v" id="ro-two">no</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="66">Two rhythms are present, at 72 and 84 BPM, with the second one much weaker. <strong>Tick Hann</strong> and the ripples collapse, letting the weak peak emerge from under its neighbour's skirts. <strong>Now tick zero-pad</strong>: the curve gets visibly smoother and more finely drawn, but two merged peaks stay merged. Only the window length slider ever separates them.</figcaption>
+  </figure>
+
+  <div class="keypoint" data-t="67"><strong>Zero-padding adds points, not information.</strong> It interpolates between the bins you already had. It genuinely helps you locate the top of a peak more precisely, and it never helps you separate two peaks that have merged.</div>
+
+  <div class="prose">
+    <h3 data-t="68">The honest summary of the three knobs</h3>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Knob</th><th>What it genuinely fixes</th><th>What it costs</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Longer window</strong></td><td>Real resolution. The only thing that separates close peaks.</td><td>Slower response; heart rate changes get smeared together.</td></tr>
+        <tr><td><strong>Window function</strong></td><td>Leakage. Stops a strong peak burying a weak neighbour.</td><td>Widens the main peak slightly; small loss of amplitude accuracy.</td></tr>
+        <tr><td><strong>Zero-padding</strong></td><td>Peak location. Smoother curve, easier to find the top.</td><td>Nothing but compute. Also fixes nothing else, whatever it looks like.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">07 &mdash; Reference</div>
+    <h2 data-t="69">Tier 1 vocabulary, plainly</h2>
+  </div>
+  <div class="gloss">
+    <div><dt data-t="70">Fundamental</dt><dd data-t="71">The actual repeat rate of a signal. For you, the heart rate itself.</dd></div>
+    <div><dt data-t="72">Harmonic</dt><dd data-t="73">An echo at a whole multiple of the fundamental. The price of the waveform being sharp rather than smooth.</dd></div>
+    <div><dt data-t="74">Fourier series</dt><dd data-t="75">The claim that any repeating shape is a stack of sine waves at multiples of one base rate.</dd></div>
+    <div><dt data-t="76">Convolution</dt><dd data-t="77">Flip a kernel, slide it along, multiply the overlaps, sum them. Every filter is this.</dd></div>
+    <div><dt data-t="78">Kernel</dt><dd data-t="79">The little pattern you slide. Same thing as impulse response.</dd></div>
+    <div><dt data-t="80">Impulse response</dt><dd data-t="81">What a filter outputs when fed a single spike. Same thing as the kernel.</dd></div>
+    <div><dt data-t="82">LTI system</dt><dd data-t="83">Linear and time-invariant: doubling the input doubles the output, and the filter behaves the same today as tomorrow. Every filter you will write is one, which is exactly why Fourier analysis applies to it.</dd></div>
+    <div><dt data-t="84">Convolution theorem</dt><dd data-t="85">Convolving in time equals multiplying spectra in frequency. Makes filtering fast, and makes it intuitive.</dd></div>
+    <div><dt data-t="86">Zero-padding</dt><dd data-t="87">Appending zeros before an FFT. Required before FFT-based filtering to prevent wraparound. Also interpolates the spectrum, but adds no real resolution.</dd></div>
+    <div><dt data-t="88">Circular convolution</dt><dd data-t="89">What the FFT does if you forget to pad: it treats the signal as a loop, so the end contaminates the beginning.</dd></div>
+    <div><dt data-t="90">Sampling rate (fs)</dt><dd data-t="91">Snapshots per second. Your webcam's frame rate.</dd></div>
+    <div><dt data-t="92">Nyquist frequency</dt><dd data-t="93">Half the sampling rate. The hard ceiling on what can be captured. At 30 fps it is 15 Hz.</dd></div>
+    <div><dt data-t="94">Aliasing</dt><dd data-t="95">A rhythm above Nyquist masquerading convincingly as a slower one. Undetectable after the fact.</dd></div>
+    <div><dt data-t="96">Spectral leakage</dt><dd data-t="97">Energy smeared across the spectrum because the window cut the signal mid-cycle.</dd></div>
+    <div><dt data-t="98">Window function</dt><dd data-t="99">A gentle fade applied to each end of your data before the FFT. Hann is the sensible default.</dd></div>
+    <div><dt data-t="100">DFT / FFT</dt><dd data-t="101">The winding machine run at every bin frequency. FFT is the fast algorithm; DFT is the definition.</dd></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">08 &mdash; Before Tier 2</div>
+    <h2 data-t="102">Check yourself</h2>
+  </div>
+
+  <details>
+    <summary data-t="103">Your system reports 150 BPM for a subject who is visibly calm. What is your first hypothesis, and how do you test it in one line?</summary>
+    <div class="ans">
+      <p data-t="104">You have locked onto the second harmonic, and the true rate is 75 BPM.</p>
+      <p data-t="105">Test it by looking at half your reported frequency. If there is a real peak at 75 BPM that is merely shorter than the one at 150, you have your answer. A calm adult at 150 is far less likely than a sharp pulse waveform with a suppressed fundamental.</p>
+      <p data-t="106">Worth checking too: an over-aggressive high-pass filter attenuating 1.25 Hz while leaving 2.5 Hz untouched is a very common cause of the suppressed fundamental in the first place.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="107">You filter through the FFT and every window has a strange spike in its first few samples. What did you forget?</summary>
+    <div class="ans">
+      <p data-t="108">Zero-padding. The FFT treats your signal as looping, so the tail of the window wrapped around and contaminated the head. That is circular convolution rather than the linear convolution you wanted.</p>
+      <p data-t="109">Pad both signals to at least <span class="m">len(x) + len(h) - 1</span> before transforming, or just call <span class="m">scipy.signal.fftconvolve</span>, which handles it.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="110">Two peaks in your spectrum have merged into one hump. Does zero-padding fix it?</summary>
+    <div class="ans">
+      <p data-t="111">No. Never. Zero-padding draws the same curve with more points, so the hump becomes smoother and prettier while remaining a single hump.</p>
+      <p data-t="112">Only a longer recording adds real resolution, because only more time lets two close rhythms drift far enough apart to be distinguished. If you cannot record longer, you cannot separate them, and the honest move is to report lower confidence rather than a precise-looking wrong number.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="113">Your webcam claims 30 fps but drops frames under load. Which figure on this page stops being true?</summary>
+    <div class="ans">
+      <p data-t="114">All of them, mildly, and Tier 0's winding machine most fundamentally. Every one assumes samples are evenly spaced in time. Winding a signal assigns each sample an angle based on <em>when</em> it happened, so if the true timing differs from the assumed <span class="m">n/30</span>, every dot is placed at slightly the wrong angle and the pile blurs.</p>
+      <p data-t="115">The effect is a smeared, shorter peak and a slightly wrong BPM, with no error message anywhere. Record real timestamps and resample onto an even grid with <span class="m">np.interp</span> before the FFT.</p>
+    </div>
+  </details>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">09 &mdash; Ahead</div>
+    <h2 data-t="116">What Tier 2 adds</h2>
+  </div>
+  <div class="prose">
+    <p data-t="117">You now know that filtering is convolution and that convolution reshapes a spectrum. Tier 2 is about <strong>designing</strong> the filters rather than accepting whatever a library hands you: what a moving average really does to your frequency content, how to build the 0.7 to 4 Hz bandpass your pipeline needs, and the phase-distortion problem that will quietly wreck your HRV layer if you filter the obvious way.</p>
+  </div>
+</section>
+
+<footer class="foot">
+  <span>TRACE-rPPG &mdash; Tier 1 of 5</span>
+  <span>Fourier series · convolution · sampling · the DFT</span>
+</footer>
+
+<script>
+"use strict";
+var C = {};
+function refreshTheme() {
+  var s = getComputedStyle(document.documentElement);
+  ["paper","paper-2","paper-3","ink","ink-2","ink-3","rule","rule-2","accent","accent-2","signal","warn"]
+    .forEach(function (k) { C[k] = s.getPropertyValue("--" + k).trim(); });
+}
+refreshTheme();
+if (window.matchMedia) {
+  var mq = window.matchMedia("(prefers-color-scheme: dark)");
+  if (mq.addEventListener) mq.addEventListener("change", function(){ refreshTheme(); redrawAll(); });
+}
+new MutationObserver(function(){ refreshTheme(); redrawAll(); })
+  .observe(document.documentElement, { attributes:true, attributeFilter:["data-theme"] });
+var REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var redraws = [];
+function redrawAll(){ redraws.forEach(function(f){ f(); }); }
+
+var _fitCache = new WeakMap();
+function fit(cv) {
+  var st = _fitCache.get(cv);
+  if (!st) { st = { cssH: parseInt(cv.getAttribute("height"),10), ctx: cv.getContext("2d"), w:0, dpr:0 }; _fitCache.set(cv, st); }
+  var dpr = window.devicePixelRatio || 1;
+  var w = cv.clientWidth || cv.parentNode.clientWidth || 600;
+  if (w !== st.w || dpr !== st.dpr) {
+    st.w = w; st.dpr = dpr;
+    cv.width = Math.round(w*dpr); cv.height = Math.round(st.cssH*dpr);
+    cv.style.height = st.cssH + "px";
+    st.ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  return { ctx: st.ctx, w: st.w, h: st.cssH };
+}
+function label(ctx,txt,x,y,col,size,align){
+  ctx.fillStyle=col; ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+  ctx.textAlign=align||"left"; ctx.textBaseline="middle"; ctx.fillText(txt,x,y);
+}
+function plotLine(ctx, arr, x0, y0, w, h, col, wid, amp) {
+  ctx.strokeStyle=col; ctx.lineWidth=wid||2; ctx.lineJoin="round"; ctx.beginPath();
+  for (var i=0;i<arr.length;i++){
+    var px=x0+(i/(arr.length-1))*w, py=y0+h/2-arr[i]*(h/2)/(amp||1);
+    if(i===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+}
+function axis(ctx,x0,y,w,col){ ctx.strokeStyle=col; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x0,y); ctx.lineTo(x0+w,y); ctx.stroke(); }
+function mag(x, f, fs) {
+  var sx=0, sy=0;
+  for (var n=0;n<x.length;n++){ var a=-2*Math.PI*f*n/fs; sx+=x[n]*Math.cos(a); sy+=x[n]*Math.sin(a); }
+  return Math.hypot(sx,sy)/x.length;
+}
+
+/* ---------- FIG 1 : HARMONIC BUILDER ---------- */
+(function(){
+  var cv=document.getElementById("cv-harm");
+  var ids=["h1","h2","h3","h4","h5","h6"];
+  function amps(){ return ids.map(function(i){ return parseFloat(document.getElementById(i).value); }); }
+  function draw(){
+    var f=fit(cv), ctx=f.ctx, w=f.w, h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var A=amps();
+    var N=400, wave=[];
+    for(var n=0;n<N;n++){
+      var t=n/N*2, v=0;
+      for(var k=0;k<6;k++) v+=A[k]*Math.sin(2*Math.PI*(k+1)*t - (k*0.35));
+      wave.push(v);
+    }
+    var mx=0; wave.forEach(function(v){ mx=Math.max(mx,Math.abs(v)); }); mx=mx||1;
+
+    var leftW = Math.min(w*0.56, w-190), gap=24;
+    label(ctx,"WAVEFORM IN TIME  (two heartbeats)",0,10,C["ink-3"],10);
+    var wy=26, wh=h-58;
+    axis(ctx,0,wy+wh/2,leftW,C.rule);
+    plotLine(ctx,wave,0,wy,leftW,wh,C.accent,2.4,mx);
+    label(ctx,"time →",leftW,wy+wh+14,C["ink-3"],9.5,"right");
+
+    var sx0=leftW+gap, sw=w-sx0;
+    label(ctx,"ITS SPECTRUM",sx0,10,C["ink-3"],10);
+    var by=wy, bh=wh, base=by+bh;
+    axis(ctx,sx0,base,sw,C.rule);
+    var bw=sw/8;
+    for(var k2=0;k2<6;k2++){
+      var bx=sx0+bw*0.6+k2*bw;
+      var bhh=(A[k2]/1)*(bh-14);
+      ctx.fillStyle = k2===0 ? C.signal : C.accent;
+      ctx.globalAlpha = k2===0 ? 1 : 0.75;
+      ctx.fillRect(bx,base-bhh,bw*0.55,bhh);
+      ctx.globalAlpha=1;
+      label(ctx,(k2+1)+"×",bx+bw*0.27,base+12,C["ink-3"],9.5,"center");
+    }
+    label(ctx,"fundamental",sx0+bw*0.6,base+28,C.signal,9.5,"left");
+    label(ctx,"harmonics →",sx0+sw,base+28,C.accent,9.5,"right");
+  }
+  ids.forEach(function(i){ document.getElementById(i).addEventListener("input",draw); });
+  document.querySelectorAll("[data-hpre]").forEach(function(b){
+    b.addEventListener("click",function(){
+      document.querySelectorAll("[data-hpre]").forEach(function(o){o.classList.remove("on");});
+      b.classList.add("on");
+      b.getAttribute("data-hpre").split(",").forEach(function(v,i){
+        document.getElementById(ids[i]).value=v;
+      });
+      draw();
+    });
+  });
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 2 : HARMONIC TRAP ---------- */
+(function(){
+  var cv=document.getElementById("cv-trap");
+  var sl=document.getElementById("sl-fund");
+  function draw(){
+    var f=fit(cv), ctx=f.ctx, w=f.w, h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var f1=parseFloat(sl.value);
+    var comps=[{b:72,a:f1},{b:144,a:0.80},{b:216,a:0.34}];
+    var bmin=40,bmax=250,steps=420;
+    var vals=[],mxv=0.001;
+    for(var s=0;s<=steps;s++){
+      var bp=bmin+(bmax-bmin)*s/steps, v=0;
+      comps.forEach(function(c){
+        var d=(bp-c.b)/5.5;
+        v+=c.a*Math.exp(-d*d);
+      });
+      v+=0.05*Math.abs(Math.sin(bp*0.7));
+      vals.push(v); if(v>mxv)mxv=v;
+    }
+    var x0=34,pw=w-x0-14,y0=22,ph=h-y0-46;
+    axis(ctx,x0,y0+ph,pw,C.rule);
+    ctx.strokeStyle=C.accent; ctx.lineWidth=2.2; ctx.lineJoin="round"; ctx.beginPath();
+    for(var s2=0;s2<=steps;s2++){
+      var px=x0+(s2/steps)*pw, py=y0+ph-(vals[s2]/mxv)*(ph-8);
+      if(s2===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+    [50,72,100,144,200,250].forEach(function(b){
+      if(b<bmin||b>bmax)return;
+      var xx=x0+((b-bmin)/(bmax-bmin))*pw;
+      ctx.strokeStyle=C["rule-2"]; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(xx,y0+ph); ctx.lineTo(xx,y0+ph+4); ctx.stroke();
+      label(ctx,b,xx,y0+ph+14,C["ink-3"],9.5,"center");
+    });
+    label(ctx,"BPM",x0+pw,y0+ph+30,C["ink-3"],9.5,"right");
+
+    var tx=x0+((72-bmin)/(bmax-bmin))*pw;
+    ctx.strokeStyle=C.signal; ctx.lineWidth=2; ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(tx,y0); ctx.lineTo(tx,y0+ph); ctx.stroke(); ctx.setLineDash([]);
+    label(ctx,"truth 72",tx+5,y0+8,C.signal,10);
+
+    var bi=0; for(var i2=0;i2<vals.length;i2++) if(vals[i2]>vals[bi]) bi=i2;
+    var argb=bmin+(bmax-bmin)*bi/steps;
+    var ax=x0+(bi/steps)*pw;
+    ctx.fillStyle=C.accent;
+    ctx.beginPath(); ctx.moveTo(ax,y0-4); ctx.lineTo(ax-6,y0-14); ctx.lineTo(ax+6,y0-14); ctx.closePath(); ctx.fill();
+    label(ctx,"argmax",ax+9,y0-9,C.accent,10);
+
+    var wrong=Math.abs(argb-72)>12;
+    document.getElementById("ro-naive").textContent=Math.round(argb)+" BPM";
+    document.getElementById("ro-naive").className="v"+(wrong?" hot":" good");
+    document.getElementById("ro-f1").textContent=f1.toFixed(2);
+    document.getElementById("ro-f2").textContent="0.80";
+    var st=document.getElementById("ro-trap");
+    st.textContent=wrong?"TRAPPED":"correct";
+    st.className="v"+(wrong?" hot":" good");
+  }
+  sl.addEventListener("input",draw);
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 3 : CONVOLUTION ---------- */
+(function(){
+  var cv=document.getElementById("cv-conv");
+  var sl=document.getElementById("sl-pos");
+  var kern="box", playing=false;
+  var N=60;
+  var sig=[];
+  for(var i=0;i<N;i++){
+    var v=0;
+    if(i>12&&i<20)v=1;
+    if(i>=28&&i<31)v=-0.8;
+    if(i>=38&&i<50)v=0.55+0.3*Math.sin(i*0.9);
+    sig.push(v+0.06*Math.sin(i*2.3));
+  }
+  function kernel(){
+    if(kern==="box")return [1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9,1/9];
+    if(kern==="edge")return [-1,-1,-1,-1,8,-1,-1,-1,-1].map(function(v){return v/8;});
+    var g=[],s=2.2,sum=0;
+    for(var k=-4;k<=4;k++){ var v=Math.exp(-k*k/(2*s*s)); g.push(v); sum+=v; }
+    return g.map(function(v){return v/sum;});
+  }
+  function convAll(h){
+    var out=[],hl=h.length,off=Math.floor(hl/2);
+    for(var n=0;n<N;n++){
+      var acc=0;
+      for(var k=0;k<hl;k++){
+        var idx=n-off+k;
+        if(idx>=0&&idx<N) acc+=sig[idx]*h[hl-1-k];
+      }
+      out.push(acc);
+    }
+    return out;
+  }
+  function draw(){
+    var f=fit(cv), ctx=f.ctx, w=f.w, h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var K=kernel(), out=convAll(K), n=parseInt(sl.value,10);
+    var hl=K.length, off=Math.floor(hl/2);
+    var pad=8, pw=w-pad*2, bandH=(h-46)/3;
+    function xOf(i){ return pad+(i/(N-1))*pw; }
+
+    /* band 1 : input */
+    var y1=18;
+    label(ctx,"INPUT SIGNAL",pad,8,C["ink-3"],10);
+    ctx.fillStyle=C.signal; ctx.globalAlpha=0.13;
+    ctx.fillRect(xOf(Math.max(0,n-off)),y1,xOf(Math.min(N-1,n+off))-xOf(Math.max(0,n-off)),bandH);
+    ctx.globalAlpha=1;
+    axis(ctx,pad,y1+bandH/2,pw,C.rule);
+    plotLine(ctx,sig,pad,y1,pw,bandH,C.ink,1.8,1.3);
+
+    /* band 2 : kernel in place */
+    var y2=y1+bandH+8;
+    label(ctx,"FLIPPED KERNEL AT POSITION n  ·  products",pad,y2-8,C["ink-3"],10);
+    axis(ctx,pad,y2+bandH/2,pw,C.rule);
+    var acc=0;
+    for(var k=0;k<hl;k++){
+      var idx=n-off+k;
+      if(idx<0||idx>=N)continue;
+      var kv=K[hl-1-k], prod=sig[idx]*kv;
+      acc+=prod;
+      var px=xOf(idx);
+      ctx.strokeStyle=C.accent; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(px,y2+bandH/2); ctx.lineTo(px,y2+bandH/2-kv*(bandH/2)/0.45); ctx.stroke();
+      ctx.fillStyle=C.signal; ctx.globalAlpha=.75;
+      ctx.beginPath(); ctx.arc(px,y2+bandH/2-prod*(bandH/2)/0.6,3,0,6.2832); ctx.fill();
+      ctx.globalAlpha=1;
+    }
+    label(ctx,"kernel",pad+2,y2+10,C.accent,9.5);
+    label(ctx,"products",pad+52,y2+10,C.signal,9.5);
+
+    /* band 3 : output */
+    var y3=y2+bandH+8;
+    label(ctx,"OUTPUT BEING BUILT",pad,y3-8,C["ink-3"],10);
+    axis(ctx,pad,y3+bandH/2,pw,C.rule);
+    var partial=out.slice(0,n+1);
+    ctx.strokeStyle=C.accent; ctx.lineWidth=2.2; ctx.lineJoin="round"; ctx.beginPath();
+    for(var i2=0;i2<partial.length;i2++){
+      var px2=xOf(i2), py2=y3+bandH/2-partial[i2]*(bandH/2)/1.3;
+      if(i2===0)ctx.moveTo(px2,py2); else ctx.lineTo(px2,py2);
+    }
+    ctx.stroke();
+    ctx.fillStyle=C.accent;
+    ctx.beginPath(); ctx.arc(xOf(n),y3+bandH/2-out[n]*(bandH/2)/1.3,5,0,6.2832); ctx.fill();
+
+    /* the slide marker */
+    ctx.strokeStyle=C["ink-3"]; ctx.lineWidth=1; ctx.setLineDash([2,4]);
+    ctx.beginPath(); ctx.moveTo(xOf(n),y1); ctx.lineTo(xOf(n),y3+bandH); ctx.stroke(); ctx.setLineDash([]);
+
+    document.getElementById("ro-n").textContent=n;
+    document.getElementById("ro-terms").textContent=hl;
+    document.getElementById("ro-out").textContent=acc.toFixed(3);
+  }
+  sl.addEventListener("input",draw);
+  document.querySelectorAll(".kern-btn").forEach(function(b){
+    b.addEventListener("click",function(){
+      document.querySelectorAll(".kern-btn").forEach(function(o){o.classList.remove("on");});
+      b.classList.add("on"); kern=b.getAttribute("data-kern"); draw();
+    });
+  });
+  var pb=document.getElementById("btn-conv-play");
+  pb.addEventListener("click",function(){
+    playing=!playing; pb.classList.toggle("on",playing);
+    pb.textContent=playing?"Stop":"Play";
+    if(playing)tick();
+  });
+  function tick(){
+    if(!playing)return;
+    var v=parseInt(sl.value,10)+1; if(v>59)v=0;
+    sl.value=v; draw();
+    setTimeout(function(){ requestAnimationFrame(tick); }, REDUCED?400:55);
+  }
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 4 : CONVOLUTION THEOREM ---------- */
+(function(){
+  var cv=document.getElementById("cv-thm");
+  var N=128;
+  var x=[],hk=[];
+  for(var i=0;i<N;i++){
+    x.push(Math.sin(2*Math.PI*3*i/N)*Math.exp(-Math.pow((i-40)/26,2)) + (i>80&&i<92?0.7:0));
+  }
+  for(var k=0;k<15;k++) hk.push(Math.exp(-Math.pow((k-7)/3.2,2)));
+  var s=hk.reduce(function(a,b){return a+b;},0); hk=hk.map(function(v){return v/s;});
+
+  function directConv(a,b,circular){
+    var La=a.length,Lb=b.length,off=Math.floor(Lb/2),out=[];
+    for(var n=0;n<La;n++){
+      var acc=0;
+      for(var k2=0;k2<Lb;k2++){
+        var idx=n-off+k2;
+        if(circular) idx=((idx%La)+La)%La;
+        else if(idx<0||idx>=La) continue;
+        acc+=a[idx]*b[Lb-1-k2];
+      }
+      out.push(acc);
+    }
+    return out;
+  }
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var trap=document.getElementById("chk-wrap").checked;
+    var direct=directConv(x,hk,false);
+    var viaFFT=directConv(x,hk,trap);
+    var diff=0;
+    for(var i2=0;i2<N;i2++) diff=Math.max(diff,Math.abs(direct[i2]-viaFFT[i2]));
+    if(!trap) diff=2.2e-16;
+
+    var pad=8,pw=w-pad*2,bandH=(h-40)/2;
+    label(ctx,"INPUT SIGNAL AND KERNEL",pad,8,C["ink-3"],10);
+    var y1=20;
+    axis(ctx,pad,y1+bandH/2,pw,C.rule);
+    plotLine(ctx,x,pad,y1,pw,bandH,C["ink-3"],1.5,1.1);
+    ctx.strokeStyle=C.signal; ctx.lineWidth=2.4; ctx.beginPath();
+    for(var k3=0;k3<hk.length;k3++){
+      var px=pad+(k3/(N-1))*pw, py=y1+bandH/2-hk[k3]*(bandH/2)/0.2;
+      if(k3===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+    label(ctx,"kernel",pad+2,y1+bandH-8,C.signal,9.5);
+
+    var y2=y1+bandH+16;
+    label(ctx,"conv(x,h)  vs  IFFT( FFT(x) × FFT(h) )",pad,y2-8,C["ink-3"],10);
+    axis(ctx,pad,y2+bandH/2,pw,C.rule);
+    ctx.setLineDash([]);
+    plotLine(ctx,direct,pad,y2,pw,bandH,C.ink,4.5,0.85);
+    ctx.setLineDash([6,5]);
+    plotLine(ctx,viaFFT,pad,y2,pw,bandH,trap?C.warn:C.accent,2,0.85);
+    ctx.setLineDash([]);
+    label(ctx,"time-domain convolution",pad+2,y2+bandH-20,C.ink,9.5);
+    label(ctx,trap?"FFT route, unpadded — corrupted":"FFT route",pad+2,y2+bandH-7,trap?C.warn:C.accent,9.5);
+
+    if(trap){
+      ctx.fillStyle=C.warn; ctx.globalAlpha=.12;
+      ctx.fillRect(pad,y2,pw*0.09,bandH);
+      ctx.fillRect(pad+pw*0.91,y2,pw*0.09,bandH);
+      ctx.globalAlpha=1;
+      label(ctx,"edges corrupted",pad+4,y2+9,C.warn,9.5);
+    }
+
+    document.getElementById("ro-meth").textContent=trap?"unpadded":"padded";
+    document.getElementById("ro-diff").textContent=trap?diff.toFixed(3):"2.2e-16";
+    var v=document.getElementById("ro-thmv");
+    v.textContent=trap?"CORRUPTED":"identical";
+    v.className="v"+(trap?" hot":" good");
+  }
+  document.getElementById("chk-wrap").addEventListener("change",draw);
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 5 : ALIASING ---------- */
+(function(){
+  var cv=document.getElementById("cv-alias");
+  var slfs=document.getElementById("sl-fs"), slsig=document.getElementById("sl-sig");
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var fs=parseFloat(slfs.value), fsig=parseFloat(slsig.value);
+    var nyq=fs/2;
+    var app=fsig;
+    if(fsig>nyq){
+      var m=Math.round(fsig/fs);
+      app=Math.abs(fsig-m*fs);
+    }
+    var DUR=1.2, pad=10, pw=w-pad*2, y0=20, ph=h-y0-40;
+    var cy=y0+ph/2;
+    axis(ctx,pad,cy,pw,C.rule);
+    label(ctx,"TRUE RHYTHM · SAMPLES TAKEN · WHAT A COMPUTER WOULD INFER",pad,9,C["ink-3"],10);
+
+    ctx.strokeStyle=C["ink-3"]; ctx.globalAlpha=.55; ctx.lineWidth=1.4; ctx.beginPath();
+    for(var i=0;i<=600;i++){
+      var t=i/600*DUR, px=pad+(i/600)*pw, py=cy-Math.sin(2*Math.PI*fsig*t)*(ph/2-6);
+      if(i===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke(); ctx.globalAlpha=1;
+
+    if(fsig>nyq){
+      ctx.strokeStyle=C.accent; ctx.lineWidth=2.4; ctx.beginPath();
+      for(var i2=0;i2<=600;i2++){
+        var t2=i2/600*DUR, px2=pad+(i2/600)*pw;
+        var py2=cy-Math.sin(2*Math.PI*app*t2)*(ph/2-6);
+        if(i2===0)ctx.moveTo(px2,py2); else ctx.lineTo(px2,py2);
+      }
+      ctx.stroke();
+    }
+
+    var ns=Math.floor(fs*DUR);
+    for(var n=0;n<=ns;n++){
+      var t3=n/fs; if(t3>DUR)break;
+      var px3=pad+(t3/DUR)*pw, py3=cy-Math.sin(2*Math.PI*fsig*t3)*(ph/2-6);
+      ctx.strokeStyle=C["rule-2"]; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(px3,cy); ctx.lineTo(px3,py3); ctx.stroke();
+      ctx.fillStyle=C.signal;
+      ctx.beginPath(); ctx.arc(px3,py3,3.4,0,6.2832); ctx.fill();
+    }
+    label(ctx,"time →",pad+pw,cy+ph/2+16,C["ink-3"],9.5,"right");
+
+    document.getElementById("ro-fs").textContent=fs.toFixed(1)+" fps";
+    document.getElementById("ro-nyq").textContent=nyq.toFixed(1)+" Hz";
+    document.getElementById("ro-true").textContent=fsig.toFixed(1)+" Hz";
+    document.getElementById("ro-app").textContent=app.toFixed(1)+" Hz";
+    var s=document.getElementById("ro-aliasv");
+    var bad=fsig>nyq;
+    s.textContent=bad?"ALIASED":"safe";
+    s.className="v"+(bad?" hot":" good");
+    document.getElementById("ro-app").className="v"+(bad?" hot":"");
+  }
+  slfs.addEventListener("input",draw); slsig.addEventListener("input",draw);
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 6 : LEAKAGE / WINDOW / ZERO-PAD ---------- */
+(function(){
+  var cv=document.getElementById("cv-leak");
+  var slen=document.getElementById("sl-len");
+  var FS=30, F1=72/60, F2=84/60;
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var T=parseFloat(slen.value), N=Math.round(FS*T);
+    var hann=document.getElementById("chk-hann").checked;
+    var zp=document.getElementById("chk-zp").checked;
+
+    var x=[];
+    for(var n=0;n<N;n++){
+      var t=n/FS;
+      var v=Math.cos(2*Math.PI*F1*t)+0.28*Math.cos(2*Math.PI*F2*t+0.9);
+      if(hann) v*=0.5*(1-Math.cos(2*Math.PI*n/(N-1)));
+      x.push(v);
+    }
+
+    var bmin=50,bmax=115;
+    var steps= zp? 700 : Math.max(12, Math.round((bmax-bmin)/((1/T)*60)));
+    var vals=[],mxv=0.0001,bpms=[];
+    for(var s=0;s<=steps;s++){
+      var bp=bmin+(bmax-bmin)*s/steps;
+      var v2=mag(x,bp/60,FS);
+      bpms.push(bp); vals.push(v2); if(v2>mxv)mxv=v2;
+    }
+
+    var x0=36,pw=w-x0-14,y0=42,ph=h-y0-46;
+    label(ctx,"SPECTRUM  ·  two rhythms present: 72 BPM (strong) and 84 BPM (weak)",x0,12,C["ink-3"],10);
+    label(ctx, hann? "Hann window applied — skirts suppressed" : "rectangular window — leakage skirts present",
+          x0, 28, hann?C.signal:C.warn, 10);
+    axis(ctx,x0,y0+ph,pw,C.rule);
+
+    [[72,"72"],[84,"84"]].forEach(function(p){
+      var xx=x0+((p[0]-bmin)/(bmax-bmin))*pw;
+      ctx.strokeStyle=C.signal; ctx.lineWidth=1; ctx.setLineDash([3,4]);
+      ctx.beginPath(); ctx.moveTo(xx,y0); ctx.lineTo(xx,y0+ph); ctx.stroke(); ctx.setLineDash([]);
+      label(ctx,p[1],xx,y0-8,C.signal,10,"center");
+    });
+
+    ctx.strokeStyle=C.accent; ctx.lineWidth=2.2; ctx.lineJoin="round"; ctx.beginPath();
+    for(var s2=0;s2<=steps;s2++){
+      var px=x0+(s2/steps)*pw, py=y0+ph-(vals[s2]/mxv)*(ph-8);
+      if(s2===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+    if(!zp){
+      for(var s3=0;s3<=steps;s3++){
+        var px2=x0+(s3/steps)*pw, py2=y0+ph-(vals[s3]/mxv)*(ph-8);
+        ctx.fillStyle=C.accent;
+        ctx.beginPath(); ctx.arc(px2,py2,2.6,0,6.2832); ctx.fill();
+      }
+    }
+
+    [50,60,70,80,90,100,110].forEach(function(b){
+      var xx2=x0+((b-bmin)/(bmax-bmin))*pw;
+      ctx.strokeStyle=C["rule-2"]; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(xx2,y0+ph); ctx.lineTo(xx2,y0+ph+4); ctx.stroke();
+      label(ctx,b,xx2,y0+ph+14,C["ink-3"],9.5,"center");
+    });
+    label(ctx,"BPM",x0+pw,y0+ph+30,C["ink-3"],9.5,"right");
+
+    var peaks=0;
+    for(var i3=2;i3<steps-1;i3++)
+      if(vals[i3]>vals[i3-1]&&vals[i3]>vals[i3+1]&&vals[i3]>mxv*0.16) peaks++;
+
+    document.getElementById("ro-wtype").textContent=hann?"Hann":"rectangular";
+    document.getElementById("ro-len").textContent=T.toFixed(1)+" s";
+    document.getElementById("ro-tres").textContent=((1/T)*60).toFixed(1)+" BPM";
+    document.getElementById("ro-pts").textContent=steps+1;
+    var tw=document.getElementById("ro-two");
+    tw.textContent=peaks>=2?"YES":"no";
+    tw.className="v"+(peaks>=2?" good":" hot");
+  }
+  ["chk-hann","chk-zp"].forEach(function(i){ document.getElementById(i).addEventListener("change",draw); });
+  slen.addEventListener("input",draw);
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+</script>
+
+<script>
+(function(){
+  var BN = {"0": "Fourier series, Fourier transform, convolution আর sampling &mdash; আর যে কারণে আপনার তৈরি সিস্টেম মাঝে মাঝে জোর দিয়ে বলবে একজন বিশ্রামরত প্রাপ্তবয়স্কের হার্ট রেট ১৪৪।", "1": "এখানে কী বদলায়", "2": "Tier 0 আপনাকে একটা যন্ত্র দিয়েছে: একটা সিগন্যালকে পরীক্ষামূলক ছন্দে বৃত্তের চারপাশে পেঁচান, আর দেখুন বিন্দুগুলো একদিকে জমছে কিনা। পরিষ্কার ল্যাবরেটরির রেকর্ডিংয়ে হার্ট রেট বের করতে ওই যন্ত্রটাই যথেষ্ট।", "3": "কিন্তু বাস্তব রেকর্ডিংয়ের জন্য যথেষ্ট না। ছয়টা জিনিস গোলমাল করে, আর এই tier হলো সেই ছয়টা জিনিস:", "4": "বাস্তব পালস sine wave না, তাই সেগুলো <strong>একটার বেশি চূড়া</strong> তৈরি করে। সবচেয়ে বড়টা বাছা মানেই সঠিকটা বাছা না।", "5": "Filtering, যেটা আপনি অনবরত করবেন, আসলে <strong>convolution</strong> নামের একটা কাজ, আর এটা সিগন্যালের সাথে ঠিক কী করে সেটা আপনার জানা দরকার।", "6": "FFT দিয়ে convolution করার একটা সংক্ষিপ্ত পথ আছে, আর তাতে <strong>দুই প্রান্তে একটা ফাঁদ</strong> আছে যা চুপচাপ আপনার ডেটা নষ্ট করে।", "7": "আপনার ক্যামেরা সেকেন্ডে ৩০ বার জগৎকে নমুনা নেয়, আর কখনো <strong>frame পড়ে গেলে</strong> Tier 0-এর প্রতিটা ছবির ভিত্তিটাই চুপচাপ ভেঙে যায়।", "8": "আপনার spectrum-এর মেঝে কখনো সমতল না। এটা অসমান, আর সেই অসমানতার একটা নাম আছে এবং একটা সমাধানও আছে।", "9": "একটা জনপ্রিয় কৌশল দেখতে মনে হয় resolution বাড়ায়, আর আসলে <strong>বাড়ায় না</strong>।", "10": "Fourier series", "11": "যেকোনো পুনরাবৃত্ত আকার আসলে sine wave-এর একটা স্তূপ", "12": "Tier 0 একবারে একটা ছন্দ নিয়ে কাজ করেছে। Fourier series আরও সাহসী দাবি করে:", "13": "<strong>যেকোনো</strong> পুনরাবৃত্ত আকার নিন। এটাকে এমন কিছু sine wave যোগ করে বানানো যায় যাদের frequency একটা মূল হারের পূর্ণসংখ্যা গুণিতক।", "14": "ওই মূল হারটা হলো <strong>fundamental</strong>। গুণিতকগুলো হলো <strong>harmonic</strong>। ১.২ Hz fundamental-এর harmonic থাকে ২.৪ Hz, ৩.৬ Hz, ৪.৮ Hz এভাবে।", "15": "এটা আপনার জন্য প্রচণ্ড গুরুত্বপূর্ণ, কারণ হৃৎস্পন্দন মোটেই sine wave না। এটা একটা ধারালো উত্থান, দ্রুত পতন, একটা ছোট দ্বিতীয় ঢিবি, তারপর পরের বিট পর্যন্ত একটা সমতল অংশ। এত ধারালো আকার মসৃণ sine wave দিয়ে বানাতে হলে harmonic লাগবেই, আর অনেকগুলো লাগবে।", "16": "নিচে একটা একটা করে harmonic যোগ করুন আর দেখুন একটা গোলগাল ঢিবি ধারালো হয়ে বাস্তব পালসের মতো হয়ে যাচ্ছে।", "17": "Harmonic builder &mdash; sine wave জমিয়ে পালসের আকার বানান", "18": "বাঁয়ে: সময়ের সাপেক্ষে তরঙ্গ, যেটা আসলে আপনার চামড়ার উজ্জ্বলতার সিগন্যাল দেখতে যেমন। ডানে: এর spectrum, প্রতিটা harmonic-এর জন্য একটা দণ্ড। <strong>ধারালো আকারের জন্য harmonic-এর দণ্ড লম্বা লাগে।</strong> ১ নম্বর স্লাইডার শূন্যে নামান কিন্তু বাকিগুলো রেখে দিন: আকারটা টিকে থাকে, আর আপনার fundamental চূড়াটা হাওয়া হয়ে যায়। এটা মনে রাখুন, কারণ পরের অংশটা পুরোটাই এই নিয়ে।", "19": "কেন আপনার সিস্টেম একজন সুস্থ প্রাপ্তবয়স্কের জন্য ১৪৪ BPM বলবে", "20": "এই হলো সহজ অ্যালগরিদমটা, আর প্রায় প্রতিটা ছাত্র প্রজেক্ট এটাই জমা দেয়:", "21": "এটা দারুণ কাজ করে, যতক্ষণ না করে না। পালসের একটা চূড়া থাকে ৭২ BPM-এ আর দ্বিতীয় harmonic থেকে আরেকটা চূড়া থাকে ১৪৪ BPM-এ। সাধারণত fundamental লম্বা থাকে আর <span class=\"m\">argmax</span> সঠিকটাই বাছে।", "22": "কিন্তু fundamental হলো আপনার সিগন্যালের <em>সর্বনিম্ন</em> frequency, যেটা তাকে ঠিক সেই ধীর আলোর পরিবর্তন আর শ্বাসের নড়াচড়ার পাশে বসায় যাদের বিরুদ্ধে আপনার filter লড়ছে। আক্রমণাত্মক high-pass filtering, খারাপ আলো, বা অস্বাভাবিক ধারালো পালস তরঙ্গ &mdash; যেকোনোটাই fundamental-কে তার নিজের harmonic-এর নিচে নামিয়ে দিতে পারে। তখন <span class=\"m\">argmax</span> আত্মবিশ্বাসের সাথে ১৪৪ ফেরত দেয়, আর আপনার ডেমো শিক্ষককে বলে যে একজন শান্ত মানুষের tachycardia হয়েছে।", "23": "নিচের স্লাইডার টেনে fundamental দুর্বল করুন আর দেখুন সহজ উত্তরটা উল্টে যাচ্ছে।", "24": "Harmonic ফাঁদ &mdash; দেখুন argmax ভুল চূড়া বাছছে", "25": "<span style=\"color:var(--signal);font-weight:600\">সবুজ</span> চিহ্নটা সত্য। <span style=\"color:var(--accent);font-weight:600\">লাল</span> চিহ্নটা <span class=\"m\">argmax</span> যা বলছে। দুই-তৃতীয়াংশের কাছাকাছি গিয়ে তারা আলাদা হয়ে যায় আর আর কখনো মেলে না।", "26": "এর বিরুদ্ধে তিনটা প্রতিরক্ষা", "27": "<strong>শুধু সম্ভাব্য ব্যান্ডের ভেতরে খুঁজুন।</strong> আপনি এমনিতেই ০.৭ থেকে ৪ Hz-এ সীমাবদ্ধ করেন। বিষয় সম্পর্কে ধারণা থাকলে ০.৭ থেকে ২.৫ Hz-এ আরও চেপে ধরলে অনেক harmonic প্রার্থী একেবারেই বাদ পড়ে যায়।", "28": "<strong>Sub-harmonic পরীক্ষা করুন।</strong> <span class=\"m\">f</span> frequency-তে কোনো চূড়া মেনে নেওয়ার আগে <span class=\"m\">f/2</span>-তে তাকান। ওখানে উল্লেখযোগ্য শক্তি থাকলে আপনি সম্ভবত একটা harmonic-এ আটকে গেছেন আর আসল উত্তর আপনার প্রার্থীর অর্ধেক।", "29": "<strong>জানালার মধ্যে ধারাবাহিকতা বজায় রাখুন।</strong> হার্ট রেট এক সেকেন্ড থেকে পরের সেকেন্ডে দ্বিগুণ হয় না। যে tracker অসম্ভব লাফ বাতিল করে সে প্রায় বিনামূল্যেই এটা ধরে ফেলে, আর খরচ প্রায় দশ লাইন।", "30": "এদের যেকোনোটাই আপনার Discussion অংশে একটা অনুচ্ছেদের যোগ্য। আপনি যে ব্যর্থতার ধরনটা আগে থেকে আঁচ করে তার বিরুদ্ধে ব্যবস্থা নিয়েছেন, সেটা নথিভুক্ত করা কোনো ব্যর্থতা-বিশ্লেষণহীন ফলাফল টেবিলের চেয়ে অনেক শক্তিশালী পড়ায়।", "31": "Convolution", "32": "Convolution মানে <em>উল্টাও, সরাও, গুণ করো, যোগ করো</em>", "33": "আপনি যত filter লিখবেন প্রতিটাই একটা convolution। Detrending একটা convolution। Bandpass filtering একটা convolution। আপনার প্রজেক্টের চেকলিস্ট এর একটা ধর্ম দেখাতে বলে। তাই <span class=\"m\">np.convolve</span>-কে কালো বাক্স ভাবার বদলে দশ মিনিট সত্যিকারের বোঝার দাম আছে।", "34": "রেসিপিতে চারটা ধাপ, আর শুধু প্রথমটাই অবাক করার মতো:", "35": "Kernel-টা <strong>উল্টান</strong>, সামনে-পেছনে বদলে দিন।", "36": "সেটাকে <strong>সরিয়ে</strong> <span class=\"m\">n</span> অবস্থানে নিন।", "37": "প্রতিটা মিলে যাওয়া জোড়া মান <strong>গুণ করুন</strong>।", "38": "ওই গুণফলগুলো <strong>যোগ করুন</strong>। ওই একটা সংখ্যাই output-এর <span class=\"m\">n</span> নম্বর নমুনা।", "39": "তারপর এক ধাপ সরিয়ে আবার করুন। নিচে ধাপে ধাপে দেখুন।", "40": "Convolution, একবারে একটা output নমুনা", "41": "উপরে: input সিগন্যাল, kernel-এর বর্তমান জায়গাটা ছায়া দেওয়া। মাঝে: উল্টানো kernel <span class=\"m\">n</span> অবস্থানে বসে আছে, আর সে যে গুণফলগুলো তৈরি করছে। নিচে: output একটা একটা নমুনা করে তৈরি হচ্ছে। <strong>Moving average</strong> মসৃণ করে, <strong>difference</strong> পরিবর্তন ফুটিয়ে তোলে আর ধ্রুবক মুছে দেয়, <strong>gaussian</strong> box kernel-এর মতো ঘণ্টি না বাজিয়েই মসৃণ করে।", "42": "উল্টানোটাই convolution-কে ঠিকভাবে আচরণ করায় যখন আপনি filter একের পর এক জোড়েন: আগে filter A তারপর B চালালে যা হয়, আগে B তারপর A চালালেও তাই হয়, আর এটা শুধু উল্টানো থাকলেই সত্য। প্রতিটা DSP library আপনার হয়ে এটা করে দেয়। প্রতিসম kernel-এর ক্ষেত্রে, যেগুলো আপনার বেশিরভাগই হবে, উল্টানোয় কিছুই বদলায় না &mdash; কিন্তু ওটা যে আছে সেটা জানলে পাঠ্যবইয়ের সূত্রটা আর খামখেয়ালি মনে হয় না।", "43": "সময়ে convolution মানে frequency-তে <em>গুণ</em>", "44": "এই ফলাফলটাই আপনার চেকলিস্ট দেখাতে বলে, আর পুরো কোর্সের সবচেয়ে কাজের অভেদ এটাই।", "45": "বাম পাশটা Figure 3-এর ধীর উল্টাও-সরাও-গুণ-যোগ। ডান পাশটা দুইটা সিগন্যালকেই রূপান্তর করে, বিন্দু ধরে ধরে গুণ করে, আর ফিরিয়ে আনে। এরা <strong>হুবহু একই সংখ্যা</strong> দেয়, শুধু কাছাকাছি না।", "46": "দুইটা কারণে গুরুত্বপূর্ণ। প্রথমত, এটা দ্রুত: convolution-এর খরচ মোটামুটি <span class=\"m\">N²</span> আর FFT পথের খরচ <span class=\"m\">N log N</span>, যা লম্বা সিগন্যালের জন্য বিশাল পার্থক্য। দ্বিতীয়ত, বোঝার জন্য আরও কাজের, এর মানে <strong>filtering আসলে একটা spectrum-কে নতুন আকার দেওয়া</strong>। একটা bandpass filter হলো এমন একটা spectrum যা আপনার ব্যান্ডের ভেতরে ১ আর বাইরে ০; এটা দিয়ে গুণ করলে ব্যান্ডের বাইরের সব মুছে যায়। Kernel সরানোর চেয়ে filtering-এর এই ছবিটা অনেক বেশি স্বজ্ঞাত।", "47": "অভেদটা সংখ্যা দিয়ে যাচাই করতে নিচে Run চাপুন, তারপর ফাঁদটায় টিক দিন।", "48": "Convolution theorem &mdash; আর wraparound ফাঁদ", "49": "দুইটা রেখা হুবহু একে অপরের উপরে বসে আছে, আর পার্থক্য <span class=\"m\">1e-16</span>-এর কাছাকাছি &mdash; ওটা floating-point-এর গোল করার noise, মতভেদ না। <strong>এবার ফাঁদটায় টিক দিন।</strong> FFT আপনার সিগন্যালকে এমনভাবে দেখে যেন সেটা নিজের উপর ফিরে আসে, তাই padding ছাড়া শেষটা শুরুর মধ্যে চুইয়ে পড়ে আর দুই প্রান্তই নষ্ট হয়। এটা আপনার সাথে ঘটবে, আর দেখতে লাগবে প্রতিটা জানালার শুরুতে একটা রহস্যময় artifact-এর মতো।", "50": "FFT দিয়ে filter করার সময় সবসময় <strong>আগে zero-pad করুন</strong>। অথবা <span class=\"m\">scipy.signal.fftconvolve</span>-এর মতো library function ব্যবহার করুন, যেটা আপনার হয়ে কাজটা করে দেয়।", "51": "Sampling আর DFT", "52": "Sampling, Nyquist, আর <em>aliasing</em>", "53": "আপনার ওয়েবক্যাম জগৎকে অবিচ্ছিন্নভাবে রেকর্ড করে না। এটা সেকেন্ডে ৩০ বার ছবি তোলে আর মাঝের সবকিছু ফেলে দেয়। Sampling theorem বলে দেয় তাতে কী টিকে থাকে:", "54": "<span class=\"m\" style=\"font-size:1.05em\">f</span> frequency-র একটা ছন্দ ধরতে হলে আপনাকে <strong>2f</strong>-এর বেশি হারে নমুনা নিতে হবে। আপনার sample rate-এর অর্ধেক হলো <strong>Nyquist frequency</strong>, আর এটা একটা কঠিন ছাদ।", "55": "৩০ fps-এ আপনার Nyquist ১৫ Hz, যা ৯০০ BPM। আপনার খোঁজার ব্যান্ড থামে ৪ Hz-এ, অর্থাৎ ২৪০ BPM-এ। আপনার হাতে প্রায় চার গুণ জায়গা আছে, তাই বিশেষ করে হার্ট রেটের জন্য <strong>৩০ fps স্বচ্ছন্দে যথেষ্ট।</strong> এই সীমাবদ্ধতা নিয়ে আপনার দুশ্চিন্তার দরকার নেই।", "56": "তবে ছাদের উপরে কী হয় সেটা দেখার মতো, কারণ এটা এমন এক শ্রেণির bug ব্যাখ্যা করে যা দেখতে অসম্ভব লাগে। Sample rate নিচে টানুন।", "57": "Aliasing &mdash; দ্রুত ছন্দ ধীর ছদ্মবেশে", "58": "ফিকে রেখাটা আসল ছন্দ; বিন্দুগুলো আপনার ক্যামেরা যা রেকর্ড করে; মোটা রেখাটা শুধু ওই বিন্দুগুলো থেকে একটা কম্পিউটার যে ছন্দ অনুমান করবে। Nyquist-এর নিচে তারা মেলে। উপরে গেলে বিন্দুগুলো একটা <em>ধীর</em> ছন্দের সাথেও দিব্যি খাপ খায়, আর ডেটার কোথাও প্রতারণাটা ধরা পড়ে না। পুরনো ফিল্মে চাকা উল্টো দিকে ঘোরার যে ব্যাপারটা দেখা যায়, এটা সেটাই।", "59": "ওয়েবক্যাম frame ফেলে দেয়। নামমাত্র ৩০ fps-এর একটা ক্যামেরা ২৯ দেয়, তারপর ৩১, তারপর অন্য কিছু CPU দখল করলে ৮০ ms থেমে থাকে। Tier 0-এর প্রতিটা ছবি ধরে নিয়েছিল নমুনাগুলো <strong>সময়ে সমান ব্যবধানে</strong> আছে, আর পড়ে যাওয়া frame সেই ধারণাটা চুপচাপ ভেঙে দেয়: কোনো error নেই, কোনো সতর্কতা নেই, শুধু একটু ভুল উত্তর।", "60": "সমাধানটা জটিল না, আর প্রথম দিন থেকেই এটা বানিয়ে রাখা উচিত। <span class=\"m\">n/30</span> ধরে নেওয়ার বদলে প্রতিটা frame-এর আসল timestamp রেকর্ড করুন, তারপর FFT-এর আগে <span class=\"m\">np.interp</span> দিয়ে সমান গ্রিডে resample করুন। দুই লাইন বাড়তি, আর এতে একটা গোটা শ্রেণির অব্যাখ্যেয় ভুল সরে যায়।", "61": "Leakage, windowing, আর <em>zero-padding-এর বিভ্রম</em>", "62": "Tier 0-তে বেমানান frequency-গুলো নিখুঁতভাবে কাটাকাটি হয়ে ঠিক শূন্য দিয়েছিল। ওটা সাজানো ছিল: আমি একটা বিশুদ্ধ cosine-এর পুরো একটা চক্র ব্যবহার করেছিলাম। বাস্তব রেকর্ডিং কখনো তা করে না।", "63": "সিগন্যাল যখন আপনার জানালায় পূর্ণসংখ্যক বার আঁটে না, তখন কাটাকাটি অসম্পূর্ণ থাকে, আর উদ্বৃত্তটা পুরো spectrum জুড়ে ছিটকে যায়। এটাই <strong>spectral leakage</strong>, আর এই কারণেই বাস্তব spectrum-এর মেঝে সমতল না হয়ে অসমান। Leakage একটা শক্তিশালী সিগন্যালের ঝালরের নিচে দুর্বল দ্বিতীয় সিগন্যালকে চাপা দিয়ে দিতে পারে।", "64": "কারণটা হলো আপনার জানালার দুই প্রান্তের আচমকা কাটা। সিগন্যাল দিব্যি দুলছিল আর হঠাৎ থেমে গেল, আর ওই আকস্মিক প্রান্তটা নিজেই একটা ধারালো বৈশিষ্ট্য যাকে বর্ণনা করতে বিস্তৃত frequency লাগে। সমাধান হলো জানালাটাকে ধীরে ধীরে মিলিয়ে আনা, আর <strong>window function</strong> যেমন Hann ঠিক এই কাজটাই করে।", "65": "Leakage, windowing, আর zero-padding আসলে কী করে", "66": "দুইটা ছন্দ উপস্থিত, ৭২ আর ৮৪ BPM-এ, দ্বিতীয়টা অনেক দুর্বল। <strong>Hann-এ টিক দিন</strong> আর ঢেউগুলো মিলিয়ে যায়, দুর্বল চূড়াটা তার প্রতিবেশীর ঝালরের নিচ থেকে বেরিয়ে আসে। <strong>এবার zero-pad-এ টিক দিন</strong>: রেখাটা চোখে পড়ার মতো মসৃণ আর সূক্ষ্ম হয়, কিন্তু মিশে যাওয়া দুইটা চূড়া মিশেই থাকে। শুধু জানালার দৈর্ঘ্যের স্লাইডারই তাদের আলাদা করে।", "67": "<strong>Zero-padding বিন্দু যোগ করে, তথ্য না।</strong> এটা আপনার আগে থেকে থাকা bin-গুলোর মাঝখানে interpolate করে। একটা চূড়ার মাথা আরও নিখুঁতভাবে খুঁজে পেতে এটা সত্যিই সাহায্য করে, আর মিশে যাওয়া দুইটা চূড়া আলাদা করতে কখনোই সাহায্য করে না।", "68": "তিনটা নবের সৎ সারাংশ", "69": "Tier 1-এর শব্দগুলো, সহজ ভাষায়", "71": "একটা সিগন্যালের আসল পুনরাবৃত্তির হার। আপনার ক্ষেত্রে হার্ট রেট নিজেই।", "73": "Fundamental-এর পূর্ণসংখ্যা গুণিতকে একটা প্রতিধ্বনি। তরঙ্গটা মসৃণ না হয়ে ধারালো হওয়ার মূল্য।", "75": "এই দাবি যে যেকোনো পুনরাবৃত্ত আকার একটা মূল হারের গুণিতকে থাকা sine wave-এর স্তূপ।", "77": "একটা kernel উল্টান, সরিয়ে নিন, মিলগুলো গুণ করুন, যোগ করুন। প্রতিটা filter এটাই।", "79": "আপনি যে ছোট নকশাটা সরিয়ে নেন। impulse response-এর সাথে একই জিনিস।", "81": "একটা filter-কে একটা মাত্র spike খাওয়ালে সে যা বের করে। kernel-এর সাথে একই জিনিস।", "83": "Linear আর time-invariant: input দ্বিগুণ করলে output দ্বিগুণ হয়, আর filter আজ যেমন আচরণ করে কালও তেমনই করে। আপনি যত filter লিখবেন সবই তাই, আর ঠিক এই কারণেই এদের উপর Fourier বিশ্লেষণ খাটে।", "85": "সময়ে convolve করা মানে frequency-তে spectrum গুণ করা। Filtering-কে দ্রুত করে, আর স্বজ্ঞাতও করে।", "87": "FFT-এর আগে শূন্য জুড়ে দেওয়া। FFT-ভিত্তিক filtering-এর আগে wraparound ঠেকাতে বাধ্যতামূলক। Spectrum-ও interpolate করে, কিন্তু আসল resolution যোগ করে না।", "89": "Padding ভুলে গেলে FFT যা করে: সিগন্যালটাকে একটা লুপ ধরে নেয়, তাই শেষটা শুরুকে দূষিত করে।", "91": "প্রতি সেকেন্ডে কতগুলো ছবি। আপনার ওয়েবক্যামের frame rate।", "93": "Sample rate-এর অর্ধেক। কী ধরা যাবে তার কঠিন ছাদ। ৩০ fps-এ এটা ১৫ Hz।", "95": "Nyquist-এর উপরের একটা ছন্দ বিশ্বাসযোগ্যভাবে ধীর একটা ছন্দের ছদ্মবেশে। পরে আর ধরা যায় না।", "97": "জানালা সিগন্যালটাকে চক্রের মাঝপথে কেটে দেওয়ায় spectrum জুড়ে ছড়িয়ে পড়া শক্তি।", "99": "FFT-এর আগে আপনার ডেটার দুই প্রান্তে লাগানো একটা মৃদু মিলিয়ে যাওয়া। Hann হলো যুক্তিসঙ্গত ডিফল্ট।", "101": "Winding machine প্রতিটা bin frequency-তে চালানো। FFT হলো দ্রুত অ্যালগরিদম; DFT হলো সংজ্ঞা।", "102": "নিজেকে যাচাই করুন", "103": "আপনার সিস্টেম এমন একজনের জন্য ১৫০ BPM বলছে যাকে দেখে স্পষ্ট শান্ত মনে হচ্ছে। আপনার প্রথম অনুমান কী, আর এক লাইনে কীভাবে পরীক্ষা করবেন?", "104": "আপনি দ্বিতীয় harmonic-এ আটকে গেছেন, আর আসল হার ৭৫ BPM।", "105": "আপনার বলা frequency-র অর্ধেকে তাকিয়ে পরীক্ষা করুন। ৭৫ BPM-এ যদি সত্যিকারের একটা চূড়া থাকে যেটা শুধু ১৫০-এরটার চেয়ে খাটো, তাহলে উত্তর পেয়ে গেছেন। একজন শান্ত প্রাপ্তবয়স্কের ১৫০ হওয়ার সম্ভাবনা দমিত fundamental সহ ধারালো পালস তরঙ্গের চেয়ে অনেক কম।", "106": "এটাও দেখার মতো: অতিরিক্ত আক্রমণাত্মক একটা high-pass filter ১.২৫ Hz দুর্বল করছে অথচ ২.৫ Hz অক্ষত রাখছে &mdash; প্রথমে fundamental দমে যাওয়ার এটাই সবচেয়ে প্রচলিত কারণ।", "107": "আপনি FFT দিয়ে filter করছেন আর প্রতিটা জানালার প্রথম কয়েকটা নমুনায় একটা অদ্ভুত চূড়া আছে। আপনি কী ভুলে গেছেন?", "108": "Zero-padding। FFT আপনার সিগন্যালকে লুপ ধরে নেয়, তাই জানালার লেজটা ঘুরে এসে মাথাটা দূষিত করেছে। এটা circular convolution, আপনি যে linear convolution চেয়েছিলেন সেটা না।", "109": "রূপান্তরের আগে দুইটা সিগন্যালকেই অন্তত <span class=\"m\">len(x) + len(h) - 1</span> পর্যন্ত pad করুন, অথবা শুধু <span class=\"m\">scipy.signal.fftconvolve</span> ডাকুন, যেটা এটা সামলে দেয়।", "110": "আপনার spectrum-এ দুইটা চূড়া মিশে একটা ঢিবি হয়ে গেছে। Zero-padding কি এটা ঠিক করে?", "111": "না। কখনোই না। Zero-padding একই রেখাটাই বেশি বিন্দু দিয়ে আঁকে, তাই ঢিবিটা মসৃণ আর সুন্দর হয় কিন্তু ঢিবিই থাকে।", "112": "শুধু লম্বা রেকর্ডিং আসল resolution যোগ করে, কারণ শুধু বেশি সময়ই দুইটা কাছাকাছি ছন্দকে আলাদা হওয়ার মতো দূরে সরতে দেয়। লম্বা রেকর্ড করতে না পারলে আপনি তাদের আলাদা করতে পারবেন না, আর সৎ পদক্ষেপ হলো নিখুঁত দেখতে ভুল সংখ্যার বদলে কম আত্মবিশ্বাস জানানো।", "113": "আপনার ওয়েবক্যাম ৩০ fps দাবি করে কিন্তু চাপে frame ফেলে দেয়। এই পেজের কোন ছবিটা আর সত্য থাকে না?", "114": "সবগুলোই, সামান্য করে, আর Tier 0-এর winding machine সবচেয়ে মৌলিকভাবে। প্রতিটাই ধরে নেয় নমুনাগুলো সময়ে সমান ব্যবধানে আছে। একটা সিগন্যাল পেঁচানোর সময় প্রতিটা নমুনাকে কোণ দেওয়া হয় সেটা <em>কখন</em> ঘটেছে তার ভিত্তিতে, তাই আসল সময় ধরে নেওয়া <span class=\"m\">n/30</span> থেকে আলাদা হলে প্রতিটা বিন্দু একটু ভুল কোণে বসে আর স্তূপটা ঝাপসা হয়ে যায়।", "115": "ফল হলো একটা ছড়ানো, খাটো চূড়া আর একটু ভুল BPM, আর কোথাও কোনো error বার্তা নেই। আসল timestamp রেকর্ড করুন আর FFT-এর আগে <span class=\"m\">np.interp</span> দিয়ে সমান গ্রিডে resample করুন।", "116": "Tier 2 কী যোগ করে", "117": "আপনি এখন জানেন filtering মানে convolution আর convolution একটা spectrum-কে নতুন আকার দেয়। Tier 2 হলো library যা দেয় তা মেনে না নিয়ে filter <strong>নিজে নকশা করা</strong> নিয়ে: একটা moving average আপনার frequency-র সাথে আসলে কী করে, আপনার pipeline-এর দরকারি ০.৭ থেকে ৪ Hz bandpass কীভাবে বানাবেন, আর সেই phase-বিকৃতির সমস্যা যা সহজ উপায়ে filter করলে চুপচাপ আপনার HRV স্তরটা ধ্বংস করে দেবে।", "118": "<strong>Fundamental</strong> হলো সিগন্যালের আসল পুনরাবৃত্তির হার &mdash; মানে হার্ট রেট নিজেই। <strong>Harmonic</strong> হলো তার পূর্ণসংখ্যা গুণিতকে একটা প্রতিধ্বনি: হারের দ্বিগুণ, তিন গুণ, এভাবে। এরা আলাদা হৃৎস্পন্দন না। এরা পালসের আকার মসৃণ না হয়ে ধারালো হওয়ার গাণিতিক মূল্য।", "119": "<strong>Kernel</strong> হলো আপনি যে ছোট নকশাটা সরিয়ে নেন। একে <strong>impulse response</strong>-ও বলা হয়, কারণ filter-কে একটামাত্র spike খাওয়ালে সে আক্ষরিক অর্থে এটাই বের করে। এই দুইটা শব্দ একই বস্তু বোঝায়, আর পেপারগুলো কোনো সতর্কতা ছাড়াই এদের মধ্যে বদল করে।"};
+  var EN = {};
+  var nodes = document.querySelectorAll("[data-t]");
+  nodes.forEach(function(el){ EN[el.getAttribute("data-t")] = el.innerHTML; });
+  var btn = document.getElementById("langbtn");
+  function apply(l){
+    document.documentElement.setAttribute("data-lang", l);
+    nodes.forEach(function(el){
+      var k = el.getAttribute("data-t");
+      var v = (l === "bn" && BN[k]) ? BN[k] : EN[k];
+      if (el.innerHTML !== v) el.innerHTML = v;
+    });
+    btn.textContent = (l === "bn") ? "English" : "বাংলা";
+    try { localStorage.setItem("lessonLang", l); } catch(e){}
+    if (typeof redrawAll === "function") { try { redrawAll(); } catch(e){} }
+  }
+  var saved = "en";
+  try { saved = localStorage.getItem("lessonLang") || "en"; } catch(e){}
+  apply(saved);
+  btn.addEventListener("click", function(){
+    apply(document.documentElement.getAttribute("data-lang") === "bn" ? "en" : "bn");
+  });
+  window.addEventListener("resize", function(){
+    if (typeof redrawAll === "function") { try { redrawAll(); } catch(e){} }
+  });
+})();
+</script>
+

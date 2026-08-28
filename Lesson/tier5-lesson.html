@@ -1,0 +1,882 @@
+<title>When Averages Lie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap">
+
+<style>
+:root {
+  --paper:#FAF7F8; --paper-2:#F2EDEF; --paper-3:#E9E1E5;
+  --ink:#1F1720; --ink-2:#5A4E58; --ink-3:#8C7F88;
+  --rule:#E0D6DB; --rule-2:#CDBFC7;
+  --accent:#B01B3F; --accent-2:#8E1533; --accent-soft:#F7DEE5;
+  --signal:#10796B; --signal-soft:#DBEFEA;
+  --warn:#9C5A12; --warn-soft:#F7E8D4;
+  --shadow:0 1px 2px rgba(31,23,32,.05), 0 8px 24px -12px rgba(31,23,32,.18);
+  --sp-1:.35rem; --sp-2:.7rem; --sp-3:1.1rem; --sp-4:1.7rem; --sp-5:2.6rem; --sp-6:4rem;
+  --font-display:"Spectral",Georgia,"Times New Roman",serif;
+  --font-body:"Archivo",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --spine:40rem; --wide:60rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#16111A; --paper-2:#1F1824; --paper-3:#29202F;
+    --ink:#F0E9EE; --ink-2:#B3A5AE; --ink-3:#7D6F79;
+    --rule:#322A38; --rule-2:#443A4B;
+    --accent:#FF6B8A; --accent-2:#FF93A9; --accent-soft:#3B1D28;
+    --signal:#45D6B0; --signal-soft:#123029;
+    --warn:#E0A050; --warn-soft:#33260F;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"] {
+  --paper:#16111A; --paper-2:#1F1824; --paper-3:#29202F;
+  --ink:#F0E9EE; --ink-2:#B3A5AE; --ink-3:#7D6F79;
+  --rule:#322A38; --rule-2:#443A4B;
+  --accent:#FF6B8A; --accent-2:#FF93A9; --accent-soft:#3B1D28;
+  --signal:#45D6B0; --signal-soft:#123029;
+  --warn:#E0A050; --warn-soft:#33260F;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.65;margin:0;padding:0 var(--sp-3) var(--sp-6);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--font-display);text-wrap:balance;line-height:1.2;margin:0}
+p{margin:0}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+code,.m{font-family:var(--font-mono);font-size:.92em;font-variant-ligatures:none}
+.m{color:var(--accent);font-weight:500}
+.masthead{max-width:var(--wide);margin:0 auto;padding:var(--sp-6) 0 var(--sp-5);border-bottom:1px solid var(--rule);display:flex;flex-direction:column;gap:var(--sp-3)}
+.eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:500}
+.masthead h1{font-size:clamp(2.6rem,7vw,4.4rem);font-weight:700;letter-spacing:-.02em}
+.masthead .standfirst{font-family:var(--font-display);font-size:clamp(1.05rem,2.2vw,1.3rem);color:var(--ink-2);max-width:34rem;line-height:1.5}
+.meta-row{display:flex;flex-wrap:wrap;gap:var(--sp-3) var(--sp-4);font-family:var(--font-mono);font-size:.76rem;color:var(--ink-3);letter-spacing:.04em;padding-top:var(--sp-2)}
+.meta-row span strong{color:var(--ink-2);font-weight:500}
+.sec{max-width:var(--wide);margin:0 auto;padding-top:var(--sp-6);display:flex;flex-direction:column;gap:var(--sp-4)}
+.sec-head{display:flex;flex-direction:column;gap:var(--sp-2)}
+.sec-num{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.16em;color:var(--ink-3);text-transform:uppercase}
+.sec-head h2{font-size:clamp(1.7rem,3.6vw,2.4rem);font-weight:600;letter-spacing:-.015em}
+.sec-head h2 em{font-style:italic;color:var(--accent)}
+.prose{max-width:var(--spine);display:flex;flex-direction:column;gap:var(--sp-3)}
+.prose h3{font-size:1.18rem;font-weight:600;margin-top:var(--sp-2)}
+.prose ul,.prose ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:var(--sp-2)}
+.prose strong{font-weight:600}
+.part-break{max-width:var(--wide);margin:var(--sp-6) auto 0;padding-top:var(--sp-5);border-top:2px solid var(--ink);display:flex;flex-direction:column;gap:var(--sp-2)}
+.part-break .eyebrow{color:var(--ink-3)}
+.part-break h2{font-size:clamp(2rem,4.6vw,3rem);font-weight:700;letter-spacing:-.02em}
+.plain{background:var(--paper-2);border-left:3px solid var(--signal);padding:var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-1);max-width:var(--spine)}
+.plain .lbl{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--signal);font-weight:600}
+.plain p{color:var(--ink-2);font-size:.95rem}
+.keypoint{background:var(--accent-soft);padding:var(--sp-3) var(--sp-4);max-width:var(--spine);border-radius:2px;font-family:var(--font-display);font-size:1.1rem;line-height:1.5}
+.keypoint strong{font-weight:700;color:var(--accent-2)}
+.aside-note{border:1px solid var(--rule);border-radius:3px;padding:var(--sp-3);max-width:var(--spine);font-size:.92rem;color:var(--ink-2);display:flex;flex-direction:column;gap:var(--sp-2)}
+.aside-note .lbl{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--warn);font-weight:600}
+.fig{border:1px solid var(--rule-2);border-radius:4px;background:var(--paper-2);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;margin:0}
+.fig-bar{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-2) var(--sp-3);background:var(--paper-3);border-bottom:1px solid var(--rule-2);flex-wrap:wrap}
+.fig-bar .tag{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.fig-bar .name{font-family:var(--font-body);font-size:.85rem;color:var(--ink-2);font-weight:500}
+.fig-canvas-wrap{padding:var(--sp-3);background:var(--paper)}
+.fig canvas{display:block;width:100%;height:auto;touch-action:none}
+.fig-controls{border-top:1px solid var(--rule);padding:var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-3)}
+.ctl-row{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2) var(--sp-3)}
+.ctl{display:flex;align-items:center;gap:var(--sp-2);flex:1 1 15rem}
+.ctl label{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.06em;color:var(--ink-2);text-transform:uppercase;white-space:nowrap}
+.ctl input[type=range]{flex:1;min-width:5rem;accent-color:var(--accent);height:1.4rem}
+button{font-family:var(--font-mono);font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;font-weight:500;padding:.42rem .8rem;background:var(--paper);color:var(--ink);border:1px solid var(--rule-2);border-radius:3px;cursor:pointer;transition:background .12s,border-color .12s,color .12s}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button[aria-pressed="true"],button.on{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+.chk{display:inline-flex;align-items:center;gap:.45rem;font-family:var(--font-mono);font-size:.73rem;color:var(--ink-2);cursor:pointer;text-transform:uppercase;letter-spacing:.05em}
+.chk input{accent-color:var(--signal);width:1rem;height:1rem}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(7.5rem,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+.readout div{background:var(--paper);padding:var(--sp-2);display:flex;flex-direction:column;gap:.15rem}
+.readout .k{font-family:var(--font-mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.readout .v{font-family:var(--font-mono);font-size:1.02rem;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.readout .v.hot{color:var(--accent)}
+.readout .v.good{color:var(--signal)}
+.readout .v.warn{color:var(--warn)}
+.fig-note{padding:var(--sp-2) var(--sp-3) var(--sp-3);font-size:.86rem;color:var(--ink-2);border-top:1px dashed var(--rule);background:var(--paper-2)}
+.fig-note strong{color:var(--ink);font-weight:600}
+.math{font-family:var(--font-mono);font-size:.95rem;background:var(--paper-2);border:1px solid var(--rule);border-radius:3px;padding:var(--sp-3);overflow-x:auto;max-width:var(--spine);line-height:1.75;white-space:pre;color:var(--ink)}
+.math .hi{color:var(--accent);font-weight:600}
+.math .dim{color:var(--ink-3)}
+.math .ok{color:var(--signal);font-weight:600}
+.tbl-wrap{overflow-x:auto;max-width:var(--spine)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:26rem}
+th,td{text-align:left;padding:.5rem .7rem;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:500;border-bottom:1px solid var(--rule-2)}
+td.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.gloss{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--rule);max-width:var(--spine)}
+.gloss>div{padding:var(--sp-3) 0;border-bottom:1px solid var(--rule);display:grid;grid-template-columns:11rem 1fr;gap:var(--sp-3)}
+.gloss dt{font-family:var(--font-mono);font-size:.82rem;font-weight:600;color:var(--accent);margin:0}
+.gloss dd{margin:0;font-size:.93rem;color:var(--ink-2)}
+@media (max-width:34rem){.gloss>div{grid-template-columns:1fr;gap:var(--sp-1)}}
+details{border:1px solid var(--rule);border-radius:3px;background:var(--paper-2);padding:var(--sp-3);max-width:var(--spine)}
+details+details{margin-top:var(--sp-2)}
+summary{cursor:pointer;font-weight:600;font-family:var(--font-display);font-size:1.05rem;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸ ";color:var(--accent);font-family:var(--font-mono)}
+details[open] summary::before{content:"▾ "}
+details .ans{margin-top:var(--sp-3);padding-top:var(--sp-3);border-top:1px dashed var(--rule-2);font-size:.95rem;color:var(--ink-2);display:flex;flex-direction:column;gap:var(--sp-2)}
+.foot{max-width:var(--wide);margin:var(--sp-6) auto 0;padding-top:var(--sp-4);border-top:1px solid var(--rule);font-family:var(--font-mono);font-size:.76rem;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:var(--sp-3);justify-content:space-between}
+.closing{max-width:var(--spine);border:2px solid var(--ink);border-radius:4px;padding:var(--sp-4);display:flex;flex-direction:column;gap:var(--sp-3)}
+.closing h3{font-family:var(--font-display);font-size:1.35rem;font-weight:700}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+
+/* ---- bilingual ---- */
+:root[data-lang="bn"] body,
+:root[data-lang="bn"] .prose,
+:root[data-lang="bn"] .sec-head h2,
+:root[data-lang="bn"] .keypoint,
+:root[data-lang="bn"] .fig-note,
+:root[data-lang="bn"] .plain p,
+:root[data-lang="bn"] .aside-note,
+:root[data-lang="bn"] .gloss dd,
+:root[data-lang="bn"] details,
+:root[data-lang="bn"] .masthead .standfirst {
+  font-family: "Hind Siliguri", "Noto Sans Bengali", var(--font-body);
+}
+:root[data-lang="bn"] .prose p,
+:root[data-lang="bn"] .prose li { line-height: 1.9; }
+:root[data-lang="bn"] .keypoint { line-height: 1.75; }
+#langbtn{
+  position:fixed; top:.75rem; right:.75rem; z-index:200;
+  font-family:var(--font-mono); font-size:.75rem; letter-spacing:.06em;
+  padding:.45rem .85rem; border-radius:4px; cursor:pointer;
+  background:var(--accent); color:var(--paper); border:1px solid var(--accent);
+  box-shadow:0 2px 10px -4px rgba(0,0,0,.4);
+}
+#langbtn:hover{ filter:brightness(1.08); }
+@media print{ #langbtn{ display:none; } }
+</style>
+<button id="langbtn" type="button" aria-label="Switch language">বাংলা</button>
+
+
+<header class="masthead">
+  <div class="eyebrow">TRACE-rPPG · Foundations · Tier 5</div>
+  <h1>When Averages Lie</h1>
+  <p class="standfirst" data-t="0">Proving your numbers are right &mdash; and why the error metric almost everyone reports can hide a serious systematic bias in plain sight.</p>
+  <div class="meta-row">
+    <span><strong>4</strong> interactive figures</span>
+    <span>Follows <strong>Tier 4</strong> &mdash; the second transform</span>
+    <span>The final tier. This is your Results section.</span>
+  </div>
+</header>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">00 &mdash; Orientation</div>
+    <h2 data-t="1">The difference between working and <em>demonstrably</em> working</h2>
+  </div>
+  <div class="prose">
+    <p data-t="2">Your system now produces a heart rate, a quality score, and an autonomic indicator. Every one of those is a claim, and a claim without evidence is a demo, not a result.</p>
+    <p data-t="3">Section 2 of your plan puts it bluntly: most student rPPG projects clone a repo, show a live number, and stop. The line between that and real work is not the pipeline. It is this tier.</p>
+    <p data-t="4">Two things here:</p>
+    <ul>
+      <li data-t="5"><strong>Validation statistics</strong> &mdash; how to compare your estimate against ground truth in a way that reveals problems instead of hiding them.</li>
+      <li data-t="6"><strong>Compression</strong> &mdash; why a video call specifically destroys the signal rPPG needs, which is the physical basis for your Section 5.1 experiment.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">01 &mdash; The trap</div>
+    <h2 data-t="7">Two systems, identical error, <em>completely different</em> problems</h2>
+  </div>
+  <div class="prose">
+    <p data-t="8">Almost every student project reports one number: mean absolute error. Here is why that is not enough.</p>
+    <p data-t="9">Imagine two versions of your system, both reporting an MAE of 3.0 BPM.</p>
+    <ul>
+      <li data-t="10"><strong>System A</strong> is unbiased and a bit noisy. Sometimes 3 too high, sometimes 3 too low, averaging out correctly.</li>
+      <li data-t="11"><strong>System B</strong> is precise but reads <em>3 BPM too high every single time.</em></li>
+    </ul>
+    <p data-t="12">These are not equally good. System A is a decent measurement with room to improve by averaging. System B has a calibration fault: it would tell every user their heart rate is elevated, and no amount of averaging fixes it. Yet MAE scores them identically.</p>
+    <p data-t="13">Worse, some faults only appear at part of the range. A system can be perfect at 60 BPM and read 10 too low at 120, which is exactly the failure you would care about most, and MAE dilutes it into a modest-looking average.</p>
+  </div>
+  <div class="keypoint" data-t="14">MAE tells you <strong>how big</strong> your errors are. It never tells you <strong>what shape</strong> they are. Shape is where the diagnosis lives.</div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 1</span><span class="name" data-t="15">Same MAE, different diseases</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-mae" height="330"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <button class="sys-btn on" data-sys="noisy">A · unbiased, noisy</button>
+        <button class="sys-btn" data-sys="biased">B · precise, offset</button>
+        <button class="sys-btn" data-sys="slope">C · drifts with rate</button>
+      </div>
+      <div class="readout">
+        <div><span class="k">MAE</span><span class="v" id="ro-mae">3.0 BPM</span></div>
+        <div><span class="k">RMSE</span><span class="v" id="ro-rmse">3.7 BPM</span></div>
+        <div><span class="k">pearson r</span><span class="v" id="ro-r">0.97</span></div>
+        <div><span class="k">mean bias</span><span class="v" id="ro-bias">0.0 BPM</span></div>
+        <div><span class="k">real problem</span><span class="v" id="ro-diag">random noise</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="16">All three systems have essentially the same MAE. Switch between them and watch MAE barely move while the <strong>mean bias</strong> readout tells three completely different stories. System C is the nastiest: it is accurate at rest and badly wrong at high rates, which is precisely backwards from what you want in a health application.</figcaption>
+  </figure>
+
+  <div class="plain">
+    <div class="lbl">Plain English</div>
+    <p data-t="96"><strong>Bias</strong> is your average error <em>with its sign kept</em>. MAE throws the signs away by taking absolute values, so +3 and −3 both become 3 and cancel nothing. Bias keeps them, so consistent over-reading shows up as a positive number and randomness averages to near zero. That one change of definition is what separates the two systems above.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">02 &mdash; The standard tool</div>
+    <h2 data-t="17"><em>Bland-Altman</em>: the plot medical papers actually use</h2>
+  </div>
+  <div class="prose">
+    <p data-t="18">When a paper compares a new measurement method against an established one, this is the plot it shows. Dasari et al. (2021), already in your reading list, uses it to evaluate CHROM and POS against an FDA-approved sensor, so you have a worked example in your own field to copy the layout from.</p>
+    <p data-t="19">The construction is almost too simple:</p>
+  </div>
+  <div class="math"><span class="dim">for each paired measurement:</span>
+  x-axis  =  (yours + truth) / 2        <span class="dim">← the average, i.e. "roughly what rate was this?"</span>
+  y-axis  =  yours − truth              <span class="dim">← the difference, signed</span>
+
+<span class="dim">then draw three horizontal lines:</span>
+  bias         = mean(differences)
+  upper limit  = bias + <span class="hi">1.96</span> × sd(differences)
+  lower limit  = bias − <span class="hi">1.96</span> × sd(differences)</div>
+  <div class="prose">
+    <p data-t="20">Those limits of agreement are where 95 percent of your errors fall. They let you make a genuinely useful statement: <em>"in 95 percent of measurements, our estimate lands within 4.2 BPM of the reference."</em> That is a claim a reader can act on, in a way that "MAE was 3.0" is not.</p>
+    <p data-t="21">And the plot's shape diagnoses the fault directly:</p>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>What you see</th><th>What it means</th></tr></thead>
+      <tbody>
+        <tr><td>Cloud centred on zero, no pattern</td><td>Healthy. Random error only.</td></tr>
+        <tr><td>Cloud centred above or below zero</td><td>Constant bias. Fixable by calibration.</td></tr>
+        <tr><td>Cloud <strong>tilted</strong></td><td>Proportional bias: error depends on the rate. The serious one.</td></tr>
+        <tr><td>Cloud <strong>fanning out</strong></td><td>Errors grow at higher rates. Report the limits separately per range.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 2</span><span class="name" data-t="22">Bland-Altman &mdash; build one, and read the diagnosis</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-ba" height="380"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-b">constant bias</label><input type="range" id="sl-b" min="-8" max="8" step="0.2" value="0"></div>
+        <div class="ctl"><label for="sl-s">proportional bias</label><input type="range" id="sl-s" min="-0.25" max="0.25" step="0.01" value="0"></div>
+      </div>
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-sc">random scatter</label><input type="range" id="sl-sc" min="0.5" max="10" step="0.1" value="2.5"></div>
+        <label class="chk"><input type="checkbox" id="chk-fan"> errors grow with rate</label>
+      </div>
+      <div class="readout">
+        <div><span class="k">mean bias</span><span class="v" id="ro-bb">0.0 BPM</span></div>
+        <div><span class="k">upper limit</span><span class="v" id="ro-ul">+4.9</span></div>
+        <div><span class="k">lower limit</span><span class="v" id="ro-ll">−4.9</span></div>
+        <div><span class="k">MAE</span><span class="v" id="ro-bmae">2.0 BPM</span></div>
+        <div><span class="k">diagnosis</span><span class="v" id="ro-badiag">clean</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="23">Left: your estimate against ground truth, the plot most people show. Right: the Bland-Altman plot of the same data. <strong>Add proportional bias and watch the left plot stay convincing while the right one visibly tilts.</strong> The scatter plot hides slope near the diagonal; Bland-Altman puts it on its own axis where it cannot hide.</figcaption>
+  </figure>
+
+  <div class="aside-note">
+    <div class="lbl">Where Pearson r misleads you</div>
+    <p data-t="24">Correlation measures whether two things move <em>together</em>, not whether they <em>agree</em>. A system reading exactly 20 BPM too high correlates at r = 1.00 while being wrong on every single measurement.</p>
+    <p data-t="25">Report r, because every paper in your field does and it makes your table comparable. But never let it carry the accuracy claim on its own. Agreement is Bland-Altman's job.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">03 &mdash; Reporting</div>
+    <h2 data-t="26">The results table your field expects</h2>
+  </div>
+  <div class="prose">
+    <p data-t="27">Match the format of the papers you cite and your numbers become directly comparable to theirs, which is worth a surprising amount to a reader.</p>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>MAE</th><th>RMSE</th><th>r</th><th>Bias</th><th>95% limits</th></tr></thead>
+      <tbody>
+        <tr><td>Green channel</td><td class="num">6.8</td><td class="num">9.1</td><td class="num">0.71</td><td class="num">+2.1</td><td class="num">±14.2</td></tr>
+        <tr><td>CHROM</td><td class="num">3.2</td><td class="num">4.4</td><td class="num">0.93</td><td class="num">−0.4</td><td class="num">±7.9</td></tr>
+        <tr><td>POS</td><td class="num">2.9</td><td class="num">3.9</td><td class="num">0.94</td><td class="num">−0.2</td><td class="num">±7.1</td></tr>
+        <tr><td><strong>TRACE (ours)</strong></td><td class="num"><strong>2.4</strong></td><td class="num"><strong>3.1</strong></td><td class="num"><strong>0.96</strong></td><td class="num"><strong>−0.1</strong></td><td class="num"><strong>±5.8</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="prose">
+    <p data-t="28">Those are illustrative figures, not predictions. Three rules for filling it in honestly:</p>
+    <ol>
+      <li data-t="29"><strong>Report a spread, never a single number.</strong> Standard deviation across subjects, or a 95 percent confidence interval. One lucky recording is not a result.</li>
+      <li data-t="30"><strong>Include the ablation.</strong> Each component on and off. This is what defends the fusion claim with evidence rather than assertion, and it is already Section 10 of your plan.</li>
+      <li data-t="31"><strong>Report the conditions where you lose.</strong> A table where your method wins every row invites suspicion. A table with one row where POS beats you, honestly reported and briefly explained, is more credible than a clean sweep.</li>
+    </ol>
+  </div>
+</section>
+
+<div class="part-break">
+  <div class="eyebrow">Part B</div>
+  <h2 data-t="32">Compression</h2>
+</div>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">04 &mdash; The physical cause</div>
+    <h2 data-t="33">Why a video call attacks <em>exactly</em> what rPPG needs</h2>
+  </div>
+  <div class="prose">
+    <p data-t="34">Section 5.1 of your plan tests robustness under Zoom-style degradation. That experiment rests on one fact about how video codecs work, and knowing it turns your experiment from empirical poking into a targeted hypothesis.</p>
+    <p data-t="35">Human vision is far more sensitive to brightness than to colour. Codec designers exploit this ruthlessly through <strong>chroma subsampling</strong>: store brightness at full resolution, and colour at a quarter of it.</p>
+  </div>
+  <div class="math">4:4:4   full colour resolution        <span class="dim">— rare; some professional formats</span>
+4:2:2   colour halved horizontally    <span class="dim">— broadcast</span>
+<span class="hi">4:2:0</span>   colour quartered              <span class="dim">— H.264, VP8, VP9: everything you will meet</span></div>
+  <div class="prose">
+    <p data-t="36">Now recall what your signal actually is. Tier 0 showed that the pulse lives in the <em>difference</em> between colour channels, because hemoglobin absorbs green much more strongly than red. That is chroma information, precisely.</p>
+  </div>
+  <div class="keypoint" data-t="37">Video compression preserves the channel rPPG does not need and discards the channel it lives in. <strong>Chroma subsampling is close to a worst-case attack on rPPG</strong>, and it is running on every video call in the world.</div>
+  <div class="prose">
+    <p data-t="38">Quantisation compounds it. The pulse changes skin colour by well under one percent, so its amplitude is a fraction of a single pixel value. Coarse quantisation at low bitrate rounds those fractions to zero. The signal is not degraded, it is <em>deleted</em>.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 3</span><span class="name" data-t="39">Chroma subsampling &mdash; what survives, and what is thrown away</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-chroma" height="340"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <button class="cs-btn on" data-cs="444">4:4:4 (uncompressed)</button>
+        <button class="cs-btn" data-cs="422">4:2:2</button>
+        <button class="cs-btn" data-cs="420">4:2:0 (Zoom, H.264)</button>
+      </div>
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-q">quantisation</label><input type="range" id="sl-q" min="1" max="32" step="1" value="1"></div>
+      </div>
+      <div class="readout">
+        <div><span class="k">format</span><span class="v" id="ro-cs">4:4:4</span></div>
+        <div><span class="k">pulse amplitude left</span><span class="v" id="ro-amp">100%</span></div>
+        <div><span class="k">brightness kept</span><span class="v good">100%</span></div>
+        <div><span class="k">signal quality</span><span class="v" id="ro-cq">excellent</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="40">Top: the colour signal carrying the pulse, before and after the codec. Bottom: what your FFT then sees. <strong>Step through the three formats and then raise quantisation.</strong> The peak shrinks toward the noise floor while the brightness channel, which the codec protects, stays pristine and useless to you.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <h3 data-t="41">What this predicts for your experiment</h3>
+    <p data-t="42">You can now state hypotheses before running anything, which is a much stronger way to write a Method section:</p>
+    <ul>
+      <li data-t="43">Methods relying on <em>chrominance differences</em> (CHROM, POS) should degrade fastest under aggressive subsampling.</li>
+      <li data-t="44">The naive green channel, being closer to raw brightness, may degrade more <em>gracefully</em> under compression even though it loses badly on motion. If your data shows that, it is a genuinely interesting finding and not a bug.</li>
+      <li data-t="45">That reversal is <strong>exactly the condition where adaptive fusion should win</strong>, because the ranking of methods flips between conditions and no static choice is right in both.</li>
+    </ul>
+    <p data-t="46">That last point is worth dwelling on. Tier 3 warned that fusion only pays off when different methods win under different conditions. Compression may be the condition that creates the flip your project needs, which makes Section 5.1 not just a robustness test but the experiment your headline claim depends on.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 4</span><span class="name" data-t="47">Degradation curves &mdash; the figure your report needs</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-deg" height="340"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <label class="chk"><input type="checkbox" id="chk-sqaf" checked> show TRACE fusion</label>
+        <label class="chk"><input type="checkbox" id="chk-cross" checked> show where the ranking flips</label>
+      </div>
+      <div class="readout">
+        <div><span class="k">crossover at</span><span class="v hot" id="ro-cross">~600 kbps</span></div>
+        <div><span class="k">best above it</span><span class="v" id="ro-above">POS</span></div>
+        <div><span class="k">best below it</span><span class="v" id="ro-below">green</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="48">This is the shape of the plot Section 5.1 is designed to produce. The crossover point is the whole argument: above it POS dominates, below it the naive method survives better, and <strong>no fixed choice is correct across the range</strong> &mdash; which is precisely the gap adaptive fusion fills. Plot yours with real numbers and this becomes your strongest single figure.</figcaption>
+  </figure>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">05 &mdash; Reference</div>
+    <h2 data-t="49">Tier 5 vocabulary, plainly</h2>
+  </div>
+  <div class="gloss">
+    <div><dt data-t="50">MAE</dt><dd data-t="51">Mean absolute error. Average size of your mistakes, ignoring direction.</dd></div>
+    <div><dt data-t="52">RMSE</dt><dd data-t="53">Root mean square error. Like MAE but squares first, so it punishes large mistakes harder. Always at least as big as MAE.</dd></div>
+    <div><dt data-t="54">Bias</dt><dd data-t="55">Mean error keeping the sign. Reveals consistent over- or under-reading that MAE conceals.</dd></div>
+    <div><dt data-t="56">Pearson r</dt><dd data-t="57">How well two measurements move together. Can be 1.00 while agreement is terrible.</dd></div>
+    <div><dt data-t="58">Bland-Altman</dt><dd data-t="59">Difference plotted against average, with bias and 95% limits drawn. The standard agreement plot in medical measurement.</dd></div>
+    <div><dt data-t="60">Limits of agreement</dt><dd data-t="61">Bias ± 1.96 standard deviations. The range containing 95% of your errors.</dd></div>
+    <div><dt data-t="62">Proportional bias</dt><dd data-t="63">Error that grows with the value being measured. Shows as a tilt in Bland-Altman and is invisible in MAE.</dd></div>
+    <div><dt data-t="64">Ablation study</dt><dd data-t="65">Turning each component off in turn to show how much it contributed. What defends a fusion claim.</dd></div>
+    <div><dt data-t="66">Confidence interval</dt><dd data-t="67">A range that likely contains the true value. Report one instead of a bare number.</dd></div>
+    <div><dt data-t="68">Luma / chroma</dt><dd data-t="69">Brightness and colour, stored separately by every video codec so colour can be discarded more aggressively.</dd></div>
+    <div><dt data-t="70">Chroma subsampling</dt><dd data-t="71">Storing colour at lower resolution than brightness. 4:2:0 keeps a quarter, and is the default everywhere.</dd></div>
+    <div><dt data-t="72">Quantisation</dt><dd data-t="73">Rounding pixel values coarsely to save bits. Rounds a sub-one-percent pulse signal straight to zero.</dd></div>
+    <div><dt data-t="74">Bitrate</dt><dd data-t="75">Bits per second the codec is allowed. The main knob controlling how much gets thrown away.</dd></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">06 &mdash; Last check</div>
+    <h2 data-t="76">Check yourself</h2>
+  </div>
+
+  <details>
+    <summary data-t="77">Your MAE is 2.1 BPM and r is 0.98. Your supervisor is unconvinced. What are they worried about?</summary>
+    <div class="ans">
+      <p data-t="78">Systematic bias, which neither number can rule out. A system reading consistently 2 BPM high produces exactly those figures while being wrong on every measurement, and r would stay near 1.00 even at a 20 BPM offset.</p>
+      <p data-t="79">Show a Bland-Altman plot with the bias and limits of agreement stated. Also show the spread across subjects, since a good mean can hide one subject the system fails on entirely.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="80">Why might the naive green channel beat CHROM at very low bitrates?</summary>
+    <div class="ans">
+      <p data-t="81">Because CHROM works on differences between colour channels, and chroma subsampling is precisely the operation that destroys colour detail. The green channel sits closer to the luma information the codec goes out of its way to protect.</p>
+      <p data-t="82">If your experiment shows this, it is a real finding worth reporting prominently rather than an anomaly to explain away. It also happens to be the strongest possible evidence for your fusion claim, because it is a documented condition where the best method changes.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="83">Your Bland-Altman cloud tilts downward: accurate at 60 BPM, reading low at 120. What is one likely cause?</summary>
+    <div class="ans">
+      <p data-t="84">Check your filter's upper edge first. If the bandpass rolls off before 2 Hz, the fundamental of a fast heart rate is being attenuated while its harmonic is not, so at high rates the peak-picking becomes unreliable in exactly one direction. Tier 2's Figure 3 shows this happening.</p>
+      <p data-t="85">Second candidate: window length. Faster rates fit more cycles into a fixed window, so the resolution behaves differently across the range and any harmonic confusion shows up asymmetrically.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="86">Why report a condition where your method loses?</summary>
+    <div class="ans">
+      <p data-t="87">Because a table where the proposed method wins every row is the signature of selective reporting, and experienced readers discount it automatically. Every real method has a regime where something else is better.</p>
+      <p data-t="88">Naming that regime shows you understand your own method's mechanism rather than just its score, and it makes your winning rows more believable, not less. Reviewers trust papers that know their own limits.</p>
+    </div>
+  </details>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">07 &mdash; Done</div>
+    <h2 data-t="89">All five tiers</h2>
+  </div>
+  <div class="closing">
+    <h3 data-t="90">What you can now build, end to end</h3>
+    <p data-t="91">A camera samples skin brightness 30 times a second (<strong>Tier 1</strong>). You project R, G and B onto a direction chosen so lighting artifacts land perpendicular and vanish (<strong>Tier 0</strong>). You detrend with a subtracted moving average and bandpass with a zero-phase filter that does not move your beats (<strong>Tier 2</strong>).</p>
+    <p data-t="92">You wind the result around a circle at every candidate rate, and the frequency where the dots pile up lopsided is the heart rate (<strong>Tier 0</strong>). You check its sub-harmonic, because a sharp pulse produces harmonics and the tallest spike is not always the right one (<strong>Tier 1</strong>).</p>
+    <p data-t="93">You measure what fraction of the band's energy sits in that peak, and that fraction becomes a trust score which weights three methods against each other, frame by frame (<strong>Tier 3</strong>).</p>
+    <p data-t="94">You locate each beat to sub-frame precision, build the interval series, resample it onto an even grid because it is not evenly spaced by construction, and transform it a second time to read the LF and HF bands (<strong>Tier 4</strong>).</p>
+    <p data-t="95">Then you prove all of it against ground truth with bias, limits of agreement, and an ablation, and you test it under the compression a real telehealth call would apply (<strong>Tier 5</strong>).</p>
+    <p style="border-top:1px solid var(--rule);padding-top:var(--sp-3)" data-t="97"><strong>None of it uses a trained model.</strong> Every number traces back to a convolution or a Fourier transform. That is the claim Section 17 of your plan makes, and you can now defend every line of it.</p>
+  </div>
+</section>
+
+<footer class="foot">
+  <span>TRACE-rPPG &mdash; Tier 5 of 5 &mdash; complete</span>
+  <span>Bland-Altman · bias · chroma subsampling · degradation curves</span>
+</footer>
+
+<script>
+"use strict";
+var C={};
+function refreshTheme(){
+  var s=getComputedStyle(document.documentElement);
+  ["paper","paper-2","paper-3","ink","ink-2","ink-3","rule","rule-2","accent","accent-2","signal","warn"]
+    .forEach(function(k){ C[k]=s.getPropertyValue("--"+k).trim(); });
+}
+refreshTheme();
+if(window.matchMedia){
+  var mq=window.matchMedia("(prefers-color-scheme: dark)");
+  if(mq.addEventListener) mq.addEventListener("change",function(){refreshTheme();redrawAll();});
+}
+new MutationObserver(function(){refreshTheme();redrawAll();})
+  .observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+var redraws=[];
+function redrawAll(){ redraws.forEach(function(f){f();}); }
+
+var _fitCache=new WeakMap();
+function fit(cv){
+  var st=_fitCache.get(cv);
+  if(!st){ st={cssH:parseInt(cv.getAttribute("height"),10),ctx:cv.getContext("2d"),w:0,dpr:0}; _fitCache.set(cv,st); }
+  var dpr=window.devicePixelRatio||1;
+  var w=cv.clientWidth||cv.parentNode.clientWidth||600;
+  if(w!==st.w||dpr!==st.dpr){
+    st.w=w; st.dpr=dpr;
+    cv.width=Math.round(w*dpr); cv.height=Math.round(st.cssH*dpr);
+    cv.style.height=st.cssH+"px";
+    st.ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  return {ctx:st.ctx,w:st.w,h:st.cssH};
+}
+function label(ctx,txt,x,y,col,size,align){
+  ctx.fillStyle=col; ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+  ctx.textAlign=align||"left"; ctx.textBaseline="middle"; ctx.fillText(txt,x,y);
+}
+function axis(ctx,x0,y,w,col){ ctx.strokeStyle=col; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x0,y); ctx.lineTo(x0+w,y); ctx.stroke(); }
+var _seed=8080;
+function rnd(){ _seed=(_seed*1103515245+12345)%2147483648; return _seed/2147483648*2-1; }
+function reseed(s){ _seed=s; }
+function gauss(){ return (rnd()+rnd()+rnd())/1.7; }
+
+/* ---------- FIG 1 : SAME MAE ---------- */
+(function(){
+  var cv=document.getElementById("cv-mae");
+  var sys="noisy";
+  function data(){
+    reseed(1234);
+    var pts=[];
+    for(var i=0;i<70;i++){
+      var t=52+ (i/69)*78;
+      var e;
+      if(sys==="noisy") e=3.75*gauss();
+      else if(sys==="biased") e=3.0+0.55*gauss();
+      else e=(t-90)*0.115+0.6*gauss();
+      pts.push({t:t,y:t+e,e:e});
+    }
+    return pts;
+  }
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var pts=data();
+    var pad=42,pw=w-pad-16,y0=26,ph=h-y0-46;
+    var lo=45,hi=140;
+    function X(v){ return pad+((v-lo)/(hi-lo))*pw; }
+    function Y(v){ return y0+ph-((v-lo)/(hi-lo))*ph; }
+
+    label(ctx,"YOUR ESTIMATE  vs  GROUND TRUTH",pad,10,C["ink-3"],10);
+    ctx.strokeStyle=C.rule; ctx.lineWidth=1;
+    ctx.strokeRect(pad,y0,pw,ph);
+    ctx.strokeStyle=C["ink-3"]; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(X(lo),Y(lo)); ctx.lineTo(X(hi),Y(hi)); ctx.stroke(); ctx.setLineDash([]);
+    label(ctx,"perfect agreement",X(hi)-6,Y(hi)+16,C["ink-3"],9,"right");
+
+    pts.forEach(function(p){
+      ctx.fillStyle=C.accent; ctx.globalAlpha=.65;
+      ctx.beginPath(); ctx.arc(X(p.t),Y(p.y),3.4,0,6.2832); ctx.fill();
+    });
+    ctx.globalAlpha=1;
+    [60,80,100,120].forEach(function(t){
+      label(ctx,t,X(t),y0+ph+13,C["ink-3"],9,"center");
+      label(ctx,t,pad-8,Y(t),C["ink-3"],9,"right");
+    });
+    label(ctx,"truth (BPM)",pad+pw,y0+ph+28,C["ink-3"],9.5,"right");
+
+    var n=pts.length;
+    var mae=pts.reduce(function(a,p){return a+Math.abs(p.e);},0)/n;
+    var rmse=Math.sqrt(pts.reduce(function(a,p){return a+p.e*p.e;},0)/n);
+    var bias=pts.reduce(function(a,p){return a+p.e;},0)/n;
+    var mt=pts.reduce(function(a,p){return a+p.t;},0)/n;
+    var my=pts.reduce(function(a,p){return a+p.y;},0)/n;
+    var num=0,d1=0,d2=0;
+    pts.forEach(function(p){ num+=(p.t-mt)*(p.y-my); d1+=(p.t-mt)*(p.t-mt); d2+=(p.y-my)*(p.y-my); });
+    var r=num/Math.sqrt(d1*d2);
+
+    document.getElementById("ro-mae").textContent=mae.toFixed(1)+" BPM";
+    document.getElementById("ro-rmse").textContent=rmse.toFixed(1)+" BPM";
+    document.getElementById("ro-r").textContent=r.toFixed(2);
+    document.getElementById("ro-bias").textContent=(bias>=0?"+":"")+bias.toFixed(1)+" BPM";
+    document.getElementById("ro-bias").className="v"+(Math.abs(bias)>1?" hot":" good");
+    var d=document.getElementById("ro-diag");
+    d.textContent = sys==="noisy"?"random noise" : sys==="biased"?"CONSTANT OFFSET" : "DRIFTS WITH RATE";
+    d.className="v"+(sys==="noisy"?" good":" hot");
+  }
+  document.querySelectorAll(".sys-btn").forEach(function(b){
+    b.addEventListener("click",function(){
+      document.querySelectorAll(".sys-btn").forEach(function(o){o.classList.remove("on");});
+      b.classList.add("on"); sys=b.getAttribute("data-sys"); draw();
+    });
+  });
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 2 : BLAND-ALTMAN ---------- */
+(function(){
+  var cv=document.getElementById("cv-ba");
+  var sb=document.getElementById("sl-b"), ss=document.getElementById("sl-s"), ssc=document.getElementById("sl-sc");
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var B=parseFloat(sb.value), S=parseFloat(ss.value), SC=parseFloat(ssc.value);
+    var fan=document.getElementById("chk-fan").checked;
+
+    reseed(6161);
+    var pts=[];
+    for(var i=0;i<90;i++){
+      var t=52+(i/89)*78;
+      var sc=SC*(fan?(0.35+1.5*(t-52)/78):1);
+      var e=B+S*(t-90)+sc*gauss();
+      pts.push({t:t,y:t+e,e:e,avg:(t+t+e)/2});
+    }
+    var n=pts.length;
+    var bias=pts.reduce(function(a,p){return a+p.e;},0)/n;
+    var sd=Math.sqrt(pts.reduce(function(a,p){return a+(p.e-bias)*(p.e-bias);},0)/n);
+    var ul=bias+1.96*sd, ll=bias-1.96*sd;
+    var mae=pts.reduce(function(a,p){return a+Math.abs(p.e);},0)/n;
+
+    var gap=22, halfW=(w-gap)/2;
+    var y0=28, ph=h-y0-46;
+
+    /* left: scatter */
+    var lo=45,hi=142;
+    function X1(v){ return 34+((v-lo)/(hi-lo))*(halfW-42); }
+    function Y1(v){ return y0+ph-((v-lo)/(hi-lo))*ph; }
+    label(ctx,"ESTIMATE vs TRUTH",34,10,C["ink-3"],10);
+    ctx.strokeStyle=C.rule; ctx.strokeRect(34,y0,halfW-42,ph);
+    ctx.strokeStyle=C["ink-3"]; ctx.setLineDash([5,4]); ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.moveTo(X1(lo),Y1(lo)); ctx.lineTo(X1(hi),Y1(hi)); ctx.stroke(); ctx.setLineDash([]);
+    pts.forEach(function(p){
+      ctx.fillStyle=C["ink-3"]; ctx.globalAlpha=.6;
+      ctx.beginPath(); ctx.arc(X1(p.t),Y1(p.y),2.8,0,6.2832); ctx.fill();
+    });
+    ctx.globalAlpha=1;
+    label(ctx,"looks convincing",34+4,y0+ph-8,C["ink-3"],9);
+
+    /* right: bland-altman */
+    var rx=halfW+gap+18, rw=w-rx-14;
+    var emax=Math.max(12,Math.abs(ul)+3,Math.abs(ll)+3);
+    function X2(v){ return rx+((v-lo)/(hi-lo))*rw; }
+    function Y2(v){ return y0+ph/2-(v/emax)*(ph/2-6); }
+    label(ctx,"BLAND-ALTMAN",rx,10,C.accent,10);
+    ctx.strokeStyle=C.rule; ctx.strokeRect(rx,y0,rw,ph);
+
+    ctx.strokeStyle=C["ink-3"]; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(rx,Y2(0)); ctx.lineTo(rx+rw,Y2(0)); ctx.stroke(); ctx.setLineDash([]);
+
+    ctx.fillStyle=C.accent; ctx.globalAlpha=.06;
+    ctx.fillRect(rx,Y2(ul),rw,Y2(ll)-Y2(ul)); ctx.globalAlpha=1;
+
+    pts.forEach(function(p){
+      ctx.fillStyle=C.accent; ctx.globalAlpha=.62;
+      ctx.beginPath(); ctx.arc(X2(p.avg),Y2(p.e),2.8,0,6.2832); ctx.fill();
+    });
+    ctx.globalAlpha=1;
+
+    ctx.strokeStyle=C.signal; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(rx,Y2(bias)); ctx.lineTo(rx+rw,Y2(bias)); ctx.stroke();
+    label(ctx,"bias "+(bias>=0?"+":"")+bias.toFixed(1),rx+4,Y2(bias)-9,C.signal,9.5);
+
+    ctx.strokeStyle=C.warn; ctx.lineWidth=1.5; ctx.setLineDash([6,4]);
+    ctx.beginPath(); ctx.moveTo(rx,Y2(ul)); ctx.lineTo(rx+rw,Y2(ul)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(rx,Y2(ll)); ctx.lineTo(rx+rw,Y2(ll)); ctx.stroke();
+    ctx.setLineDash([]);
+    label(ctx,"+1.96 SD",rx+rw-4,Y2(ul)-9,C.warn,9,"right");
+    label(ctx,"−1.96 SD",rx+rw-4,Y2(ll)+10,C.warn,9,"right");
+    label(ctx,"mean of the two (BPM)",rx+rw,y0+ph+16,C["ink-3"],9.5,"right");
+    label(ctx,"difference",rx+2,y0+12,C["ink-3"],9.5);
+
+    document.getElementById("ro-bb").textContent=(bias>=0?"+":"")+bias.toFixed(1)+" BPM";
+    document.getElementById("ro-ul").textContent="+"+ul.toFixed(1);
+    document.getElementById("ro-ll").textContent=ll.toFixed(1);
+    document.getElementById("ro-bmae").textContent=mae.toFixed(1)+" BPM";
+    var dg=document.getElementById("ro-badiag");
+    var txt="clean", cls=" good";
+    if(Math.abs(S)>0.05){ txt="PROPORTIONAL"; cls=" hot"; }
+    else if(Math.abs(bias)>1.5){ txt="CONSTANT BIAS"; cls=" hot"; }
+    else if(fan){ txt="fans out"; cls=" warn"; }
+    dg.textContent=txt; dg.className="v"+cls;
+  }
+  [sb,ss,ssc].forEach(function(e){e.addEventListener("input",draw);});
+  document.getElementById("chk-fan").addEventListener("change",draw);
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 3 : CHROMA ---------- */
+(function(){
+  var cv=document.getElementById("cv-chroma");
+  var mode="444", sq=document.getElementById("sl-q");
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var Q=parseFloat(sq.value);
+    var sub = mode==="444"?1 : mode==="422"?2 : 4;
+    var FS=30,N=210;
+
+    reseed(1717);
+    var clean=[],deg=[];
+    for(var n=0;n<N;n++){
+      var t=n/FS;
+      var v=Math.cos(2*Math.PI*1.2*t)+0.35*Math.cos(2*Math.PI*2.4*t);
+      clean.push(v);
+    }
+    for(var n2=0;n2<N;n2++){
+      var blockStart=Math.floor(n2/sub)*sub;
+      var acc=0,c=0;
+      for(var k=0;k<sub;k++){ if(blockStart+k<N){ acc+=clean[blockStart+k]; c++; } }
+      var v2=acc/c;
+      var step=Q/32*1.05;
+      if(step>0.001) v2=Math.round(v2/step)*step;
+      deg.push(v2+0.02*rnd());
+    }
+
+    var pad=8,pw=w-pad*2,bh=(h-58)/2;
+    label(ctx,"THE COLOUR SIGNAL CARRYING YOUR PULSE",pad,9,C["ink-3"],10);
+    var y1=22;
+    axis(ctx,pad,y1+bh/2,pw,C.rule);
+    ctx.strokeStyle=C["ink-3"]; ctx.lineWidth=1.4; ctx.globalAlpha=.6;
+    ctx.beginPath();
+    for(var i=0;i<N;i++){
+      var px=pad+(i/(N-1))*pw, py=y1+bh/2-clean[i]*(bh/2)/1.4;
+      if(i===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke(); ctx.globalAlpha=1;
+    ctx.strokeStyle=C.accent; ctx.lineWidth=2; ctx.lineJoin="round";
+    ctx.beginPath();
+    for(var i2=0;i2<N;i2++){
+      var px2=pad+(i2/(N-1))*pw, py2=y1+bh/2-deg[i2]*(bh/2)/1.4;
+      if(i2===0)ctx.moveTo(px2,py2); else ctx.lineTo(px2,py2);
+    }
+    ctx.stroke();
+    label(ctx,"original",pad+2,y1+10,C["ink-3"],9.5);
+    label(ctx,"after the codec",pad+70,y1+10,C.accent,9.5);
+
+    var y2=y1+bh+26;
+    label(ctx,"WHAT YOUR FFT THEN SEES",pad,y2-8,C["ink-3"],10);
+    function spec(arr){
+      var out=[],mx=0.0001;
+      for(var s=0;s<=180;s++){
+        var bp=40+(200-40)*s/180, ffq=bp/60;
+        var sx=0,sy=0;
+        for(var n3=0;n3<N;n3++){ var a=-2*Math.PI*ffq*n3/FS; sx+=arr[n3]*Math.cos(a); sy+=arr[n3]*Math.sin(a); }
+        var m=Math.hypot(sx,sy)/N;
+        out.push(m); if(m>mx)mx=m;
+      }
+      return {v:out,mx:mx};
+    }
+    var sc=spec(clean), sd=spec(deg);
+    var sbase=y2+bh;
+    axis(ctx,pad,sbase,pw,C.rule);
+    ctx.strokeStyle=C["ink-3"]; ctx.globalAlpha=.5; ctx.lineWidth=1.4; ctx.beginPath();
+    for(var s2=0;s2<sc.v.length;s2++){
+      var px3=pad+(s2/(sc.v.length-1))*pw, py3=sbase-(sc.v[s2]/sc.mx)*(bh-6);
+      if(s2===0)ctx.moveTo(px3,py3); else ctx.lineTo(px3,py3);
+    }
+    ctx.stroke(); ctx.globalAlpha=1;
+    ctx.strokeStyle=C.accent; ctx.lineWidth=2.2; ctx.beginPath();
+    for(var s3=0;s3<sd.v.length;s3++){
+      var px4=pad+(s3/(sd.v.length-1))*pw, py4=sbase-(sd.v[s3]/sc.mx)*(bh-6);
+      if(s3===0)ctx.moveTo(px4,py4); else ctx.lineTo(px4,py4);
+    }
+    ctx.stroke();
+    var t72=pad+((72-40)/(200-40))*pw;
+    ctx.strokeStyle=C.signal; ctx.setLineDash([3,3]); ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(t72,y2); ctx.lineTo(t72,sbase); ctx.stroke(); ctx.setLineDash([]);
+    label(ctx,"72 BPM",t72+5,y2+8,C.signal,9.5);
+
+    var amp=sd.mx/sc.mx*100;
+    document.getElementById("ro-cs").textContent=mode==="444"?"4:4:4":mode==="422"?"4:2:2":"4:2:0";
+    document.getElementById("ro-amp").textContent=Math.round(amp)+"%";
+    var q=document.getElementById("ro-cq");
+    var txt= amp>80?"excellent" : amp>50?"degraded" : amp>25?"poor" : "destroyed";
+    q.textContent=txt;
+    q.className="v"+(amp>80?" good":amp>50?" warn":" hot");
+    document.getElementById("ro-amp").className="v"+(amp>80?" good":amp>50?" warn":" hot");
+  }
+  document.querySelectorAll(".cs-btn").forEach(function(b){
+    b.addEventListener("click",function(){
+      document.querySelectorAll(".cs-btn").forEach(function(o){o.classList.remove("on");});
+      b.classList.add("on"); mode=b.getAttribute("data-cs"); draw();
+    });
+  });
+  sq.addEventListener("input",draw);
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 4 : DEGRADATION CURVES ---------- */
+(function(){
+  var cv=document.getElementById("cv-deg");
+  function draw(){
+    var f=fit(cv),ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var showS=document.getElementById("chk-sqaf").checked;
+    var showC=document.getElementById("chk-cross").checked;
+
+    var pad=44,pw=w-pad-104,y0=26,ph=h-y0-48;
+    var bmin=100,bmax=3000;
+    function X(b){ return pad+(Math.log(b/bmin)/Math.log(bmax/bmin))*pw; }
+    function Y(e){ return y0+ph-(1-Math.min(e,16)/16)*0+ (Math.min(e,16)/16)*ph; }
+
+    label(ctx,"BPM ERROR vs BITRATE  ·  lower is better",pad,10,C["ink-3"],10);
+    ctx.strokeStyle=C.rule; ctx.strokeRect(pad,y0,pw,ph);
+
+    function curve(name,col,fn,wid){
+      ctx.strokeStyle=col; ctx.lineWidth=wid||2.4; ctx.lineJoin="round"; ctx.beginPath();
+      for(var s=0;s<=160;s++){
+        var b=bmin*Math.pow(bmax/bmin,s/160);
+        var px=X(b), py=Y(fn(b));
+        if(s===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);
+      }
+      ctx.stroke();
+      label(ctx,name,pad+pw+6,Y(fn(bmax)),col,10);
+    }
+    var green=function(b){ return 6.2+3.6*Math.pow(300/b,0.55); };
+    var chrom=function(b){ return 2.9+11.5*Math.pow(240/b,1.5); };
+    var pos  =function(b){ return 2.5+11.0*Math.pow(250/b,1.5); };
+    var sqaf =function(b){ return Math.min(green(b),pos(b),chrom(b))*0.86+0.15; };
+
+    curve("green",C.warn,green);
+    curve("CHROM",C["ink-3"],chrom);
+    curve("POS",C.accent,pos);
+    if(showS) curve("TRACE",C.signal,sqaf,3.2);
+
+    if(showC){
+      var cb=null;
+      for(var s2=0;s2<=300;s2++){
+        var b2=bmin*Math.pow(bmax/bmin,s2/300);
+        if(pos(b2)<green(b2)){ cb=b2; break; }
+      }
+      if(cb){
+        var cx=X(cb);
+        ctx.strokeStyle=C.ink; ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
+        ctx.beginPath(); ctx.moveTo(cx,y0); ctx.lineTo(cx,y0+ph); ctx.stroke(); ctx.setLineDash([]);
+        label(ctx,"ranking flips",cx+6,y0+12,C.ink,10);
+        ctx.fillStyle=C.accent; ctx.globalAlpha=.05;
+        ctx.fillRect(pad,y0,cx-pad,ph); ctx.globalAlpha=1;
+        label(ctx,"naive wins here",pad+6,y0+ph-10,C.warn,9.5);
+        document.getElementById("ro-cross").textContent="~"+Math.round(cb/50)*50+" kbps";
+      }
+    }
+
+    [100,300,1000,3000].forEach(function(b3){
+      var xx=X(b3);
+      ctx.strokeStyle=C["rule-2"];
+      ctx.beginPath(); ctx.moveTo(xx,y0+ph); ctx.lineTo(xx,y0+ph+4); ctx.stroke();
+      label(ctx,b3,xx,y0+ph+14,C["ink-3"],9,"center");
+    });
+    label(ctx,"kbps",pad+pw,y0+ph+30,C["ink-3"],9.5,"right");
+    [0,4,8,12,16].forEach(function(e){
+      label(ctx,e,pad-8,Y(e),C["ink-3"],9,"right");
+    });
+    label(ctx,"MAE",pad-8,y0-8,C["ink-3"],9,"right");
+  }
+  ["chk-sqaf","chk-cross"].forEach(function(i){ document.getElementById(i).addEventListener("change",draw); });
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+</script>
+
+<script>
+(function(){
+  var BN = {"0": "আপনার সংখ্যাগুলো সঠিক প্রমাণ করা &mdash; আর কেন প্রায় সবাই যে ভুলের পরিমাপটা জানায় সেটা একটা গুরুতর নিয়মতান্ত্রিক পক্ষপাত চোখের সামনেই লুকিয়ে রাখতে পারে।", "1": "কাজ করা আর <em>প্রমাণসহ</em> কাজ করার পার্থক্য", "2": "আপনার সিস্টেম এখন একটা হার্ট রেট, একটা quality score আর একটা autonomic নির্দেশক তৈরি করে। এদের প্রতিটাই একটা দাবি, আর প্রমাণহীন দাবি একটা ডেমো, ফলাফল না।", "3": "আপনার পরিকল্পনার Section 2 সোজাসুজি বলে: বেশিরভাগ ছাত্র rPPG প্রজেক্ট একটা repo ক্লোন করে, একটা live সংখ্যা দেখায়, আর থেমে যায়। ওটার আর এটার মাঝের রেখাটা pipeline না। এটাই সেই tier।", "4": "এখানে দুইটা জিনিস:", "5": "<strong>Validation পরিসংখ্যান</strong> &mdash; আপনার অনুমানকে ground truth-এর সাথে এমনভাবে তুলনা করা যাতে সমস্যা লুকিয়ে না গিয়ে প্রকাশ পায়।", "6": "<strong>Compression</strong> &mdash; কেন একটা ভিডিও কল ঠিক সেই সিগন্যালটাই ধ্বংস করে যেটা rPPG-র দরকার, যা আপনার Section 5.1 পরীক্ষার ভৌত ভিত্তি।", "7": "দুইটা সিস্টেম, একই ভুল, <em>সম্পূর্ণ ভিন্ন</em> সমস্যা", "8": "প্রায় প্রতিটা ছাত্র প্রজেক্ট একটা সংখ্যা জানায়: mean absolute error। এটা কেন যথেষ্ট না তা এখানে।", "9": "আপনার সিস্টেমের দুইটা সংস্করণ কল্পনা করুন, দুইটাই ৩.০ BPM MAE জানাচ্ছে।", "10": "<strong>সিস্টেম A</strong> পক্ষপাতহীন কিন্তু একটু noisy। কখনো ৩ বেশি, কখনো ৩ কম, গড়ে ঠিকই।", "11": "<strong>সিস্টেম B</strong> নিখুঁত কিন্তু <em>প্রতিবারই ৩ BPM বেশি পড়ে।</em>", "12": "এরা সমান ভালো না। সিস্টেম A একটা ভদ্র পরিমাপ যা গড় করে আরও ভালো করা যায়। সিস্টেম B-তে একটা calibration ত্রুটি আছে: এটা প্রতিটা ব্যবহারকারীকে বলবে তাঁর হার্ট রেট বেড়ে গেছে, আর কোনো পরিমাণ গড় করাই সেটা ঠিক করবে না। অথচ MAE দুইটাকে একই নম্বর দেয়।", "13": "আরও খারাপ, কিছু ত্রুটি শুধু পরিসরের একটা অংশেই দেখা যায়। একটা সিস্টেম ৬০ BPM-এ নিখুঁত হয়ে ১২০-তে ১০ কম পড়তে পারে, যেটা আপনার সবচেয়ে বেশি চিন্তার ব্যর্থতা, আর MAE সেটাকে একটা ভদ্র দেখতে গড়ে মিশিয়ে ফেলে।", "14": "MAE আপনাকে বলে আপনার ভুলগুলো <strong>কত বড়</strong>। এটা কখনো বলে না ভুলগুলোর <strong>আকার কেমন</strong>। আর আকারেই রোগ নির্ণয়টা থাকে।", "15": "একই MAE, ভিন্ন রোগ", "16": "তিনটা সিস্টেমেরই MAE মোটামুটি একই। এদের মধ্যে বদল করুন আর দেখুন MAE সবে নড়ছে অথচ <strong>mean bias</strong> রিডআউট তিনটা সম্পূর্ণ ভিন্ন গল্প বলছে। সিস্টেম C সবচেয়ে বাজে: এটা বিশ্রামে নিখুঁত আর উঁচু হারে ভয়ানক ভুল, যা একটা স্বাস্থ্য প্রয়োগে আপনি যা চান তার ঠিক উল্টো।", "17": "Bland-Altman: চিকিৎসা পেপার আসলে যে প্লটটা ব্যবহার করে", "18": "একটা পেপার যখন একটা প্রতিষ্ঠিত পদ্ধতির সাথে নতুন পরিমাপ পদ্ধতির তুলনা করে, তখন এই প্লটটাই দেখায়। Dasari et al. (2021), যা আগে থেকেই আপনার পড়ার তালিকায় আছে, একটা FDA-অনুমোদিত সেন্সরের বিপরীতে CHROM আর POS মূল্যায়নে এটা ব্যবহার করে, তাই আপনার নিজের ক্ষেত্রেই একটা তৈরি উদাহরণ আছে যার বিন্যাস নকল করা যায়।", "19": "গঠনটা প্রায় বেশিই সহজ:", "20": "ওই limits of agreement হলো যেখানে আপনার ৯৫ শতাংশ ভুল পড়ে। এতে আপনি সত্যিই কাজের একটা বক্তব্য দিতে পারেন: <em>\"৯৫ শতাংশ পরিমাপে আমাদের অনুমান রেফারেন্স থেকে ৪.২ BPM-এর মধ্যে পড়ে।\"</em> এটা এমন একটা দাবি যার উপর পাঠক কাজ করতে পারেন, যা \"MAE ছিল ৩.০\" পারে না।", "21": "আর প্লটের আকারটাই সরাসরি ত্রুটি নির্ণয় করে:", "22": "Bland-Altman &mdash; একটা বানান, আর রোগ নির্ণয়টা পড়ুন", "23": "বাঁয়ে: ground truth-এর বিপরীতে আপনার অনুমান, বেশিরভাগ মানুষ যে প্লটটা দেখায়। ডানে: একই ডেটার Bland-Altman প্লট। <strong>Proportional bias যোগ করুন আর দেখুন বাম প্লটটা বিশ্বাসযোগ্যই থাকছে অথচ ডানেরটা চোখে পড়ার মতো হেলে যাচ্ছে।</strong> Scatter প্লট কর্ণরেখার কাছে ঢালটা লুকিয়ে রাখে; Bland-Altman সেটাকে নিজের অক্ষে বসিয়ে দেয় যেখানে সে লুকাতে পারে না।", "24": "Correlation মাপে দুইটা জিনিস <em>একসাথে</em> চলে কিনা, তারা <em>একমত</em> কিনা তা না। ঠিক ২০ BPM বেশি পড়া একটা সিস্টেমের correlation r = 1.00 হয় অথচ সে প্রতিটা পরিমাপেই ভুল।", "25": "r জানান, কারণ আপনার ক্ষেত্রের প্রতিটা পেপার জানায় আর এতে আপনার টেবিল তুলনাযোগ্য হয়। কিন্তু কখনোই নির্ভুলতার দাবিটা একা তার উপর ছাড়বেন না। একমত হওয়াটা Bland-Altman-এর কাজ।", "26": "আপনার ক্ষেত্র যে results টেবিল আশা করে", "27": "আপনি যেসব পেপার উদ্ধৃত করেন তাদের বিন্যাস মেলান, তাহলে আপনার সংখ্যা সরাসরি তাদের সাথে তুলনাযোগ্য হয়ে যায়, যেটা পাঠকের কাছে অবাক করার মতো মূল্যবান।", "28": "ওগুলো উদাহরণ, ভবিষ্যদ্বাণী না। সৎভাবে পূরণ করার তিনটা নিয়ম:", "29": "<strong>একটা বিস্তার জানান, কখনো একটামাত্র সংখ্যা না।</strong> অংশগ্রহণকারী জুড়ে আদর্শ বিচ্যুতি, বা একটা ৯৫ শতাংশ confidence interval। একটা ভাগ্যবান রেকর্ডিং কোনো ফলাফল না।", "30": "<strong>Ablation রাখুন।</strong> প্রতিটা উপাদান চালু আর বন্ধ করে। এটাই fusion-এর দাবিকে দাবি না রেখে প্রমাণ দিয়ে রক্ষা করে, আর এটা আগে থেকেই আপনার পরিকল্পনার Section 10।", "31": "<strong>যে পরিস্থিতিতে আপনি হারেন সেটাও জানান।</strong> যে টেবিলে আপনার পদ্ধতি প্রতিটা সারিতে জেতে সেটা সন্দেহ ডেকে আনে। একটা সারিতে POS আপনাকে হারাচ্ছে, সৎভাবে জানানো আর সংক্ষেপে ব্যাখ্যা করা, একটা নিখুঁত জয়ের চেয়ে বেশি বিশ্বাসযোগ্য।", "32": "Compression", "33": "কেন একটা ভিডিও কল rPPG-র <em>ঠিক দরকারি</em> জিনিসটাতেই আঘাত করে", "34": "আপনার পরিকল্পনার Section 5.1 Zoom-ধাঁচের ক্ষয়ের অধীনে robustness পরীক্ষা করে। ওই পরীক্ষাটা video codec কীভাবে কাজ করে তার একটা তথ্যের উপর দাঁড়িয়ে, আর সেটা জানলে আপনার পরীক্ষা এলোমেলো খোঁচাখুঁচি থেকে একটা লক্ষ্যভেদী অনুমানে পরিণত হয়।", "35": "মানুষের দৃষ্টি রঙের চেয়ে উজ্জ্বলতায় অনেক বেশি সংবেদনশীল। Codec নকশাকারীরা <strong>chroma subsampling</strong>-এর মাধ্যমে এটা নির্মমভাবে কাজে লাগান: উজ্জ্বলতা পূর্ণ resolution-এ রাখো, আর রঙ তার এক-চতুর্থাংশে।", "36": "এবার মনে করুন আপনার সিগন্যালটা আসলে কী। Tier 0 দেখিয়েছে পালসটা রঙের চ্যানেলগুলোর <em>পার্থক্যে</em> থাকে, কারণ hemoglobin লাল আলোর চেয়ে সবুজ অনেক বেশি শোষণ করে। ওটা ঠিক chroma তথ্য।", "37": "Video compression সেই চ্যানেলটা রাখে যেটা rPPG-র দরকার নেই আর সেটা ফেলে দেয় যেটাতে rPPG থাকে। <strong>Chroma subsampling প্রায় rPPG-র উপর একটা সবচেয়ে খারাপ আক্রমণ</strong>, আর এটা দুনিয়ার প্রতিটা ভিডিও কলে চলছে।", "38": "Quantisation এটাকে আরও বাড়ায়। পালস চামড়ার রঙ বদলায় এক শতাংশেরও অনেক কম, তাই এর বিস্তার একটা পিক্সেল মানের ভগ্নাংশ। কম bitrate-এ মোটা দাগের quantisation ওই ভগ্নাংশগুলো শূন্যে গোল করে দেয়। সিগন্যালটা ক্ষয়প্রাপ্ত হয় না, <em>মুছে যায়</em>।", "39": "Chroma subsampling &mdash; কী টিকে থাকে, আর কী ফেলে দেওয়া হয়", "40": "উপরে: পালস বহনকারী রঙের সিগন্যাল, codec-এর আগে আর পরে। নিচে: আপনার FFT তখন যা দেখে। <strong>তিনটা ফরম্যাটে ধাপে ধাপে যান, তারপর quantisation বাড়ান।</strong> চূড়াটা noise-এর মেঝের দিকে সংকুচিত হয় অথচ উজ্জ্বলতার চ্যানেল, যেটা codec রক্ষা করে, নিখুঁত আর আপনার জন্য অকেজো থেকে যায়।", "41": "এটা আপনার পরীক্ষার জন্য কী ভবিষ্যদ্বাণী করে", "42": "আপনি এখন কিছু চালানোর আগেই অনুমান বলতে পারেন, যা একটা Method অংশ লেখার অনেক শক্তিশালী উপায়:", "43": "যেসব পদ্ধতি <em>chrominance পার্থক্যের</em> উপর নির্ভর করে (CHROM, POS) তারা আক্রমণাত্মক subsampling-এ সবচেয়ে দ্রুত খারাপ হওয়ার কথা।", "44": "সহজ green channel, যেহেতু কাঁচা উজ্জ্বলতার কাছাকাছি, compression-এ হয়তো আরও <em>ধীরে</em> খারাপ হবে, যদিও নড়াচড়ায় সে বাজেভাবে হারে। আপনার ডেটা যদি সেটা দেখায়, তাহলে সেটা সত্যিই আকর্ষণীয় একটা আবিষ্কার, bug না।", "45": "ওই উল্টে যাওয়াটাই <strong>ঠিক সেই পরিস্থিতি যেখানে adaptive fusion-এর জেতার কথা</strong>, কারণ পদ্ধতিগুলোর ক্রম পরিস্থিতিভেদে উল্টে যায় আর কোনো স্থির বাছাই দুইটাতেই সঠিক না।", "46": "শেষ পয়েন্টটা নিয়ে একটু ভাবার মতো। Tier 3 সতর্ক করেছিল যে fusion তখনই লাভ দেয় যখন ভিন্ন পরিস্থিতিতে ভিন্ন পদ্ধতি জেতে। Compression হয়তো সেই পরিস্থিতিটাই তৈরি করবে যে উল্টে যাওয়াটা আপনার দরকার, যাতে Section 5.1 শুধু একটা robustness পরীক্ষা না হয়ে সেই পরীক্ষা হয়ে ওঠে যার উপর আপনার প্রধান দাবি নির্ভর করে।", "47": "ক্ষয়ের রেখা &mdash; আপনার রিপোর্টে যে ছবিটা দরকার", "48": "Section 5.1 যে প্লটটা তৈরি করার জন্য নকশা করা, এটাই তার আকার। Crossover বিন্দুটাই পুরো যুক্তি: এর উপরে POS প্রধান, নিচে সহজ পদ্ধতিটা ভালো টেকে, আর <strong>পুরো পরিসরে কোনো স্থির বাছাই সঠিক না</strong> &mdash; যেটাই ঠিক সেই ফাঁক যা adaptive fusion পূরণ করে। বাস্তব সংখ্যা দিয়ে আপনারটা আঁকুন, আর এটাই আপনার সবচেয়ে শক্তিশালী একক ছবি হয়ে যাবে।", "49": "Tier 5-এর শব্দগুলো, সহজ ভাষায়", "51": "Mean absolute error। আপনার ভুলগুলোর গড় আকার, দিক উপেক্ষা করে।", "53": "Root mean square error। MAE-র মতোই কিন্তু আগে বর্গ করে, তাই বড় ভুলকে বেশি শাস্তি দেয়। সবসময় MAE-র সমান বা বড়।", "55": "চিহ্ন রেখে গড় ভুল। MAE যে ধারাবাহিক বেশি বা কম পড়া লুকিয়ে রাখে সেটা প্রকাশ করে।", "57": "দুইটা পরিমাপ কতটা একসাথে চলে। একমত হওয়া ভয়ানক খারাপ হওয়া সত্ত্বেও এটা ১.০০ হতে পারে।", "59": "গড়ের বিপরীতে পার্থক্য আঁকা, সাথে bias আর ৯৫% সীমা টানা। চিকিৎসা পরিমাপে প্রমিত agreement প্লট।", "61": "Bias ± ১.৯৬ আদর্শ বিচ্যুতি। আপনার ৯৫% ভুল যে পরিসরে থাকে।", "63": "যে ভুল মাপা মানের সাথে বাড়ে। Bland-Altman-এ হেলে যাওয়া হিসেবে দেখা যায় আর MAE-তে অদৃশ্য।", "65": "প্রতিটা উপাদান পালা করে বন্ধ করে দেখানো যে সে কতটা অবদান রেখেছে। এটাই একটা fusion দাবিকে রক্ষা করে।", "67": "এমন একটা পরিসর যাতে আসল মানটা সম্ভবত আছে। খালি একটা সংখ্যার বদলে এটা জানান।", "69": "উজ্জ্বলতা আর রঙ, প্রতিটা video codec আলাদাভাবে সংরক্ষণ করে যাতে রঙটা আরও আক্রমণাত্মকভাবে ফেলে দেওয়া যায়।", "71": "উজ্জ্বলতার চেয়ে কম resolution-এ রঙ রাখা। 4:2:0 এক-চতুর্থাংশ রাখে, আর এটাই সর্বত্র ডিফল্ট।", "73": "বিট বাঁচাতে পিক্সেল মান মোটা দাগে গোল করা। এক-শতাংশেরও কম পালস সিগন্যালকে সোজা শূন্যে গোল করে দেয়।", "75": "Codec-কে যত বিট প্রতি সেকেন্ড দেওয়া হয়। কতটা ফেলে দেওয়া হবে তার প্রধান নব।", "76": "নিজেকে যাচাই করুন", "77": "আপনার MAE ২.১ BPM আর r ০.৯৮। আপনার সুপারভাইজার সন্তুষ্ট না। তিনি কী নিয়ে চিন্তিত?", "78": "নিয়মতান্ত্রিক পক্ষপাত, যা কোনো সংখ্যাই বাদ দিতে পারে না। ধারাবাহিকভাবে ২ BPM বেশি পড়া একটা সিস্টেম ঠিক ওই সংখ্যাগুলোই তৈরি করে অথচ প্রতিটা পরিমাপেই ভুল, আর ২০ BPM ব্যবধানেও r প্রায় ১.০০ থাকত।", "79": "Bias আর limits of agreement উল্লেখ করে একটা Bland-Altman প্লট দেখান। অংশগ্রহণকারী জুড়ে বিস্তারও দেখান, যেহেতু একটা ভালো গড় এমন একজনকে লুকিয়ে রাখতে পারে যার ক্ষেত্রে সিস্টেমটা পুরোপুরি ব্যর্থ।", "80": "খুব কম bitrate-এ সহজ green channel কেন CHROM-কে হারাতে পারে?", "81": "কারণ CHROM রঙের চ্যানেলগুলোর পার্থক্যের উপর কাজ করে, আর chroma subsampling ঠিক সেই কাজটাই করে যা রঙের বিস্তারিত ধ্বংস করে। Green channel সেই luma তথ্যের কাছাকাছি বসে যেটা codec বিশেষভাবে রক্ষা করে।", "82": "আপনার পরীক্ষা যদি এটা দেখায়, তাহলে এটা ব্যাখ্যা করে সরিয়ে দেওয়ার মতো কোনো অসংগতি না, বরং গুরুত্ব দিয়ে জানানোর মতো একটা সত্যিকারের আবিষ্কার। আর এটাই ঘটনাক্রমে আপনার fusion দাবির সবচেয়ে শক্তিশালী প্রমাণ, কারণ এটা একটা নথিভুক্ত পরিস্থিতি যেখানে সেরা পদ্ধতিটা বদলে যায়।", "83": "আপনার Bland-Altman মেঘ নিচের দিকে হেলে আছে: ৬০ BPM-এ নিখুঁত, ১২০-তে কম পড়ছে। একটা সম্ভাব্য কারণ কী?", "84": "আগে আপনার filter-এর উপরের প্রান্তটা দেখুন। Bandpass যদি ২ Hz-এর আগেই নেমে যায়, তাহলে দ্রুত হার্ট রেটের fundamental দুর্বল হচ্ছে অথচ তার harmonic হচ্ছে না, তাই উঁচু হারে peak-বাছাই ঠিক একটা দিকেই অনির্ভরযোগ্য হয়ে যায়। Tier 2-এর Figure 3 এটা ঘটতে দেখায়।", "85": "দ্বিতীয় প্রার্থী: জানালার দৈর্ঘ্য। দ্রুত হার একটা নির্দিষ্ট জানালায় বেশি চক্র আঁটে, তাই পরিসর জুড়ে resolution ভিন্নভাবে আচরণ করে আর যেকোনো harmonic বিভ্রান্তি অসমভাবে দেখা দেয়।", "86": "আপনার পদ্ধতি যেখানে হারে সেটা কেন জানাবেন?", "87": "কারণ যে টেবিলে প্রস্তাবিত পদ্ধতি প্রতিটা সারিতে জেতে সেটা বাছাই করে জানানোর স্বাক্ষর, আর অভিজ্ঞ পাঠক স্বয়ংক্রিয়ভাবে সেটা ছাড় দিয়ে পড়েন। প্রতিটা বাস্তব পদ্ধতিরই এমন একটা এলাকা থাকে যেখানে অন্য কিছু ভালো।", "88": "ওই এলাকাটার নাম বলা দেখায় যে আপনি শুধু আপনার পদ্ধতির নম্বর না, তার কার্যপ্রণালী বোঝেন, আর এতে আপনার জেতা সারিগুলো কম না, বেশি বিশ্বাসযোগ্য হয়। Reviewer-রা সেই পেপারগুলোকেই বিশ্বাস করেন যারা নিজেদের সীমা জানে।", "89": "পাঁচটা tier একসাথে", "90": "আপনি এখন শুরু থেকে শেষ পর্যন্ত যা বানাতে পারেন", "91": "একটা ক্যামেরা সেকেন্ডে ৩০ বার চামড়ার উজ্জ্বলতার নমুনা নেয় (<strong>Tier 1</strong>)। আপনি R, G আর B-কে এমন একটা দিকে project করেন যাতে আলোর artifact লম্বভাবে গিয়ে মিলিয়ে যায় (<strong>Tier 0</strong>)। আপনি একটা বিয়োগ করা moving average দিয়ে detrend করেন আর এমন একটা zero-phase filter দিয়ে bandpass করেন যা আপনার বিট সরায় না (<strong>Tier 2</strong>)।", "92": "আপনি ফলটাকে প্রতিটা সম্ভাব্য হারে বৃত্তের চারপাশে পেঁচান, আর যে frequency-তে বিন্দুগুলো একদিকে জমে সেটাই হার্ট রেট (<strong>Tier 0</strong>)। আপনি তার sub-harmonic পরীক্ষা করেন, কারণ একটা ধারালো পালস harmonic তৈরি করে আর সবচেয়ে লম্বা চূড়াটা সবসময় সঠিক উত্তর না (<strong>Tier 1</strong>)।", "93": "আপনি মাপেন ব্যান্ডের শক্তির কত ভাগ ওই চূড়ায় আছে, আর ওই ভগ্নাংশটা হয়ে যায় একটা trust score যা frame ধরে ধরে তিনটা পদ্ধতিকে একে অপরের বিপরীতে ওজন দেয় (<strong>Tier 3</strong>)।", "94": "আপনি প্রতিটা বিট frame-এর চেয়ে সূক্ষ্মভাবে খুঁজে বের করেন, interval সিরিজ বানান, সেটাকে একটা সমান গ্রিডে resample করেন কারণ গঠনগতভাবেই সেটা সমান ব্যবধানে না, আর LF আর HF ব্যান্ড পড়তে দ্বিতীয়বার রূপান্তর করেন (<strong>Tier 4</strong>)।", "95": "তারপর আপনি bias, limits of agreement আর একটা ablation দিয়ে ground truth-এর বিপরীতে পুরোটা প্রমাণ করেন, আর একটা বাস্তব telehealth কল যে compression প্রয়োগ করত তার অধীনে পরীক্ষা করেন (<strong>Tier 5</strong>)।", "96": "<strong>Bias</strong> হলো আপনার গড় ভুল, <em>চিহ্ন রেখে</em>। MAE পরম মান নিয়ে চিহ্ন ফেলে দেয়, তাই +৩ আর −৩ দুইটাই ৩ হয়ে যায় আর কিছুই কাটাকাটি হয় না। Bias চিহ্ন রাখে, তাই ধারাবাহিকভাবে বেশি পড়া একটা ধনাত্মক সংখ্যা হিসেবে দেখা দেয় আর এলোমেলোতা প্রায় শূন্যে গড় হয়ে যায়। সংজ্ঞার ওই একটা বদলই উপরের দুইটা সিস্টেমকে আলাদা করে।", "97": "<strong>এর কোথাও কোনো প্রশিক্ষিত model ব্যবহার হয় না।</strong> প্রতিটা সংখ্যা একটা convolution বা একটা Fourier transform-এ ফিরে যায়। এটাই আপনার পরিকল্পনার Section 17-এর দাবি, আর আপনি এখন এর প্রতিটা লাইন রক্ষা করতে পারেন।"};
+  var EN = {};
+  var nodes = document.querySelectorAll("[data-t]");
+  nodes.forEach(function(el){ EN[el.getAttribute("data-t")] = el.innerHTML; });
+  var btn = document.getElementById("langbtn");
+  function apply(l){
+    document.documentElement.setAttribute("data-lang", l);
+    nodes.forEach(function(el){
+      var k = el.getAttribute("data-t");
+      var v = (l === "bn" && BN[k]) ? BN[k] : EN[k];
+      if (el.innerHTML !== v) el.innerHTML = v;
+    });
+    btn.textContent = (l === "bn") ? "English" : "বাংলা";
+    try { localStorage.setItem("lessonLang", l); } catch(e){}
+    if (typeof redrawAll === "function") { try { redrawAll(); } catch(e){} }
+  }
+  var saved = "en";
+  try { saved = localStorage.getItem("lessonLang") || "en"; } catch(e){}
+  apply(saved);
+  btn.addEventListener("click", function(){
+    apply(document.documentElement.getAttribute("data-lang") === "bn" ? "en" : "bn");
+  });
+  window.addEventListener("resize", function(){
+    if (typeof redrawAll === "function") { try { redrawAll(); } catch(e){} }
+  });
+})();
+</script>
+

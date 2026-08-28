@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Tooling
+.playwright-mcp/
+.firecrawl/
+.claude/
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Data (large, and redistributable only under each dataset's own licence)
+data/
+*.mp4
+*.avi
+*.mkv

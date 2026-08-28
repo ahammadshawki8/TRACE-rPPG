@@ -1,0 +1,665 @@
+<title>TRACE-rPPG Pitch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --paper:#FAF7F8; --paper-2:#F2EDEF; --paper-3:#E9E1E5;
+  --ink:#1F1720; --ink-2:#5A4E58; --ink-3:#8C7F88;
+  --rule:#E0D6DB; --rule-2:#CDBFC7;
+  --accent:#B01B3F; --accent-2:#8E1533; --accent-soft:#F7DEE5;
+  --signal:#10796B; --signal-soft:#DBEFEA;
+  --warn:#9C5A12; --warn-soft:#F7E8D4;
+  --font-display:"Spectral",Georgia,serif;
+  --font-body:"Archivo",ui-sans-serif,system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#16111A; --paper-2:#1F1824; --paper-3:#29202F;
+    --ink:#F0E9EE; --ink-2:#B3A5AE; --ink-3:#7D6F79;
+    --rule:#322A38; --rule-2:#443A4B;
+    --accent:#FF6B8A; --accent-2:#FF93A9; --accent-soft:#3B1D28;
+    --signal:#45D6B0; --signal-soft:#123029;
+    --warn:#E0A050; --warn-soft:#33260F;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#16111A; --paper-2:#1F1824; --paper-3:#29202F;
+  --ink:#F0E9EE; --ink-2:#B3A5AE; --ink-3:#7D6F79;
+  --rule:#322A38; --rule-2:#443A4B;
+  --accent:#FF6B8A; --accent-2:#FF93A9; --accent-soft:#3B1D28;
+  --signal:#45D6B0; --signal-soft:#123029;
+  --warn:#E0A050; --warn-soft:#33260F;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:var(--font-body); margin:0; padding:0;
+  -webkit-font-smoothing:antialiased; overflow:hidden;
+}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;line-height:1.12}
+p{margin:0}
+
+/* ---------- deck frame ---------- */
+.deck{position:relative;width:100vw;height:100vh;overflow:hidden}
+.slide{
+  position:absolute; inset:0;
+  padding:clamp(2rem,5vh,4rem) clamp(2rem,6vw,6rem) clamp(4rem,8vh,5.5rem);
+  display:none; flex-direction:column; gap:clamp(1rem,2.4vh,2rem);
+  overflow-y:auto;
+}
+.slide.active{display:flex}
+.slide.center{justify-content:center}
+
+.eyebrow{
+  font-family:var(--font-mono); font-size:clamp(.7rem,1.1vw,.9rem);
+  letter-spacing:.18em; text-transform:uppercase; color:var(--accent); font-weight:600;
+}
+.eyebrow.mute{color:var(--ink-3)}
+h1.big{font-size:clamp(2.6rem,7.5vw,6rem);font-weight:700;letter-spacing:-.025em}
+h2.title{font-size:clamp(1.9rem,4.4vw,3.4rem);font-weight:600;letter-spacing:-.02em}
+h2.title em{font-style:italic;color:var(--accent)}
+.lede{
+  font-family:var(--font-display); font-size:clamp(1.1rem,2.2vw,1.8rem);
+  color:var(--ink-2); line-height:1.45; max-width:44ch;
+}
+.big-stat{font-family:var(--font-mono);font-size:clamp(2.4rem,6vw,4.5rem);font-weight:600;color:var(--accent);letter-spacing:-.03em}
+
+ul.pts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:clamp(.6rem,1.6vh,1.2rem)}
+ul.pts li{
+  font-size:clamp(1rem,1.9vw,1.5rem); line-height:1.4;
+  padding-left:1.7em; position:relative; color:var(--ink);
+}
+ul.pts li::before{
+  content:"—"; position:absolute; left:0; color:var(--accent); font-weight:600;
+}
+ul.pts li strong{font-weight:700}
+ul.pts li small{display:block;font-size:.74em;color:var(--ink-3);margin-top:.2em;padding-left:0}
+
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,17rem),1fr));gap:clamp(1rem,2.5vw,2.2rem);align-items:start}
+.card{
+  border:1px solid var(--rule-2); border-radius:5px; background:var(--paper-2);
+  padding:clamp(1rem,2vw,1.6rem); display:flex; flex-direction:column; gap:.5rem;
+}
+.card .ct{font-family:var(--font-mono);font-size:clamp(.66rem,1vw,.8rem);letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.card .ch{font-family:var(--font-display);font-size:clamp(1.1rem,1.9vw,1.5rem);font-weight:600}
+.card p{font-size:clamp(.85rem,1.4vw,1.05rem);color:var(--ink-2);line-height:1.45}
+.card.hi{border-color:var(--accent);border-width:2px;background:var(--accent-soft)}
+.card.sig{border-color:var(--signal);background:var(--signal-soft)}
+.card.sig .ct{color:var(--signal)}
+
+/* pipeline diagram */
+.pipe{display:flex;flex-wrap:wrap;gap:.5rem;align-items:stretch}
+.step{
+  flex:1 1 8.5rem; border:1px solid var(--rule-2); border-radius:4px;
+  background:var(--paper-2); padding:.7rem .8rem;
+  display:flex; flex-direction:column; gap:.3rem; min-width:8rem;
+}
+.step .n{font-family:var(--font-mono);font-size:.68rem;color:var(--ink-3);letter-spacing:.1em}
+.step .t{font-size:clamp(.82rem,1.25vw,1rem);font-weight:600;line-height:1.25}
+.step .tag{
+  font-family:var(--font-mono);font-size:.6rem;letter-spacing:.09em;text-transform:uppercase;
+  padding:.15rem .4rem;border-radius:2px;align-self:flex-start;margin-top:.15rem;font-weight:600;
+}
+.step.conv{border-color:var(--signal);background:var(--signal-soft)}
+.step.conv .tag{background:var(--signal);color:var(--paper)}
+.step.ft{border-color:var(--accent);background:var(--accent-soft)}
+.step.ft .tag{background:var(--accent);color:var(--paper)}
+.step.plain-s .tag{background:var(--rule-2);color:var(--ink-2)}
+
+.formula{
+  font-family:var(--font-mono); font-size:clamp(.95rem,1.9vw,1.5rem);
+  background:var(--paper-2); border:1px solid var(--rule); border-radius:4px;
+  padding:clamp(.8rem,2vh,1.4rem) clamp(1rem,2vw,1.6rem); line-height:1.7;
+  white-space:pre; overflow-x:auto; color:var(--ink);
+}
+.formula .hi{color:var(--accent);font-weight:600}
+.formula .ok{color:var(--signal);font-weight:600}
+.formula .dim{color:var(--ink-3)}
+
+table{border-collapse:collapse;width:100%;font-size:clamp(.8rem,1.35vw,1.05rem)}
+th,td{text-align:left;padding:.5rem .7rem;border-bottom:1px solid var(--rule)}
+th{font-family:var(--font-mono);font-size:clamp(.6rem,.95vw,.75rem);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
+td.tag-c{color:var(--signal);font-weight:600;font-family:var(--font-mono);font-size:.9em}
+td.tag-f{color:var(--accent);font-weight:600;font-family:var(--font-mono);font-size:.9em}
+td.tag-n{color:var(--ink-3);font-family:var(--font-mono);font-size:.9em}
+.tbl-wrap{overflow:auto;max-height:52vh}
+
+canvas{display:block;width:100%;height:auto;border:1px solid var(--rule);border-radius:4px;background:var(--paper-2)}
+
+.quote{
+  border-left:4px solid var(--accent); padding:clamp(.8rem,2vh,1.4rem) clamp(1rem,2.5vw,2rem);
+  background:var(--accent-soft); border-radius:0 4px 4px 0;
+  font-family:var(--font-display); font-size:clamp(1.05rem,2.1vw,1.7rem); line-height:1.45;
+}
+.quote strong{color:var(--accent-2);font-weight:700}
+
+/* ---------- chrome ---------- */
+.bar{
+  position:fixed; left:0; right:0; bottom:0; height:clamp(2.6rem,5vh,3.4rem);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 clamp(1rem,3vw,2.5rem); background:var(--paper);
+  border-top:1px solid var(--rule); z-index:20;
+}
+.bar .lbl{font-family:var(--font-mono);font-size:clamp(.62rem,1vw,.78rem);color:var(--ink-3);letter-spacing:.08em}
+.bar .lbl b{color:var(--ink-2);font-weight:600}
+.nav{display:flex;gap:.4rem;align-items:center}
+.nav button{
+  font-family:var(--font-mono); font-size:.75rem; letter-spacing:.05em;
+  padding:.32rem .7rem; background:var(--paper-2); color:var(--ink);
+  border:1px solid var(--rule-2); border-radius:3px; cursor:pointer;
+}
+.nav button:hover{border-color:var(--accent);color:var(--accent)}
+.prog{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:30;transition:width .22s ease}
+.dots{display:flex;gap:4px;align-items:center;flex-wrap:wrap;max-width:40vw}
+.dots i{width:6px;height:6px;border-radius:50%;background:var(--rule-2);cursor:pointer;display:block}
+.dots i.on{background:var(--accent);transform:scale(1.4)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="prog" id="prog"></div>
+<div class="deck" id="deck">
+
+<!-- 1 -->
+<section class="slide center">
+  <div class="eyebrow">Signals &amp; Systems · Project Proposal</div>
+  <h1 class="big">TRACE-rPPG</h1>
+  <p class="lede">Measuring heart rate and heart-rate variability from an ordinary video of a face, with no sensor touching the skin.</p>
+  <div style="display:flex;gap:2rem;flex-wrap:wrap;margin-top:1rem">
+    <div><div class="eyebrow mute">Built entirely from</div><div style="font-family:var(--font-display);font-size:clamp(1rem,1.8vw,1.4rem);font-weight:600">Fourier Series · Fourier Transform · Convolution</div></div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <div class="eyebrow">01 · The problem</div>
+  <h2 class="title">Every vital sign measurement today needs something <em>touching you</em></h2>
+  <div class="cols">
+    <div class="card"><div class="ct">Telehealth</div><div class="ch">The doctor cannot see your pulse</div><p>A video consultation gives the clinician everything except objective physiological data.</p></div>
+    <div class="card"><div class="ct">Neonatal care</div><div class="ch">Adhesive sensors damage fragile skin</div><p>Premature infants need constant monitoring and can least tolerate contact sensors.</p></div>
+    <div class="card"><div class="ct">Driver monitoring</div><div class="ch">Nobody wears a chest strap to drive</div><p>Drowsiness and cardiac events are detectable, but only if measurement is invisible.</p></div>
+  </div>
+  <p class="lede" style="margin-top:.5rem">In all three cases there is already a camera pointed at the person.</p>
+</section>
+
+<!-- 3 -->
+<section class="slide center">
+  <div class="eyebrow">02 · The idea</div>
+  <h2 class="title">A camera can already see your heartbeat.<br>It just needs the <em>right mathematics</em>.</h2>
+  <div class="formula">every heartbeat pushes blood into the face
+        <span class="dim">↓</span>
+  the skin absorbs slightly more light
+        <span class="dim">↓</span>
+   the camera records a tiny colour change
+        <span class="dim">↓</span>
+      <span class="hi">Fourier finds the rhythm in it</span></div>
+  <p class="lede">The colour change is under one percent. Invisible to the eye. Well within the reach of an ordinary webcam and the three tools this course teaches.</p>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <div class="eyebrow">03 · The physics</div>
+  <h2 class="title">Why <em>green</em> carries the signal</h2>
+  <div class="cols">
+    <div class="card sig">
+      <div class="ct">Haemoglobin</div>
+      <div class="ch">Absorbs green light strongly, red light weakly</div>
+      <p>So when blood volume rises, the green channel dips much harder than the red channel does. The pulse lives in the <strong>difference between channels</strong>, not in overall brightness.</p>
+    </div>
+    <div class="card">
+      <div class="ct">Consequence</div>
+      <div class="ch">Motion and lighting look different from a pulse</div>
+      <p>A person shifting, or a cloud passing, brightens all three channels together. A heartbeat changes their balance. That distinction is what makes the whole thing possible.</p>
+    </div>
+  </div>
+  <div class="quote">This one fact is what we exploit at every later stage: <strong>artifacts change brightness, blood changes colour balance.</strong></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <div class="eyebrow">04 · The pipeline</div>
+  <h2 class="title">Eleven steps, and the course appears in <em>five of them</em></h2>
+  <div class="pipe">
+    <div class="step plain-s"><span class="n">01</span><span class="t">Capture face video</span><span class="tag">input</span></div>
+    <div class="step plain-s"><span class="n">02</span><span class="t">Track the skin region</span><span class="tag">Haar / convolution family</span></div>
+    <div class="step plain-s"><span class="n">03</span><span class="t">Average R, G, B per frame</span><span class="tag">data</span></div>
+    <div class="step conv"><span class="n">04</span><span class="t">Detrend</span><span class="tag">Convolution</span></div>
+    <div class="step plain-s"><span class="n">05</span><span class="t">CHROM / POS projection</span><span class="tag">linear algebra</span></div>
+    <div class="step conv"><span class="n">06</span><span class="t">Bandpass 0.7–4 Hz</span><span class="tag">Convolution</span></div>
+    <div class="step ft"><span class="n">07</span><span class="t">FFT → find the peak → BPM</span><span class="tag">Fourier Transform</span></div>
+    <div class="step ft"><span class="n">08</span><span class="t">Signal-quality metric</span><span class="tag">Fourier Transform</span></div>
+    <div class="step plain-s"><span class="n">09</span><span class="t">Weighted fusion</span><span class="tag">arithmetic</span></div>
+    <div class="step plain-s"><span class="n">10</span><span class="t">Beat timing → RR intervals</span><span class="tag">peak finding</span></div>
+    <div class="step ft"><span class="n">11</span><span class="t">Second FFT → LF/HF</span><span class="tag">Fourier Transform</span></div>
+  </div>
+  <p class="lede" style="margin-top:.4rem">Every number the system outputs comes out of a green box or a crimson box. Nothing is learned, nothing is trained.</p>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <div class="eyebrow">05 · Course topic 1</div>
+  <h2 class="title"><em>Convolution</em> — twice, and we prove the theorem</h2>
+  <div class="cols">
+    <div class="card sig">
+      <div class="ct">Step 4</div>
+      <div class="ch">Detrending</div>
+      <p>Convolve with a moving-average kernel to extract the slow lighting drift, then subtract it. A low-pass subtracted from the original <strong>is a high-pass</strong>.</p>
+    </div>
+    <div class="card sig">
+      <div class="ct">Step 6</div>
+      <div class="ch">Bandpass filtering</div>
+      <p>Convolve with a kernel that keeps only 0.7 to 4 Hz — that is 42 to 240 BPM, the range a human heart rate can plausibly occupy.</p>
+    </div>
+  </div>
+  <div class="formula"><span class="dim">and we demonstrate the convolution theorem directly:</span>
+
+  conv(x, h)   <span class="hi">≡</span>   IFFT( FFT(x) × FFT(h) )
+
+<span class="dim">  identical to 1e-16 — floating point noise, not disagreement</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <div class="eyebrow">06 · Course topic 2</div>
+  <h2 class="title"><em>Fourier Transform</em> — this is where the number comes from</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr));gap:1.4rem;align-items:center">
+    <canvas id="cv-live" height="230"></canvas>
+    <div style="display:flex;flex-direction:column;gap:1rem">
+      <p class="lede" style="font-size:clamp(1rem,1.8vw,1.35rem)">We wind the filtered signal around a circle at every candidate rate. Noise smears evenly and cancels. The real pulse piles up on one side.</p>
+      <div class="formula" style="font-size:clamp(.9rem,1.6vw,1.25rem)">BPM = peak frequency <span class="hi">× 60</span></div>
+    </div>
+  </div>
+  <div class="quote">The noise cancelling itself out is not luck. <strong>It is the mechanism.</strong> That is why we can extract a signal weaker than the noise sitting on top of it.</div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <div class="eyebrow">07 · Course topic 3</div>
+  <h2 class="title"><em>Fourier Series</em> — why the spectrum has two peaks</h2>
+  <ul class="pts">
+    <li><strong>A heartbeat is not a sine wave.</strong> It is a sharp upstroke, a fast fall, a small secondary bump.<small>Fourier series says a sharp repeating shape must be built from a fundamental plus harmonics.</small></li>
+    <li><strong>So the spectrum shows a peak at 72 BPM and another at 144 BPM.</strong><small>The second is the harmonic. It is not a second heartbeat.</small></li>
+    <li><strong>Naive peak-picking will sometimes choose the wrong one.</strong><small>If the fundamental is weakened by filtering or poor light, argmax reports 144 for a resting adult.</small></li>
+  </ul>
+  <div class="quote">We handle this explicitly with a <strong>sub-harmonic check</strong> — before accepting a peak at f, we test f/2. This is a known failure mode we designed against, and it comes straight out of Fourier series theory.</div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <div class="eyebrow">08 · Our contribution</div>
+  <h2 class="title">Existing systems pick <em>one</em> method and hope</h2>
+  <div class="cols">
+    <div class="card"><div class="ct">Method A</div><div class="ch">Green channel</div><p>Simple. Survives compression reasonably. Collapses under motion.</p></div>
+    <div class="card"><div class="ct">Method B</div><div class="ch">CHROM</div><p>Motion-robust projection. Needs decent lighting and intact colour detail.</p></div>
+    <div class="card"><div class="ct">Method C</div><div class="ch">POS</div><p>Best in clean conditions. Also depends on colour fidelity.</p></div>
+  </div>
+  <div class="quote"><strong>Each one wins under different conditions.</strong> Every published implementation commits to one for the entire recording. That is a bet, not a measurement.</div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <div class="eyebrow">09 · Our contribution</div>
+  <h2 class="title">TRACE: measure <em>how much to trust</em> each method, every frame</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,19rem),1fr));gap:1.4rem;align-items:center">
+    <canvas id="cv-fuse" height="240"></canvas>
+    <div style="display:flex;flex-direction:column;gap:.9rem">
+      <p class="lede" style="font-size:clamp(1rem,1.7vw,1.3rem)">Run all three in parallel. Score each one live. Blend their spectra weighted by those scores.</p>
+      <ul class="pts" style="gap:.45rem">
+        <li style="font-size:clamp(.9rem,1.5vw,1.15rem)">Lighting drops → green is down-weighted</li>
+        <li style="font-size:clamp(.9rem,1.5vw,1.15rem)">Subject moves → green collapses, CHROM takes over</li>
+        <li style="font-size:clamp(.9rem,1.5vw,1.15rem)">No single method is trusted blindly</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <div class="eyebrow">10 · The quality metric</div>
+  <h2 class="title">And the trust score comes <em>straight out of the FFT</em></h2>
+  <div class="formula">peak        = argmax( power inside 0.7–4 Hz )
+signalPower = power near the peak <span class="dim">+</span> power near its harmonic
+noisePower  = everything else in the band
+
+<span class="hi">quality = signalPower / (signalPower + noisePower)</span>       <span class="dim">→ 0 to 1</span></div>
+  <ul class="pts">
+    <li><strong>A clean pulse concentrates its energy into one narrow peak.</strong> Score near 1.</li>
+    <li><strong>Noise spreads energy evenly across the band.</strong> Score near 0.</li>
+    <li><strong>No extra computation.</strong> It is a ratio of sums over the spectrum we already computed. Parseval's theorem is what lets us measure energy this way.</li>
+  </ul>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <div class="eyebrow">11 · Extension one</div>
+  <h2 class="title">Testing it on the video a <em>real telehealth call</em> produces</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,19rem),1fr));gap:1.4rem;align-items:center">
+    <div style="display:flex;flex-direction:column;gap:.9rem">
+      <p class="lede" style="font-size:clamp(1rem,1.7vw,1.3rem)">Every benchmark dataset is clean, uncompressed video. Real usage is Zoom.</p>
+      <ul class="pts" style="gap:.45rem">
+        <li style="font-size:clamp(.9rem,1.5vw,1.15rem)">Codecs store colour at <strong>a quarter resolution</strong> because human eyes barely notice</li>
+        <li style="font-size:clamp(.9rem,1.5vw,1.15rem)">But colour is <em>exactly</em> where our signal lives</li>
+        <li style="font-size:clamp(.9rem,1.5vw,1.15rem)">So we route footage through real calls and measure the damage</li>
+      </ul>
+    </div>
+    <canvas id="cv-deg" height="250"></canvas>
+  </div>
+  <div class="quote">We predict the <strong>ranking of methods flips</strong> at low bitrate — and that is precisely the condition adaptive fusion exists for.</div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <div class="eyebrow">12 · Extension two</div>
+  <h2 class="title">Applying the Fourier Transform a <em>second time</em></h2>
+  <div class="formula"><span class="dim">first transform — on the video signal</span>
+  brightness over time    <span class="hi">→ FFT →</span>   heart rate
+
+<span class="dim">second transform — on the rhythm of the beats themselves</span>
+  gaps between beats      <span class="hi">→ FFT →</span>   autonomic state</div>
+  <ul class="pts">
+    <li><strong>LF band, 0.04–0.15 Hz.</strong> Mixed autonomic activity and blood-pressure regulation.</li>
+    <li><strong>HF band, 0.15–0.40 Hz.</strong> That is 9 to 24 breaths per minute — <em>this peak is the person's breathing</em>, visible inside their heartbeat.</li>
+    <li><strong>Output is a wellness indicator, never a diagnosis.</strong> We state that explicitly on screen and in the report.</li>
+  </ul>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <div class="eyebrow">13 · Method purity</div>
+  <h2 class="title">Where each course topic is <em>actually used</em></h2>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Pipeline stage</th><th>Course topic</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>Detrending</td><td class="tag-c">Convolution</td><td>moving-average kernel</td></tr>
+        <tr><td>Bandpass filtering</td><td class="tag-c">Convolution</td><td>+ convolution theorem demonstrated</td></tr>
+        <tr><td>BPM extraction</td><td class="tag-f">Fourier Transform</td><td>FFT peak-finding</td></tr>
+        <tr><td>Signal-quality metric</td><td class="tag-f">Fourier Transform</td><td>in-band vs total spectral power</td></tr>
+        <tr><td>Harmonic handling</td><td class="tag-f">Fourier Series</td><td>fundamental vs harmonic structure</td></tr>
+        <tr><td>LF/HF ratio</td><td class="tag-f">Fourier Transform</td><td>a second, independent FFT</td></tr>
+        <tr><td>Face tracking</td><td class="tag-n">convolution family</td><td>Haar features, no training step</td></tr>
+        <tr><td>CHROM / POS</td><td class="tag-n">linear algebra</td><td>fixed projection from skin optics</td></tr>
+        <tr><td>Validation statistics</td><td class="tag-n">statistics</td><td>applied after estimation</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="quote"><strong>Both headline outputs — BPM and LF/HF — come directly out of a Fourier Transform.</strong> There is no trained model anywhere in the estimation path.</div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <div class="eyebrow">14 · Proving it works</div>
+  <h2 class="title">Quantified validation, not a number that <em>looks about right</em></h2>
+  <div class="cols">
+    <div class="card">
+      <div class="ct">Ground truth</div>
+      <div class="ch">Public benchmark datasets</div>
+      <p><strong>UBFC-rPPG</strong> — 42 videos with synchronised pulse-oximeter readings, free to download. <strong>PURE</strong> — six controlled head-motion scenarios. Plus our own recordings with a pulse oximeter.</p>
+    </div>
+    <div class="card">
+      <div class="ct">Metrics</div>
+      <div class="ch">What every paper in this field reports</div>
+      <p>MAE, RMSE and Pearson r, plus <strong>Bland-Altman analysis</strong> to expose systematic bias that an average error hides completely.</p>
+    </div>
+    <div class="card hi">
+      <div class="ct">The key test</div>
+      <div class="ch">Ablation study</div>
+      <p>Each method alone, then fusion. This is what turns "our method is better" from a claim into evidence.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <div class="eyebrow">15 · Plan</div>
+  <h2 class="title">Four weeks</h2>
+  <div class="cols">
+    <div class="card"><div class="ct">Week 1</div><div class="ch">Foundation</div><p>Read the core papers. Build the green-channel baseline with FFT. Load UBFC-rPPG.</p></div>
+    <div class="card"><div class="ct">Week 2</div><div class="ch">The contribution</div><p>Implement CHROM and POS. Build the quality metric and the fusion layer. Begin validation.</p></div>
+    <div class="card"><div class="ct">Week 3</div><div class="ch">Extensions</div><p>Compression robustness testing. HRV and LF/HF layer. Ablation study.</p></div>
+    <div class="card"><div class="ct">Week 4</div><div class="ch">Evidence</div><p>Bland-Altman and statistics. Live demo interface. Paper-style report.</p></div>
+  </div>
+  <p class="lede">Deliverables: a working real-time demo, a quantified results table benchmarked against published methods, and a report structured as a research paper.</p>
+</section>
+
+<!-- 17 -->
+<section class="slide center">
+  <div class="eyebrow">In one sentence</div>
+  <h2 class="title" style="max-width:22ch">We are not just <em>reproducing</em> a known technique.</h2>
+  <p class="lede" style="font-size:clamp(1.15rem,2.4vw,2rem);max-width:36ch">We identified a real weakness in how existing systems choose their extraction method, and we fix it with an adaptive approach built entirely from Fourier and convolution theory.</p>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1.5rem">
+    <div class="card sig" style="flex:1 1 12rem"><div class="ct">Contactless</div><div class="ch">No sensor on the skin</div></div>
+    <div class="card sig" style="flex:1 1 12rem"><div class="ct">Interpretable</div><div class="ch">Every number traces to an FFT</div></div>
+    <div class="card sig" style="flex:1 1 12rem"><div class="ct">Validated</div><div class="ch">Against published benchmarks</div></div>
+  </div>
+</section>
+
+</div>
+
+<div class="bar">
+  <span class="lbl">TRACE-rPPG &nbsp;·&nbsp; <b id="sname">Title</b></span>
+  <div class="dots" id="dots"></div>
+  <div class="nav">
+    <span class="lbl"><b id="snum">1</b> / <span id="stot">17</span></span>
+    <button id="prev" aria-label="Previous slide">◀ Prev</button>
+    <button id="next" aria-label="Next slide">Next ▶</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+var slides=[].slice.call(document.querySelectorAll(".slide"));
+var names=["Title","The problem","The idea","The physics","The pipeline","Convolution","Fourier Transform",
+"Fourier Series","Why fusion","TRACE","Quality metric","Compression","Second FFT","Method purity",
+"Validation","Plan","Close"];
+var idx=0;
+var dots=document.getElementById("dots");
+slides.forEach(function(_,i){
+  var d=document.createElement("i");
+  d.addEventListener("click",function(){ go(i); });
+  dots.appendChild(d);
+});
+document.getElementById("stot").textContent=slides.length;
+
+function go(n){
+  idx=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach(function(s,i){ s.classList.toggle("active",i===idx); });
+  [].slice.call(dots.children).forEach(function(d,i){ d.classList.toggle("on",i===idx); });
+  document.getElementById("snum").textContent=idx+1;
+  document.getElementById("sname").textContent=names[idx]||"";
+  document.getElementById("prog").style.width=((idx+1)/slides.length*100)+"%";
+  slides[idx].scrollTop=0;
+  redrawAll();
+}
+document.getElementById("next").addEventListener("click",function(){ go(idx+1); });
+document.getElementById("prev").addEventListener("click",function(){ go(idx-1); });
+document.addEventListener("keydown",function(e){
+  if(e.key==="ArrowRight"||e.key==="PageDown"||e.key===" "){ e.preventDefault(); go(idx+1); }
+  if(e.key==="ArrowLeft"||e.key==="PageUp"){ e.preventDefault(); go(idx-1); }
+  if(e.key==="Home") go(0);
+  if(e.key==="End") go(slides.length-1);
+});
+
+/* ---------- canvas helpers ---------- */
+var C={};
+function refreshTheme(){
+  var s=getComputedStyle(document.documentElement);
+  ["paper","paper-2","paper-3","ink","ink-2","ink-3","rule","rule-2","accent","accent-2","signal","warn"]
+    .forEach(function(k){ C[k]=s.getPropertyValue("--"+k).trim(); });
+}
+refreshTheme();
+if(window.matchMedia){
+  var mq=window.matchMedia("(prefers-color-scheme: dark)");
+  if(mq.addEventListener) mq.addEventListener("change",function(){refreshTheme();redrawAll();});
+}
+new MutationObserver(function(){refreshTheme();redrawAll();})
+  .observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+var redraws=[];
+function redrawAll(){ redraws.forEach(function(f){ try{f();}catch(e){} }); }
+
+var _fitCache=new WeakMap();
+function fit(cv){
+  var st=_fitCache.get(cv);
+  if(!st){ st={cssH:parseInt(cv.getAttribute("height"),10),ctx:cv.getContext("2d"),w:0,dpr:0}; _fitCache.set(cv,st); }
+  var dpr=window.devicePixelRatio||1;
+  var w=cv.clientWidth||cv.parentNode.clientWidth||600;
+  if(w<2) return null;
+  if(w!==st.w||dpr!==st.dpr){
+    st.w=w; st.dpr=dpr;
+    cv.width=Math.round(w*dpr); cv.height=Math.round(st.cssH*dpr);
+    cv.style.height=st.cssH+"px";
+    st.ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  return {ctx:st.ctx,w:st.w,h:st.cssH};
+}
+function label(ctx,t,x,y,col,size,align){
+  ctx.fillStyle=col; ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+  ctx.textAlign=align||"left"; ctx.textBaseline="middle"; ctx.fillText(t,x,y);
+}
+var _seed=4242;
+function rnd(){ _seed=(_seed*1103515245+12345)%2147483648; return _seed/2147483648*2-1; }
+function reseed(s){ _seed=s; }
+
+/* ---------- SLIDE 7 : live signal → spectrum ---------- */
+(function(){
+  var cv=document.getElementById("cv-live");
+  var FS=30,N=180,t0=0;
+  function draw(){
+    var f=fit(cv); if(!f) return;
+    var ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    reseed(1234);
+    var x=[];
+    for(var n=0;n<N;n++){
+      var t=(n+t0)/FS;
+      x.push(Math.cos(2*Math.PI*1.2*t)+0.4*Math.cos(2*Math.PI*2.4*t+0.5)+1.15*(rnd()+rnd()));
+    }
+    var pad=8,pw=w-pad*2,bh=(h-34)/2;
+    label(ctx,"THE FILTERED SIGNAL — noise is larger than the pulse",pad,10,C["ink-3"],9.5);
+    var y1=20, mx=0; x.forEach(function(v){mx=Math.max(mx,Math.abs(v));});
+    ctx.strokeStyle=C["ink-3"]; ctx.lineWidth=1.3; ctx.beginPath();
+    for(var i=0;i<N;i++){
+      var px=pad+(i/(N-1))*pw, py=y1+bh/2-x[i]*(bh/2)/mx;
+      if(i===0)ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+
+    var y2=y1+bh+18;
+    label(ctx,"ITS SPECTRUM — the pulse is unmistakable",pad,y2-8,C.accent,9.5);
+    var vals=[],mv=0.0001,steps=150;
+    for(var s=0;s<=steps;s++){
+      var bp=40+(200-40)*s/steps, ff=bp/60, sx=0,sy=0;
+      for(var m=0;m<N;m++){ var a=-2*Math.PI*ff*m/FS; sx+=x[m]*Math.cos(a); sy+=x[m]*Math.sin(a); }
+      var v=Math.hypot(sx,sy)/N; vals.push(v); if(v>mv)mv=v;
+    }
+    var sb=y2+bh;
+    ctx.strokeStyle=C.rule; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad,sb); ctx.lineTo(pad+pw,sb); ctx.stroke();
+    ctx.strokeStyle=C.accent; ctx.lineWidth=2.2; ctx.lineJoin="round"; ctx.beginPath();
+    for(var s2=0;s2<=steps;s2++){
+      var px2=pad+(s2/steps)*pw, py2=sb-(vals[s2]/mv)*(bh-8);
+      if(s2===0)ctx.moveTo(px2,py2); else ctx.lineTo(px2,py2);
+    }
+    ctx.stroke();
+    var bi=0; for(var k=1;k<vals.length;k++) if(vals[k]>vals[bi])bi=k;
+    var bx=pad+(bi/steps)*pw;
+    ctx.fillStyle=C.signal;
+    ctx.beginPath(); ctx.arc(bx,sb-(vals[bi]/mv)*(bh-8),5,0,6.2832); ctx.fill();
+    label(ctx,Math.round(40+(200-40)*bi/steps)+" BPM",bx+8,sb-(vals[bi]/mv)*(bh-8),C.signal,11);
+  }
+  redraws.push(draw); window.addEventListener("resize",draw);
+  setInterval(function(){ if(idx===6){ t0+=3; draw(); } },140);
+  draw();
+})();
+
+/* ---------- SLIDE 10 : fusion weights ---------- */
+(function(){
+  var cv=document.getElementById("cv-fuse");
+  var ph=0;
+  function draw(){
+    var f=fit(cv); if(!f) return;
+    var ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var L=0.58+0.4*Math.cos(ph*0.9), M=0.45+0.42*Math.sin(ph*0.62);
+    var q=[
+      Math.max(.03,L*0.95*Math.pow(1-M,2.6)),
+      Math.max(.03,Math.pow(L,1.5)*0.9*(1-M*0.35)),
+      Math.max(.03,Math.pow(L,1.3)*0.88*(1-M*0.28))
+    ];
+    var pw2=q.map(function(v){return Math.pow(v,2);});
+    var s=pw2.reduce(function(a,b){return a+b;},0);
+    var W=pw2.map(function(v){return v/s;});
+    var names=["GREEN","CHROM","POS"], cols=[C.warn,C.accent,C.signal];
+
+    var pad=10,pwid=w-pad*2;
+    label(ctx,"LIGHTING",pad,14,C["ink-3"],9.5);
+    ctx.fillStyle=C.rule; ctx.fillRect(pad+72,8,pwid-72,10);
+    ctx.fillStyle=C["ink-2"]; ctx.fillRect(pad+72,8,(pwid-72)*L,10);
+    label(ctx,"MOTION",pad,32,C["ink-3"],9.5);
+    ctx.fillStyle=C.rule; ctx.fillRect(pad+72,26,pwid-72,10);
+    ctx.fillStyle=C["ink-2"]; ctx.fillRect(pad+72,26,(pwid-72)*M,10);
+
+    label(ctx,"FUSION WEIGHTS",pad,58,C["ink-3"],9.5);
+    var y=70,rowH=(h-82)/3;
+    for(var i=0;i<3;i++){
+      var yy=y+i*rowH;
+      label(ctx,names[i],pad,yy+13,cols[i],11);
+      var bx=pad+72, bw=pwid-72-46;
+      ctx.fillStyle=C.rule; ctx.fillRect(bx,yy+4,bw,20);
+      ctx.fillStyle=cols[i]; ctx.fillRect(bx,yy+4,bw*W[i],20);
+      label(ctx,(W[i]*100).toFixed(0)+"%",pad+pwid,yy+14,C["ink-2"],11,"right");
+    }
+  }
+  redraws.push(draw); window.addEventListener("resize",draw);
+  setInterval(function(){ if(idx===9){ ph+=0.045; draw(); } },60);
+  draw();
+})();
+
+/* ---------- SLIDE 12 : degradation curves ---------- */
+(function(){
+  var cv=document.getElementById("cv-deg");
+  function draw(){
+    var f=fit(cv); if(!f) return;
+    var ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var pad=32,pw=w-pad-64,y0=20,ph=h-y0-38;
+    var bmin=100,bmax=3000;
+    function X(b){ return pad+(Math.log(b/bmin)/Math.log(bmax/bmin))*pw; }
+    function Y(e){ return y0+(Math.min(e,16)/16)*ph; }
+    ctx.strokeStyle=C.rule; ctx.lineWidth=1; ctx.strokeRect(pad,y0,pw,ph);
+    label(ctx,"BPM error vs bitrate",pad,10,C["ink-3"],9.5);
+    function curve(nm,col,fn,wd){
+      ctx.strokeStyle=col; ctx.lineWidth=wd||2; ctx.lineJoin="round"; ctx.beginPath();
+      for(var s=0;s<=120;s++){
+        var b=bmin*Math.pow(bmax/bmin,s/120);
+        if(s===0)ctx.moveTo(X(b),Y(fn(b))); else ctx.lineTo(X(b),Y(fn(b)));
+      }
+      ctx.stroke();
+      label(ctx,nm,pad+pw+5,Y(fn(bmax)),col,9.5);
+    }
+    var green=function(b){ return 6.2+3.6*Math.pow(300/b,0.55); };
+    var pos=function(b){ return 2.5+11*Math.pow(250/b,1.5); };
+    var chrom=function(b){ return 2.9+11.5*Math.pow(240/b,1.5); };
+    var sqaf=function(b){ return Math.min(green(b),pos(b),chrom(b))*0.86+0.15; };
+    curve("green",C.warn,green);
+    curve("CHROM",C["ink-3"],chrom);
+    curve("POS",C.accent,pos);
+    curve("TRACE",C.signal,sqaf,3);
+    var cb=null;
+    for(var s2=0;s2<=240;s2++){ var b2=bmin*Math.pow(bmax/bmin,s2/240); if(pos(b2)<green(b2)){ cb=b2; break; } }
+    if(cb){
+      ctx.strokeStyle=C.ink; ctx.lineWidth=1.4; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(X(cb),y0); ctx.lineTo(X(cb),y0+ph); ctx.stroke(); ctx.setLineDash([]);
+      label(ctx,"ranking flips",X(cb)+5,y0+11,C.ink,9.5);
+    }
+    [100,300,1000,3000].forEach(function(b3){ label(ctx,b3,X(b3),y0+ph+12,C["ink-3"],9,"center"); });
+    label(ctx,"kbps",pad+pw,y0+ph+26,C["ink-3"],9,"right");
+  }
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+go(0);
+</script>

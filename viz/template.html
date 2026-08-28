@@ -1,0 +1,757 @@
+<title>Pipeline Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;600;700&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --paper:#FAF7F8; --paper-2:#F2EDEF; --paper-3:#E9E1E5;
+  --ink:#1F1720; --ink-2:#5A4E58; --ink-3:#8C7F88;
+  --rule:#E0D6DB; --rule-2:#CDBFC7;
+  --accent:#B01B3F; --accent-2:#8E1533; --accent-soft:#F7DEE5;
+  --signal:#10796B; --signal-soft:#DBEFEA;
+  --warn:#9C5A12; --warn-soft:#F7E8D4;
+  --ok:#10796B; --bad:#B01B3F;
+  --font-display:"Spectral",Georgia,serif;
+  --font-body:"Archivo",ui-sans-serif,system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#16111A; --paper-2:#1F1824; --paper-3:#29202F;
+    --ink:#F0E9EE; --ink-2:#B3A5AE; --ink-3:#7D6F79;
+    --rule:#322A38; --rule-2:#443A4B;
+    --accent:#FF6B8A; --accent-2:#FF93A9; --accent-soft:#3B1D28;
+    --signal:#45D6B0; --signal-soft:#123029;
+    --warn:#E0A050; --warn-soft:#33260F;
+    --ok:#45D6B0; --bad:#FF6B8A;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#16111A; --paper-2:#1F1824; --paper-3:#29202F;
+  --ink:#F0E9EE; --ink-2:#B3A5AE; --ink-3:#7D6F79;
+  --rule:#322A38; --rule-2:#443A4B;
+  --accent:#FF6B8A; --accent-2:#FF93A9; --accent-soft:#3B1D28;
+  --signal:#45D6B0; --signal-soft:#123029;
+  --warn:#E0A050; --warn-soft:#33260F;
+  --ok:#45D6B0; --bad:#FF6B8A;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-body);
+  font-size:16px;line-height:1.6;margin:0;padding:0 1rem 4rem;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--font-display);margin:0;line-height:1.2;text-wrap:balance}
+p{margin:0}
+.wrap{max-width:74rem;margin-inline:auto}
+
+/* ---- masthead ---- */
+.top{padding:2.6rem 0 1.4rem;border-bottom:1px solid var(--rule);
+  display:flex;flex-wrap:wrap;gap:1.4rem;align-items:flex-end;justify-content:space-between}
+.eyebrow{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--accent);font-weight:600}
+.top h1{font-size:clamp(2rem,4.6vw,3.1rem);font-weight:700;letter-spacing:-.02em}
+.top .sub{font-family:var(--font-display);font-size:1.02rem;color:var(--ink-2);max-width:38rem}
+.verdict{border:2px solid var(--ok);border-radius:5px;padding:.7rem 1.1rem;
+  display:flex;flex-direction:column;gap:.15rem;background:var(--signal-soft);min-width:13rem}
+.verdict .k{font-family:var(--font-mono);font-size:.64rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-3)}
+.verdict .v{font-family:var(--font-mono);font-size:1.5rem;font-weight:600;color:var(--ok);
+  font-variant-numeric:tabular-nums}
+.verdict .d{font-family:var(--font-mono);font-size:.72rem;color:var(--ink-2)}
+
+.provenance{font-family:var(--font-mono);font-size:.72rem;color:var(--ink-3);
+  padding:.6rem 0 0;letter-spacing:.03em}
+
+/* ---- stepper ---- */
+.stepper{display:flex;gap:.4rem;flex-wrap:wrap;padding:1.3rem 0}
+.step{flex:1 1 10rem;text-align:left;border:1px solid var(--rule-2);border-radius:4px;
+  background:var(--paper-2);padding:.55rem .7rem;cursor:pointer;
+  display:flex;flex-direction:column;gap:.1rem;transition:border-color .12s,background .12s}
+.step:hover{border-color:var(--accent)}
+.step .sn{font-family:var(--font-mono);font-size:.62rem;letter-spacing:.1em;color:var(--ink-3)}
+.step .st{font-size:.9rem;font-weight:600;line-height:1.25}
+.step.on{background:var(--accent);border-color:var(--accent)}
+.step.on .sn,.step.on .st{color:var(--paper)}
+
+/* ---- panel ---- */
+.panel{border:1px solid var(--rule-2);border-radius:5px;background:var(--paper-2);overflow:hidden;margin-bottom:1.6rem}
+.panel-bar{display:flex;align-items:baseline;gap:.8rem;flex-wrap:wrap;
+  padding:.65rem .9rem;background:var(--paper-3);border-bottom:1px solid var(--rule-2)}
+.panel-bar .tag{font-family:var(--font-mono);font-size:.64rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent);font-weight:600}
+.panel-bar h2{font-size:1.15rem;font-weight:600}
+.panel-bar .sub{font-family:var(--font-mono);font-size:.75rem;color:var(--ink-2);margin-left:auto}
+.plot{padding:.9rem;background:var(--paper)}
+canvas{display:block;width:100%;height:auto}
+.legend{display:flex;gap:1rem;flex-wrap:wrap;padding:0 .9rem .6rem;background:var(--paper);
+  font-family:var(--font-mono);font-size:.72rem;color:var(--ink-2)}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:.35rem;
+  vertical-align:middle}
+.note{padding:.75rem .9rem;font-size:.9rem;color:var(--ink-2);border-top:1px dashed var(--rule);
+  background:var(--paper-2)}
+.note b{color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));gap:1px;
+  background:var(--rule);border-top:1px solid var(--rule)}
+.stats div{background:var(--paper);padding:.5rem .7rem;display:flex;flex-direction:column;gap:.1rem}
+.stats .k{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--ink-3)}
+.stats .v{font-family:var(--font-mono);font-size:.95rem;font-weight:600;
+  font-variant-numeric:tabular-nums}
+.stats .v.hot{color:var(--accent)} .stats .v.good{color:var(--ok)}
+
+/* ---- controls ---- */
+.ctl-row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;padding:.7rem .9rem;
+  border-top:1px solid var(--rule);background:var(--paper-2)}
+button{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;
+  font-weight:500;padding:.4rem .75rem;background:var(--paper);color:var(--ink);
+  border:1px solid var(--rule-2);border-radius:3px;cursor:pointer}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button.on{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+label.chk{display:inline-flex;align-items:center;gap:.4rem;font-family:var(--font-mono);
+  font-size:.72rem;color:var(--ink-2);cursor:pointer;text-transform:uppercase}
+label.chk input{accent-color:var(--signal)}
+
+/* ---- section head ---- */
+.sec-head{padding:2.4rem 0 .9rem;display:flex;flex-direction:column;gap:.3rem}
+.sec-head h2{font-size:1.7rem;font-weight:600;letter-spacing:-.015em}
+.sec-head p{color:var(--ink-2);font-size:.95rem;max-width:44rem}
+
+/* ---- checks table ---- */
+.checks{width:100%;border-collapse:collapse;font-size:.88rem}
+.checks th,.checks td{text-align:left;padding:.45rem .7rem;border-bottom:1px solid var(--rule)}
+.checks th{font-family:var(--font-mono);font-size:.62rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3);font-weight:500}
+.checks td.n{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.pill{font-family:var(--font-mono);font-size:.62rem;font-weight:600;letter-spacing:.08em;
+  padding:.12rem .4rem;border-radius:3px;background:var(--signal-soft);color:var(--ok)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr));gap:1.2rem}
+footer{padding-top:2rem;margin-top:2rem;border-top:1px solid var(--rule);
+  font-family:var(--font-mono);font-size:.72rem;color:var(--ink-3);
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <div>
+    <div class="eyebrow">TRACE-rPPG · Step 1 · Synthetic verification</div>
+    <h1>Pipeline Bench</h1>
+    <p class="sub">Every trace below was computed by the Python pipeline and baked into this page. Nothing here is a JavaScript reimplementation, so what you see is what the code does.</p>
+  </div>
+  <div class="verdict" id="verdict">
+    <span class="k">recovered heart rate</span>
+    <span class="v" id="v-bpm">—</span>
+    <span class="d" id="v-detail">—</span>
+  </div>
+</header>
+<div class="provenance" id="prov">—</div>
+
+<!-- ============ WALK THE PIPELINE ============ -->
+<div class="sec-head">
+  <h2>Walk the pipeline</h2>
+  <p>Four stages, same time axis throughout. The signal starts unreadable and ends as a clean rhythm without a single trained model touching it.</p>
+</div>
+
+<div class="stepper" id="stepper"></div>
+
+<div class="panel">
+  <div class="panel-bar">
+    <span class="tag" id="p-tag">Stage</span>
+    <h2 id="p-title">—</h2>
+    <span class="sub" id="p-sub">—</span>
+  </div>
+  <div class="plot"><canvas id="cv-stage" height="300"></canvas></div>
+  <div class="legend" id="p-legend"></div>
+  <div class="stats" id="p-stats"></div>
+  <div class="note" id="p-note">—</div>
+  <div class="ctl-row">
+    <button id="btn-prev">◀ Prev</button>
+    <button id="btn-next">Next ▶</button>
+    <button id="btn-play">Play through</button>
+    <label class="chk"><input type="checkbox" id="chk-zoom"> zoom to first 6 seconds</label>
+  </div>
+</div>
+
+<!-- ============ THE TWO KERNELS ============ -->
+<div class="sec-head">
+  <h2>The two kernels, and what they do to your frequencies</h2>
+  <p>Both filters are convolutions. A kernel on its own tells you very little; its frequency response tells you everything.</p>
+</div>
+
+<div class="grid2">
+  <div class="panel">
+    <div class="panel-bar"><span class="tag">Kernel A</span><h2>Moving average</h2><span class="sub" id="k1-sub">—</span></div>
+    <div class="plot"><canvas id="cv-k1" height="230"></canvas></div>
+    <div class="stats" id="k1-stats"></div>
+    <div class="note">Used for detrending. The <b>first null</b> is a frequency this filter deletes completely &mdash; keep it far below the heart-rate band, or subtracting the trend would remove the pulse itself.</div>
+  </div>
+  <div class="panel">
+    <div class="panel-bar"><span class="tag">Kernel B</span><h2>Windowed-sinc bandpass</h2><span class="sub" id="k2-sub">—</span></div>
+    <div class="plot"><canvas id="cv-k2" height="230"></canvas></div>
+    <div class="stats" id="k2-stats"></div>
+    <div class="note">Built by hand from a truncated sinc, not pulled from a library. The ripples in the stopband are the price of truncation &mdash; the same leakage trade-off as windowing your data.</div>
+  </div>
+</div>
+
+<!-- ============ SPECTRUM ============ -->
+<div class="sec-head">
+  <h2>The winding machine, run</h2>
+  <p>The filtered signal wound around a circle at every candidate rate. Where the dots pile up is the heart rate; how much of the band's energy sits in that pile is the quality score.</p>
+</div>
+
+<div class="panel">
+  <div class="panel-bar"><span class="tag">Step 7 + 8</span><h2>Power spectrum</h2><span class="sub" id="sp-sub">—</span></div>
+  <div class="plot"><canvas id="cv-spec" height="330"></canvas></div>
+  <div class="stats" id="sp-stats"></div>
+  <div class="note" id="sp-note">—</div>
+</div>
+
+<!-- ============ EXPERIMENTS ============ -->
+<div class="sec-head">
+  <h2>The twelve checks, drawn</h2>
+  <p>Each panel is one assertion from <span style="font-family:var(--font-mono);font-size:.9em">scripts/step1_synthetic.py</span>, plotted rather than printed.</p>
+</div>
+
+<div class="panel">
+  <div class="panel-bar"><span class="tag">Check 3</span><h2>Convolution theorem</h2><span class="sub" id="ct-sub">—</span></div>
+  <div class="plot"><canvas id="cv-ct" height="250"></canvas></div>
+  <div class="stats" id="ct-stats"></div>
+  <div class="note">Sliding a kernel along the signal and multiplying two spectra give <b>identical</b> numbers. The two traces sit exactly on top of each other; the residual is floating-point rounding, not disagreement.</div>
+</div>
+
+<div class="panel">
+  <div class="panel-bar"><span class="tag">Check 4</span><h2>The wraparound trap</h2><span class="sub" id="wr-sub">—</span></div>
+  <div class="plot"><canvas id="cv-wr" height="250"></canvas></div>
+  <div class="stats" id="wr-stats"></div>
+  <div class="note">Filtering through the FFT without zero-padding makes the signal loop, so its tail contaminates its head. The damage is confined to exactly the first <span style="font-family:var(--font-mono)">len(h)−1</span> samples, and it is not subtle.</div>
+</div>
+
+<div class="panel">
+  <div class="panel-bar"><span class="tag">Check 6</span><h2>The harmonic trap</h2><span class="sub" id="ht-sub">—</span></div>
+  <div class="plot"><canvas id="cv-ht" height="280"></canvas></div>
+  <div class="stats" id="ht-stats"></div>
+  <div class="note">A pulse whose fundamental has been suppressed. Naive <span style="font-family:var(--font-mono)">argmax</span> takes the tallest spike and reports double the true rate. The sub-harmonic check looks at half the peak frequency and recovers it &mdash; while never firing on a healthy reading from 86 to 140 BPM.</div>
+</div>
+
+<div class="panel">
+  <div class="panel-bar"><span class="tag">Check 7</span><h2>Frequency resolution</h2><span class="sub">two rhythms, 72 and 78 BPM</span></div>
+  <div class="plot"><canvas id="cv-res" height="280"></canvas></div>
+  <div class="stats" id="res-stats"></div>
+  <div class="note">Identical signal, three window lengths. Resolution is <b>1/T</b>, so separating rhythms 6 BPM apart needs more than 10 seconds. At 6 s they fuse into one hump and you would confidently report a single wrong rate.</div>
+</div>
+
+<div class="panel">
+  <div class="panel-bar"><span class="tag">Check 8</span><h2>Parabolic interpolation</h2><span class="sub" id="in-sub">—</span></div>
+  <div class="plot"><canvas id="cv-int" height="270"></canvas></div>
+  <div class="stats" id="in-stats"></div>
+  <div class="note">The true rate sits between two bins. Fitting a parabola through the peak and its two neighbours finds the vertex, cutting mean error from 0.420 to 0.022 BPM across five off-grid rates &mdash; for three lines of code.</div>
+</div>
+
+<div class="panel">
+  <div class="panel-bar"><span class="tag">Check 9</span><h2>Noise robustness</h2><span class="sub">the pulse survives well below the noise</span></div>
+  <div class="plot"><canvas id="cv-noise" height="290"></canvas></div>
+  <div class="stats" id="ns-stats"></div>
+  <div class="note">At <b>−6 dB</b> the noise carries four times the power of the pulse and the trace looks like nothing. The estimate is still within 0.3 BPM, because noise is not rhythmic and cancels when wound around a circle, while the pulse accumulates.</div>
+</div>
+
+<div class="sec-head">
+  <h2>Check results</h2>
+  <p>Verbatim from the last run of the acceptance script.</p>
+</div>
+<div class="panel"><div class="plot" style="padding:0">
+  <table class="checks" id="checks"></table>
+</div></div>
+
+<footer>
+  <span>TRACE-rPPG &mdash; step 1 of the build staircase</span>
+  <span id="foot-gen">—</span>
+</footer>
+
+</div>
+
+<script>
+"use strict";
+var D = /*__PIPELINE_DATA__*/null;
+
+/* ---------- theme-aware colours ---------- */
+var C={};
+function theme(){
+  var s=getComputedStyle(document.documentElement);
+  ["paper","paper-2","paper-3","ink","ink-2","ink-3","rule","rule-2",
+   "accent","accent-2","signal","warn","ok","bad","accent-soft","signal-soft"]
+   .forEach(function(k){C[k]=s.getPropertyValue("--"+k).trim();});
+}
+theme();
+if(window.matchMedia){
+  var mq=window.matchMedia("(prefers-color-scheme: dark)");
+  if(mq.addEventListener)mq.addEventListener("change",function(){theme();redrawAll();});
+}
+new MutationObserver(function(){theme();redrawAll();})
+  .observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+function col(name){ return C[name] || C.ink; }
+
+var redraws=[];
+function redrawAll(){ redraws.forEach(function(f){try{f();}catch(e){}}); }
+
+/* ---------- canvas plumbing ---------- */
+var _fc=new WeakMap();
+function fit(cv){
+  var st=_fc.get(cv);
+  if(!st){st={h:parseInt(cv.getAttribute("height"),10),ctx:cv.getContext("2d"),w:0,dpr:0};_fc.set(cv,st);}
+  var dpr=window.devicePixelRatio||1, w=cv.clientWidth||cv.parentNode.clientWidth||600;
+  if(w<2)return null;
+  if(w!==st.w||dpr!==st.dpr){
+    st.w=w;st.dpr=dpr;
+    cv.width=Math.round(w*dpr);cv.height=Math.round(st.h*dpr);
+    cv.style.height=st.h+"px";st.ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  return {ctx:st.ctx,w:st.w,h:st.h};
+}
+function lab(ctx,t,x,y,c,s,a){
+  ctx.fillStyle=c;ctx.font=(s||11)+'px "IBM Plex Mono", monospace';
+  ctx.textAlign=a||"left";ctx.textBaseline="middle";ctx.fillText(t,x,y);
+}
+function frame(ctx,x,y,w,h){ ctx.strokeStyle=C.rule;ctx.lineWidth=1;ctx.strokeRect(x,y,w,h); }
+function poly(ctx,pts,c,lw){
+  ctx.strokeStyle=c;ctx.lineWidth=lw||2;ctx.lineJoin="round";ctx.beginPath();
+  for(var i=0;i<pts.length;i+=2){ if(i===0)ctx.moveTo(pts[0],pts[1]); else ctx.lineTo(pts[i],pts[i+1]); }
+  ctx.stroke();
+}
+function extent(arrs){
+  var lo=Infinity,hi=-Infinity;
+  arrs.forEach(function(a){for(var i=0;i<a.length;i++){if(a[i]<lo)lo=a[i];if(a[i]>hi)hi=a[i];}});
+  if(!isFinite(lo)){lo=-1;hi=1;}
+  if(hi-lo<1e-12){hi=lo+1;}
+  var pad=(hi-lo)*0.08; return [lo-pad,hi+pad];
+}
+
+/* ---------- header ---------- */
+(function(){
+  var m=D.meta,e=m.estimate;
+  document.getElementById("v-bpm").textContent=e.bpm.toFixed(2)+" BPM";
+  document.getElementById("v-detail").textContent=
+    "true "+m.true_bpm.toFixed(0)+"  ·  error "+e.error_bpm.toFixed(2)+
+    "  ·  bin "+m.resolution_bpm.toFixed(2);
+  document.getElementById("prov").textContent=
+    "computed by scripts/build_viz.py  ·  "+m.n_samples+" samples  ·  "+
+    m.fs+" fps  ·  "+m.duration_s+" s  ·  band "+m.band[0]+"–"+m.band[1]+" Hz  ·  "+m.generated;
+  document.getElementById("foot-gen").textContent="generated "+m.generated;
+})();
+
+/* ---------- stage walker ---------- */
+var stageIdx=0, playing=null;
+(function(){
+  var sp=document.getElementById("stepper");
+  D.stages.forEach(function(s,i){
+    var b=document.createElement("button");
+    b.className="step";
+    b.innerHTML='<span class="sn">STAGE '+s.n+'</span><span class="st">'+s.title+'</span>';
+    b.addEventListener("click",function(){ setStage(i); });
+    sp.appendChild(b);
+  });
+})();
+
+function setStage(i){
+  stageIdx=Math.max(0,Math.min(D.stages.length-1,i));
+  var s=D.stages[stageIdx];
+  [].forEach.call(document.querySelectorAll(".step"),function(el,k){
+    el.classList.toggle("on",k===stageIdx);
+  });
+  document.getElementById("p-tag").textContent="Stage "+s.n;
+  document.getElementById("p-title").textContent=s.title;
+  document.getElementById("p-sub").textContent=s.sub;
+  document.getElementById("p-note").innerHTML=s.note;
+  document.getElementById("p-legend").innerHTML=s.series.map(function(se){
+    return '<span><i style="background:'+col(se.colour)+'"></i>'+se.name+'</span>';
+  }).join("");
+  document.getElementById("p-stats").innerHTML=(s.stat||[]).map(function(p){
+    return '<div><span class="k">'+p[0]+'</span><span class="v">'+p[1]+'</span></div>';
+  }).join("");
+  drawStage();
+}
+
+function drawStage(){
+  var f=fit(document.getElementById("cv-stage")); if(!f)return;
+  var ctx=f.ctx,w=f.w,h=f.h;
+  ctx.clearRect(0,0,w,h);
+  var s=D.stages[stageIdx];
+  var zoom=document.getElementById("chk-zoom").checked;
+  var n=D.t.length, upto=zoom?Math.round(6*D.meta.fs):n;
+  var pad=48,pw=w-pad-14,y0=14,ph=h-y0-30;
+  var ys=s.series.map(function(se){return se.y.slice(0,upto);});
+  var ex=extent(ys);
+  function X(i){ return pad+(i/(upto-1))*pw; }
+  function Y(v){ return y0+ph-((v-ex[0])/(ex[1]-ex[0]))*ph; }
+  frame(ctx,pad,y0,pw,ph);
+  // zero line
+  if(ex[0]<0&&ex[1]>0){
+    ctx.strokeStyle=C.rule;ctx.setLineDash([3,4]);ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(pad,Y(0));ctx.lineTo(pad+pw,Y(0));ctx.stroke();ctx.setLineDash([]);
+  }
+  s.series.forEach(function(se){
+    var y=se.y,pts=[];
+    var step=Math.max(1,Math.floor(upto/1400));
+    for(var i=0;i<upto;i+=step){ pts.push(X(i),Y(y[i])); }
+    poly(ctx,pts,col(se.colour),se.colour==="ink"?1.4:2.1);
+  });
+  lab(ctx,"0 s",pad,y0+ph+14,C["ink-3"],10);
+  lab(ctx,(upto/D.meta.fs).toFixed(0)+" s",pad+pw,y0+ph+14,C["ink-3"],10,"right");
+  lab(ctx,ex[1].toFixed(1),pad-6,y0+6,C["ink-3"],9.5,"right");
+  lab(ctx,ex[0].toFixed(1),pad-6,y0+ph-6,C["ink-3"],9.5,"right");
+}
+redraws.push(drawStage);
+document.getElementById("btn-prev").addEventListener("click",function(){setStage(stageIdx-1);});
+document.getElementById("btn-next").addEventListener("click",function(){setStage(stageIdx+1);});
+document.getElementById("chk-zoom").addEventListener("change",drawStage);
+document.getElementById("btn-play").addEventListener("click",function(){
+  var b=this;
+  if(playing){clearInterval(playing);playing=null;b.classList.remove("on");b.textContent="Play through";return;}
+  b.classList.add("on");b.textContent="Stop";
+  setStage(0);
+  playing=setInterval(function(){
+    if(stageIdx>=D.stages.length-1){clearInterval(playing);playing=null;
+      b.classList.remove("on");b.textContent="Play through";return;}
+    setStage(stageIdx+1);
+  },1400);
+});
+
+/* ---------- kernels ---------- */
+function kernelPanel(cvId,statsId,subId,k,bandMark){
+  function draw(){
+    var f=fit(document.getElementById(cvId)); if(!f)return;
+    var ctx=f.ctx,w=f.w,h=f.h; ctx.clearRect(0,0,w,h);
+    var gap=16, half=(w-gap)/2;
+    // left: taps
+    var pad=8,pw=half-pad-6,y0=20,ph=h-y0-28;
+    lab(ctx,"KERNEL (time)",pad,10,C["ink-3"],9.5);
+    var ex=extent([k.taps]);
+    frame(ctx,pad,y0,pw,ph);
+    var pts=[];
+    for(var i=0;i<k.taps.length;i++){
+      pts.push(pad+(i/(k.taps.length-1))*pw, y0+ph-((k.taps[i]-ex[0])/(ex[1]-ex[0]))*ph);
+    }
+    poly(ctx,pts,C.accent,1.8);
+    lab(ctx,k.taps.length+" taps",pad+4,y0+ph-10,C["ink-3"],9.5);
+    // right: response
+    var rx=half+gap, rw=w-rx-14;
+    lab(ctx,"FREQUENCY RESPONSE  |H(f)|",rx,10,C["ink-3"],9.5);
+    frame(ctx,rx,y0,rw,ph);
+    var fmax=k.freqs[k.freqs.length-1];
+    function FX(hz){ return rx+(hz/fmax)*rw; }
+    function FY(g){ return y0+ph-g*(ph-4); }
+    if(bandMark){
+      ctx.fillStyle=C.signal;ctx.globalAlpha=.10;
+      ctx.fillRect(FX(D.meta.band[0]),y0,FX(D.meta.band[1])-FX(D.meta.band[0]),ph);
+      ctx.globalAlpha=1;
+      lab(ctx,"search band",FX(D.meta.band[0])+4,y0+12,C.signal,9);
+    }
+    var rp=[];
+    for(var j=0;j<k.freqs.length;j++){ rp.push(FX(k.freqs[j]),FY(k.response[j])); }
+    poly(ctx,rp,C.accent,2);
+    // 1.2 Hz marker
+    ctx.strokeStyle=C.signal;ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.moveTo(FX(1.2),y0);ctx.lineTo(FX(1.2),y0+ph);ctx.stroke();ctx.setLineDash([]);
+    lab(ctx,"72 BPM",FX(1.2)+5,y0+ph-12,C.signal,9.5);
+    [0,1,2,3,4,5].forEach(function(t){ if(t<=fmax) lab(ctx,t,FX(t),y0+ph+13,C["ink-3"],9,"center"); });
+    lab(ctx,"Hz",rx+rw,y0+ph+26,C["ink-3"],9,"right");
+  }
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+}
+(function(){
+  var k1=D.kernels.moving_average,k2=D.kernels.bandpass;
+  document.getElementById("k1-sub").textContent=D.meta.ma_window+" taps";
+  document.getElementById("k2-sub").textContent=D.meta.numtaps+" taps";
+  document.getElementById("k1-stats").innerHTML=
+    '<div><span class="k">first null</span><span class="v hot">'+k1.null_hz.toFixed(2)+' Hz</span></div>'+
+    '<div><span class="k">= in BPM</span><span class="v">'+(k1.null_hz*60).toFixed(0)+'</span></div>'+
+    '<div><span class="k">gain at 72 BPM</span><span class="v">'+k1.gain_at_pulse.toFixed(3)+'</span></div>'+
+    '<div><span class="k">pulse kept by detrend</span><span class="v good">'+((1-k1.gain_at_pulse)*100).toFixed(0)+'%</span></div>';
+  document.getElementById("k2-stats").innerHTML=
+    '<div><span class="k">gain at 30 BPM</span><span class="v">'+k2.gain_30.toFixed(3)+'</span></div>'+
+    '<div><span class="k">gain at 72 BPM</span><span class="v good">'+k2.gain_72.toFixed(3)+'</span></div>'+
+    '<div><span class="k">gain at 144 BPM</span><span class="v good">'+k2.gain_144.toFixed(3)+'</span></div>';
+  kernelPanel("cv-k1","k1-stats","k1-sub",k1,false);
+  kernelPanel("cv-k2","k2-stats","k2-sub",k2,true);
+})();
+
+/* ---------- spectrum ---------- */
+(function(){
+  var S=D.spectrum;
+  document.getElementById("sp-sub").textContent="zero-padded 4x for a smoother peak";
+  document.getElementById("sp-note").innerHTML=S.note;
+  document.getElementById("sp-stats").innerHTML=
+    '<div><span class="k">peak</span><span class="v good">'+S.peak_bpm.toFixed(2)+' BPM</span></div>'+
+    '<div><span class="k">peak frequency</span><span class="v">'+S.peak_hz.toFixed(4)+' Hz</span></div>'+
+    '<div><span class="k">harmonic at</span><span class="v">'+(S.harmonic_hz*60).toFixed(1)+' BPM</span></div>'+
+    '<div><span class="k">quality score</span><span class="v hot">'+S.quality.toFixed(3)+'</span></div>';
+  function draw(){
+    var f=fit(document.getElementById("cv-spec")); if(!f)return;
+    var ctx=f.ctx,w=f.w,h=f.h; ctx.clearRect(0,0,w,h);
+    var pad=44,pw=w-pad-16,y0=18,ph=h-y0-42;
+    var fmax=5.0;
+    function X(hz){ return pad+(hz/fmax)*pw; }
+    function Y(p){ return y0+ph-p*(ph-8); }
+    // out-of-band shading
+    ctx.fillStyle=C["ink-3"];ctx.globalAlpha=.07;
+    ctx.fillRect(pad,y0,X(S.band[0])-pad,ph);
+    ctx.fillRect(X(S.band[1]),y0,pad+pw-X(S.band[1]),ph);
+    ctx.globalAlpha=1;
+    // signal windows (teal) and noise (crimson) inside band
+    ctx.fillStyle=C.accent;ctx.globalAlpha=.10;
+    ctx.fillRect(X(S.band[0]),y0,X(S.band[1])-X(S.band[0]),ph);ctx.globalAlpha=1;
+    [S.peak_hz,S.harmonic_hz].forEach(function(c){
+      var a=Math.max(S.band[0],c-S.half_width), b=Math.min(S.band[1],c+S.half_width);
+      if(b>a){ ctx.fillStyle=C.signal;ctx.globalAlpha=.30;ctx.fillRect(X(a),y0,X(b)-X(a),ph);ctx.globalAlpha=1; }
+    });
+    frame(ctx,pad,y0,pw,ph);
+    var pts=[];
+    for(var i=0;i<S.freqs.length;i++){ pts.push(X(S.freqs[i]),Y(S.power[i])); }
+    poly(ctx,pts,C.accent,2);
+    // markers
+    ctx.strokeStyle=C.signal;ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(X(S.peak_hz),y0);ctx.lineTo(X(S.peak_hz),y0+ph);ctx.stroke();
+    lab(ctx,S.peak_bpm.toFixed(1)+" BPM",X(S.peak_hz)+6,y0+12,C.signal,11);
+    lab(ctx,"harmonic",X(S.harmonic_hz)+6,y0+30,C["ink-3"],9.5);
+    lab(ctx,"out of band",pad+5,y0+ph-10,C["ink-3"],9);
+    [0,1,2,3,4,5].forEach(function(t){ lab(ctx,t,X(t),y0+ph+14,C["ink-3"],9.5,"center"); });
+    lab(ctx,"Hz",pad+pw,y0+ph+14,C["ink-3"],9.5,"right");
+    [0,60,120,180,240,300].forEach(function(b){
+      var hz=b/60; if(hz>fmax)return;
+      lab(ctx,b,X(hz),y0+ph+30,C["ink-2"],9.5,"center");
+    });
+    lab(ctx,"BPM",pad+pw,y0+ph+30,C["ink-2"],9.5,"right");
+  }
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- convolution theorem ---------- */
+(function(){
+  var E=D.experiments.conv_theorem;
+  document.getElementById("ct-sub").textContent="conv(x,h)  vs  IFFT(FFT(x)·FFT(h))";
+  document.getElementById("ct-stats").innerHTML=
+    '<div><span class="k">largest difference</span><span class="v good">'+E.max_diff.toExponential(2)+'</span></div>'+
+    '<div><span class="k">relative to scale</span><span class="v good">'+E.rel_diff.toExponential(1)+'</span></div>'+
+    '<div><span class="k">verdict</span><span class="v good">identical</span></div>';
+  function draw(){
+    var f=fit(document.getElementById("cv-ct")); if(!f)return;
+    var ctx=f.ctx,w=f.w,h=f.h; ctx.clearRect(0,0,w,h);
+    var pad=40,pw=w-pad-14,y0=16,ph=h-y0-26;
+    var ex=extent([E.direct]);
+    function X(i){ return pad+(i/(E.direct.length-1))*pw; }
+    function Y(v){ return y0+ph-((v-ex[0])/(ex[1]-ex[0]))*ph; }
+    frame(ctx,pad,y0,pw,ph);
+    var p1=[],p2=[];
+    for(var i=0;i<E.direct.length;i+=2){ p1.push(X(i),Y(E.direct[i])); p2.push(X(i),Y(E.via_fft[i])); }
+    poly(ctx,p1,C.ink,4.5);
+    ctx.setLineDash([7,5]); poly(ctx,p2,C.accent,2); ctx.setLineDash([]);
+    lab(ctx,"time-domain convolution (thick)",pad+6,y0+12,C.ink,9.5);
+    lab(ctx,"FFT route (dashed)",pad+6,y0+26,C.accent,9.5);
+  }
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- wraparound ---------- */
+(function(){
+  var E=D.experiments.wraparound;
+  document.getElementById("wr-sub").textContent="N-point FFT on an N-sample signal";
+  document.getElementById("wr-stats").innerHTML=
+    '<div><span class="k">corrupted samples</span><span class="v hot">first '+E.corrupt_until+'</span></div>'+
+    '<div><span class="k">head error</span><span class="v hot">'+E.head_err_pct.toFixed(1)+'% of scale</span></div>'+
+    '<div><span class="k">rest of signal</span><span class="v good">'+E.tail_err.toExponential(1)+'</span></div>';
+  function draw(){
+    var f=fit(document.getElementById("cv-wr")); if(!f)return;
+    var ctx=f.ctx,w=f.w,h=f.h; ctx.clearRect(0,0,w,h);
+    var pad=40,pw=w-pad-14,y0=16,ph=h-y0-26;
+    var ex=extent([E.correct,E.circular]);
+    var n=E.correct.length;
+    function X(i){ return pad+(i/(n-1))*pw; }
+    function Y(v){ return y0+ph-((v-ex[0])/(ex[1]-ex[0]))*ph; }
+    ctx.fillStyle=C.warn;ctx.globalAlpha=.13;
+    ctx.fillRect(pad,y0,X(E.corrupt_until)-pad,ph);ctx.globalAlpha=1;
+    frame(ctx,pad,y0,pw,ph);
+    var p1=[],p2=[];
+    for(var i=0;i<n;i+=2){ p1.push(X(i),Y(E.correct[i])); p2.push(X(i),Y(E.circular[i])); }
+    poly(ctx,p1,C.signal,2.4);
+    poly(ctx,p2,C.accent,1.8);
+    lab(ctx,"corrupted",pad+6,y0+12,C.warn,10);
+    lab(ctx,"correct (padded)",pad+pw-6,y0+12,C.signal,9.5,"right");
+    lab(ctx,"unpadded",pad+pw-6,y0+26,C.accent,9.5,"right");
+  }
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- harmonic trap ---------- */
+(function(){
+  var E=D.experiments.harmonic_trap;
+  document.getElementById("ht-sub").textContent="fundamental suppressed, true rate "+E.true_bpm+" BPM";
+  document.getElementById("ht-stats").innerHTML=
+    '<div><span class="k">true</span><span class="v good">'+E.true_bpm.toFixed(0)+' BPM</span></div>'+
+    '<div><span class="k">naive argmax</span><span class="v hot">'+E.naive_bpm.toFixed(2)+' BPM</span></div>'+
+    '<div><span class="k">with sub-harmonic check</span><span class="v good">'+E.guarded_bpm.toFixed(2)+' BPM</span></div>'+
+    '<div><span class="k">false halvings, 86–140</span><span class="v good">0</span></div>';
+  function draw(){
+    var f=fit(document.getElementById("cv-ht")); if(!f)return;
+    var ctx=f.ctx,w=f.w,h=f.h; ctx.clearRect(0,0,w,h);
+    var pad=44,pw=w-pad-16,y0=18,ph=h-y0-34;
+    var fmax=5.0;
+    function X(hz){ return pad+(hz/fmax)*pw; }
+    function Y(p){ return y0+ph-p*(ph-10); }
+    frame(ctx,pad,y0,pw,ph);
+    var pts=[];
+    for(var i=0;i<E.freqs.length;i++){ pts.push(X(E.freqs[i]),Y(E.power[i])); }
+    poly(ctx,pts,C.accent,2);
+    // markers
+    ctx.strokeStyle=C.bad;ctx.lineWidth=2;ctx.setLineDash([5,4]);
+    ctx.beginPath();ctx.moveTo(X(E.naive_bpm/60),y0);ctx.lineTo(X(E.naive_bpm/60),y0+ph);ctx.stroke();
+    ctx.setLineDash([]);
+    lab(ctx,"argmax → "+E.naive_bpm.toFixed(0),X(E.naive_bpm/60)+6,y0+14,C.bad,10.5);
+    ctx.strokeStyle=C.ok;ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.moveTo(X(E.true_bpm/60),y0);ctx.lineTo(X(E.true_bpm/60),y0+ph);ctx.stroke();
+    lab(ctx,"truth "+E.true_bpm.toFixed(0),X(E.true_bpm/60)+6,y0+32,C.ok,10.5);
+    [0,60,120,180,240,300].forEach(function(b){
+      var hz=b/60; if(hz>fmax)return;
+      lab(ctx,b,X(hz),y0+ph+14,C["ink-3"],9.5,"center");
+    });
+    lab(ctx,"BPM",pad+pw,y0+ph+14,C["ink-3"],9.5,"right");
+  }
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- resolution ---------- */
+(function(){
+  var R=D.experiments.resolution;
+  document.getElementById("res-stats").innerHTML=R.map(function(r){
+    return '<div><span class="k">'+r.duration+' s window</span><span class="v'+
+      (r.duration>=12?' good':' hot')+'">'+r.resolution_bpm.toFixed(1)+' BPM</span></div>';
+  }).join("");
+  function draw(){
+    var f=fit(document.getElementById("cv-res")); if(!f)return;
+    var ctx=f.ctx,w=f.w,h=f.h; ctx.clearRect(0,0,w,h);
+    var gap=12, cw=(w-gap*(R.length-1))/R.length;
+    R.forEach(function(r,k){
+      var x0=k*(cw+gap), pad=x0+6, pw=cw-16, y0=26, ph=h-y0-30;
+      lab(ctx,r.duration+" s  ·  Δf = "+r.resolution_bpm.toFixed(1)+" BPM",pad,12,
+          r.duration>=12?C.ok:C.bad,10);
+      frame(ctx,pad,y0,pw,ph);
+      var lo=r.freqs[0],hi=r.freqs[r.freqs.length-1];
+      function X(hz){ return pad+((hz-lo)/(hi-lo))*pw; }
+      function Y(p){ return y0+ph-p*(ph-8); }
+      [72,78].forEach(function(b){
+        var xx=X(b/60);
+        ctx.strokeStyle=C.signal;ctx.lineWidth=1;ctx.setLineDash([3,4]);
+        ctx.beginPath();ctx.moveTo(xx,y0);ctx.lineTo(xx,y0+ph);ctx.stroke();ctx.setLineDash([]);
+        lab(ctx,b,xx,y0-6,C.signal,9,"center");
+      });
+      var pts=[];
+      for(var i=0;i<r.freqs.length;i++){ pts.push(X(r.freqs[i]),Y(r.power[i])); }
+      poly(ctx,pts,C.accent,2);
+      lab(ctx,r.duration>=12?"two peaks":"merged",pad+4,y0+ph-10,
+          r.duration>=12?C.ok:C.bad,10);
+    });
+  }
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- interpolation ---------- */
+(function(){
+  var E=D.experiments.interpolation;
+  document.getElementById("in-sub").textContent="true rate "+E.true_bpm+" BPM, bins "+E.bin_width_bpm.toFixed(2)+" BPM apart";
+  document.getElementById("in-stats").innerHTML=
+    '<div><span class="k">true</span><span class="v good">'+E.true_bpm.toFixed(2)+'</span></div>'+
+    '<div><span class="k">nearest bin</span><span class="v hot">'+E.nearest_bpm.toFixed(2)+'</span></div>'+
+    '<div><span class="k">interpolated</span><span class="v good">'+E.interp_bpm.toFixed(2)+'</span></div>'+
+    '<div><span class="k">MAE across 5 rates</span><span class="v good">0.420 → 0.022</span></div>';
+  function draw(){
+    var f=fit(document.getElementById("cv-int")); if(!f)return;
+    var ctx=f.ctx,w=f.w,h=f.h; ctx.clearRect(0,0,w,h);
+    var pad=44,pw=w-pad-16,y0=22,ph=h-y0-32;
+    var lo=E.parabola_x[0],hi=E.parabola_x[E.parabola_x.length-1];
+    lo=Math.min(lo,E.bin_freqs[0]); hi=Math.max(hi,E.bin_freqs[E.bin_freqs.length-1]);
+    function X(b){ return pad+((b-lo)/(hi-lo))*pw; }
+    function Y(p){ return y0+ph-p*(ph-10); }
+    frame(ctx,pad,y0,pw,ph);
+    // parabola
+    var pts=[];
+    for(var i=0;i<E.parabola_x.length;i++){
+      if(E.parabola_y[i]>1.35)continue;
+      pts.push(X(E.parabola_x[i]),Y(E.parabola_y[i]));
+    }
+    poly(ctx,pts,C.signal,2.2);
+    // bins as stems
+    for(var j=0;j<E.bin_freqs.length;j++){
+      var bx=X(E.bin_freqs[j]);
+      ctx.strokeStyle=C["rule-2"];ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(bx,y0+ph);ctx.lineTo(bx,Y(E.bin_power[j]));ctx.stroke();
+      ctx.fillStyle=C.ink;
+      ctx.beginPath();ctx.arc(bx,Y(E.bin_power[j]),4,0,6.2832);ctx.fill();
+    }
+    function vline(b,c,txt,dy){
+      var xx=X(b);
+      ctx.strokeStyle=c;ctx.lineWidth=2;ctx.setLineDash(c===C.bad?[5,4]:[]);
+      ctx.beginPath();ctx.moveTo(xx,y0);ctx.lineTo(xx,y0+ph);ctx.stroke();ctx.setLineDash([]);
+      lab(ctx,txt,xx+5,y0+dy,c,10);
+    }
+    vline(E.nearest_bpm,C.bad,"nearest bin "+E.nearest_bpm.toFixed(2),14);
+    vline(E.true_bpm,C["ink-3"],"true "+E.true_bpm.toFixed(2),32);
+    vline(E.interp_bpm,C.ok,"interpolated "+E.interp_bpm.toFixed(2),50);
+    lab(ctx,"BPM",pad+pw,y0+ph+16,C["ink-3"],9.5,"right");
+  }
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- noise sweep ---------- */
+(function(){
+  var S=D.experiments.noise_sweep;
+  document.getElementById("ns-stats").innerHTML=S.map(function(s){
+    return '<div><span class="k">'+s.snr_db+' dB</span><span class="v'+
+      (s.error<2?' good':' hot')+'">'+s.bpm.toFixed(2)+'</span></div>';
+  }).join("");
+  function draw(){
+    var f=fit(document.getElementById("cv-noise")); if(!f)return;
+    var ctx=f.ctx,w=f.w,h=f.h; ctx.clearRect(0,0,w,h);
+    var rows=S.length, rh=(h-14)/rows;
+    S.forEach(function(s,k){
+      var y0=8+k*rh, ph=rh-12, pad=86, pw=w-pad-96;
+      var ex=extent([s.signal]);
+      function X(i){ return pad+(i/(s.signal.length-1))*pw; }
+      function Y(v){ return y0+ph-((v-ex[0])/(ex[1]-ex[0]))*ph; }
+      lab(ctx,s.snr_db+" dB",6,y0+ph/2,s.error<2?C.ok:C.bad,11);
+      var pts=[];
+      for(var i=0;i<s.signal.length;i++){ pts.push(X(i),Y(s.signal[i])); }
+      poly(ctx,pts,C.accent,1.3);
+      lab(ctx,s.bpm.toFixed(2)+" BPM",w-6,y0+ph/2-7,s.error<2?C.ok:C.bad,10.5,"right");
+      lab(ctx,"q="+s.quality.toFixed(3),w-6,y0+ph/2+8,C["ink-3"],9.5,"right");
+    });
+    lab(ctx,"first 10 s of the filtered signal at each noise level",86,h-4,C["ink-3"],9.5);
+  }
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- checks table ---------- */
+(function(){
+  var rows=[
+    ["1","BPM within one resolution bin","error 0.07 BPM, bin 2.00"],
+    ["1","quality high on a clean pulse","0.654"],
+    ["2","detrending removes drift leakage","71x reduction in band"],
+    ["3","convolution theorem holds","relative difference 4.3e-16"],
+    ["4","unpadded FFT corrupts exactly len(h)−1","head 82.4%, tail 4.9e-16"],
+    ["5","61-tap window leaves the pulse intact","87% kept"],
+    ["6","naive argmax locks onto the harmonic","reports 144.0"],
+    ["6","sub-harmonic check recovers the rate","71.99 BPM"],
+    ["6","defence never halves a healthy reading","0 false positives, 86–140"],
+    ["7","6 s cannot separate 6 BPM apart, 30 s can","resolution = 1/T"],
+    ["8","interpolation reduces off-grid error","0.420 → 0.022 BPM"],
+    ["9","pulse recovered down to −6 dB SNR","error 0.27 BPM"]
+  ];
+  var html='<thead><tr><th>#</th><th>Assertion</th><th>Measured</th><th>Result</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    html+='<tr><td class="n">'+r[0]+'</td><td>'+r[1]+'</td><td class="n">'+r[2]+
+          '</td><td><span class="pill">PASS</span></td></tr>';
+  });
+  document.getElementById("checks").innerHTML=html+'</tbody>';
+})();
+
+window.addEventListener("resize",function(){ drawStage(); });
+setStage(0);
+</script>

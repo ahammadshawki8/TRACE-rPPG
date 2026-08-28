@@ -1,0 +1,2056 @@
+<title>The Winding Machine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap">
+
+<style>
+/* ============================================================
+   TOKENS
+   Light palette on bare :root. Dark redefines tokens only.
+   ============================================================ */
+:root {
+  --paper:      #FAF7F8;
+  --paper-2:    #F2EDEF;
+  --paper-3:    #E9E1E5;
+  --ink:        #1F1720;
+  --ink-2:      #5A4E58;
+  --ink-3:      #8C7F88;
+  --rule:       #E0D6DB;
+  --rule-2:     #CDBFC7;
+  --accent:     #B01B3F;
+  --accent-2:   #8E1533;
+  --accent-soft:#F7DEE5;
+  --signal:     #10796B;
+  --signal-soft:#DBEFEA;
+  --warn:       #9C5A12;
+  --warn-soft:  #F7E8D4;
+  --shadow:     0 1px 2px rgba(31,23,32,.05), 0 8px 24px -12px rgba(31,23,32,.18);
+
+  --sp-1: .35rem;  --sp-2: .7rem;   --sp-3: 1.1rem;
+  --sp-4: 1.7rem;  --sp-5: 2.6rem;  --sp-6: 4rem;
+
+  --font-display: "Spectral", Georgia, "Times New Roman", serif;
+  --font-body: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --spine: 40rem;
+  --wide: 60rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:      #16111A;
+    --paper-2:    #1F1824;
+    --paper-3:    #29202F;
+    --ink:        #F0E9EE;
+    --ink-2:      #B3A5AE;
+    --ink-3:      #7D6F79;
+    --rule:       #322A38;
+    --rule-2:     #443A4B;
+    --accent:     #FF6B8A;
+    --accent-2:   #FF93A9;
+    --accent-soft:#3B1D28;
+    --signal:     #45D6B0;
+    --signal-soft:#123029;
+    --warn:       #E0A050;
+    --warn-soft:  #33260F;
+    --shadow:     0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper:      #16111A;
+  --paper-2:    #1F1824;
+  --paper-3:    #29202F;
+  --ink:        #F0E9EE;
+  --ink-2:      #B3A5AE;
+  --ink-3:      #7D6F79;
+  --rule:       #322A38;
+  --rule-2:     #443A4B;
+  --accent:     #FF6B8A;
+  --accent-2:   #FF93A9;
+  --accent-soft:#3B1D28;
+  --signal:     #45D6B0;
+  --signal-soft:#123029;
+  --warn:       #E0A050;
+  --warn-soft:  #33260F;
+  --shadow:     0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+* { box-sizing: border-box; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.65;
+  margin: 0;
+  padding: 0 var(--sp-3) var(--sp-6);
+  -webkit-font-smoothing: antialiased;
+}
+
+.spine { max-width: var(--spine); margin-inline: auto; }
+.wide  { max-width: var(--wide);  margin-inline: auto; }
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  text-wrap: balance;
+  line-height: 1.2;
+  margin: 0;
+}
+
+p { margin: 0; }
+
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+code, .m {
+  font-family: var(--font-mono);
+  font-size: .92em;
+  font-variant-ligatures: none;
+}
+
+.m { color: var(--accent); font-weight: 500; }
+.m-sig { color: var(--signal); font-weight: 500; font-family: var(--font-mono); font-size: .92em; }
+
+/* ============================================================
+   MASTHEAD
+   ============================================================ */
+.masthead {
+  max-width: var(--wide);
+  margin: 0 auto;
+  padding: var(--sp-6) 0 var(--sp-5);
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.masthead h1 {
+  font-size: clamp(2.6rem, 7vw, 4.4rem);
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+
+.masthead .standfirst {
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 2.2vw, 1.3rem);
+  color: var(--ink-2);
+  max-width: 34rem;
+  line-height: 1.5;
+}
+
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3) var(--sp-4);
+  font-family: var(--font-mono);
+  font-size: .76rem;
+  color: var(--ink-3);
+  letter-spacing: .04em;
+  padding-top: var(--sp-2);
+}
+.meta-row span strong { color: var(--ink-2); font-weight: 500; }
+
+/* ============================================================
+   SECTIONS
+   ============================================================ */
+.sec {
+  max-width: var(--wide);
+  margin: 0 auto;
+  padding-top: var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.sec-head { display: flex; flex-direction: column; gap: var(--sp-2); }
+
+.sec-num {
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  letter-spacing: .16em;
+  color: var(--ink-3);
+  text-transform: uppercase;
+}
+
+.sec-head h2 {
+  font-size: clamp(1.7rem, 3.6vw, 2.4rem);
+  font-weight: 600;
+  letter-spacing: -.015em;
+}
+
+.sec-head h2 em { font-style: italic; color: var(--accent); }
+
+.prose {
+  max-width: var(--spine);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.prose h3 {
+  font-size: 1.18rem;
+  font-weight: 600;
+  margin-top: var(--sp-2);
+}
+.prose ul, .prose ol {
+  margin: 0;
+  padding-left: 1.3em;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.prose strong { font-weight: 600; }
+
+/* part divider */
+.part-break {
+  max-width: var(--wide);
+  margin: var(--sp-6) auto 0;
+  padding-top: var(--sp-5);
+  border-top: 2px solid var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.part-break .eyebrow { color: var(--ink-3); }
+.part-break h2 {
+  font-size: clamp(2rem, 4.6vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+
+/* ============================================================
+   CALLOUTS
+   ============================================================ */
+.plain {
+  background: var(--paper-2);
+  border-left: 3px solid var(--signal);
+  padding: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  max-width: var(--spine);
+}
+.plain .lbl {
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--signal);
+  font-weight: 600;
+}
+.plain p { color: var(--ink-2); font-size: .95rem; }
+
+.keypoint {
+  background: var(--accent-soft);
+  padding: var(--sp-3) var(--sp-4);
+  max-width: var(--spine);
+  border-radius: 2px;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+.keypoint strong { font-weight: 700; color: var(--accent-2); }
+
+.aside-note {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: var(--sp-3);
+  max-width: var(--spine);
+  font-size: .92rem;
+  color: var(--ink-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.aside-note .lbl {
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--warn);
+  font-weight: 600;
+}
+
+/* ============================================================
+   FIGURE PANELS (instrument styling)
+   ============================================================ */
+.fig {
+  border: 1px solid var(--rule-2);
+  border-radius: 4px;
+  background: var(--paper-2);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.fig-bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--paper-3);
+  border-bottom: 1px solid var(--rule-2);
+  flex-wrap: wrap;
+}
+.fig-bar .tag {
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+}
+.fig-bar .name {
+  font-family: var(--font-body);
+  font-size: .85rem;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+.fig-canvas-wrap { padding: var(--sp-3); background: var(--paper); }
+.fig canvas { display: block; width: 100%; height: auto; touch-action: none; }
+
+.fig-controls {
+  border-top: 1px solid var(--rule);
+  padding: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.ctl-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+}
+
+.ctl {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: 1 1 16rem;
+}
+.ctl label {
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  letter-spacing: .06em;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ctl input[type=range] {
+  flex: 1;
+  min-width: 6rem;
+  accent-color: var(--accent);
+  height: 1.4rem;
+}
+
+button {
+  font-family: var(--font-mono);
+  font-size: .75rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  font-weight: 500;
+  padding: .42rem .8rem;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--rule-2);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+button:hover { border-color: var(--accent); color: var(--accent); }
+button[aria-pressed="true"], button.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper);
+}
+
+.chk {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  font-family: var(--font-mono);
+  font-size: .73rem;
+  color: var(--ink-2);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.chk input { accent-color: var(--signal); width: 1rem; height: 1rem; }
+
+/* readouts */
+.readout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.readout div {
+  background: var(--paper);
+  padding: var(--sp-2);
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+}
+.readout .k {
+  font-family: var(--font-mono);
+  font-size: .64rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.readout .v {
+  font-family: var(--font-mono);
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.readout .v.hot { color: var(--accent); }
+.readout .v.good { color: var(--signal); }
+
+.fig-note {
+  padding: var(--sp-2) var(--sp-3) var(--sp-3);
+  font-size: .86rem;
+  color: var(--ink-2);
+  border-top: 1px dashed var(--rule);
+  background: var(--paper-2);
+}
+.fig-note strong { color: var(--ink); font-weight: 600; }
+
+/* ============================================================
+   MATH BLOCK
+   ============================================================ */
+.math {
+  font-family: var(--font-mono);
+  font-size: .95rem;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: var(--sp-3);
+  overflow-x: auto;
+  max-width: var(--spine);
+  line-height: 1.75;
+  white-space: pre;
+  color: var(--ink);
+}
+.math .hi { color: var(--accent); font-weight: 600; }
+.math .dim { color: var(--ink-3); }
+.math .ok { color: var(--signal); font-weight: 600; }
+
+/* ============================================================
+   TABLES
+   ============================================================ */
+.tbl-wrap { overflow-x: auto; max-width: var(--spine); }
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: .9rem;
+  min-width: 26rem;
+}
+th, td {
+  text-align: left;
+  padding: .5rem .7rem;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+th {
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 500;
+  border-bottom: 1px solid var(--rule-2);
+}
+td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* quadrant map */
+.quad {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  max-width: 26rem;
+  border: 1px solid var(--rule-2);
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--rule-2);
+  gap: 1px;
+}
+.quad div {
+  background: var(--paper);
+  padding: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+}
+.quad .qn {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--accent);
+}
+.quad .qs { font-family: var(--font-mono); font-size: .8rem; color: var(--ink); }
+.quad .qa { font-family: var(--font-mono); font-size: .72rem; color: var(--ink-3); }
+
+/* ============================================================
+   GLOSSARY
+   ============================================================ */
+.gloss {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid var(--rule);
+  max-width: var(--spine);
+}
+.gloss > div {
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--rule);
+  display: grid;
+  grid-template-columns: 11rem 1fr;
+  gap: var(--sp-3);
+}
+.gloss dt {
+  font-family: var(--font-mono);
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0;
+}
+.gloss dd { margin: 0; font-size: .93rem; color: var(--ink-2); }
+@media (max-width: 34rem) {
+  .gloss > div { grid-template-columns: 1fr; gap: var(--sp-1); }
+}
+
+/* ============================================================
+   SELF CHECK
+   ============================================================ */
+details {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--paper-2);
+  padding: var(--sp-3);
+  max-width: var(--spine);
+}
+details + details { margin-top: var(--sp-2); }
+summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  list-style: none;
+}
+summary::-webkit-details-marker { display: none; }
+summary::before {
+  content: "▸ ";
+  color: var(--accent);
+  font-family: var(--font-mono);
+}
+details[open] summary::before { content: "▾ "; }
+details .ans {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px dashed var(--rule-2);
+  font-size: .95rem;
+  color: var(--ink-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.foot {
+  max-width: var(--wide);
+  margin: var(--sp-6) auto 0;
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: .76rem;
+  color: var(--ink-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  justify-content: space-between;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* ---- bilingual ---- */
+:root[data-lang="bn"] body,
+:root[data-lang="bn"] .prose,
+:root[data-lang="bn"] .sec-head h2,
+:root[data-lang="bn"] .keypoint,
+:root[data-lang="bn"] .fig-note,
+:root[data-lang="bn"] .plain p,
+:root[data-lang="bn"] .aside-note,
+:root[data-lang="bn"] .gloss dd,
+:root[data-lang="bn"] details,
+:root[data-lang="bn"] .masthead .standfirst {
+  font-family: "Hind Siliguri", "Noto Sans Bengali", var(--font-body);
+}
+:root[data-lang="bn"] .prose p,
+:root[data-lang="bn"] .prose li { line-height: 1.9; }
+:root[data-lang="bn"] .keypoint { line-height: 1.75; }
+#langbtn{
+  position:fixed; top:.75rem; right:.75rem; z-index:200;
+  font-family:var(--font-mono); font-size:.75rem; letter-spacing:.06em;
+  padding:.45rem .85rem; border-radius:4px; cursor:pointer;
+  background:var(--accent); color:var(--paper); border:1px solid var(--accent);
+  box-shadow:0 2px 10px -4px rgba(0,0,0,.4);
+}
+#langbtn:hover{ filter:brightness(1.08); }
+@media print{ #langbtn{ display:none; } }
+</style>
+<button id="langbtn" type="button" aria-label="Switch language">বাংলা</button>
+
+
+<header class="masthead">
+  <div class="eyebrow">TRACE-rPPG · Foundations · Tier 0</div>
+  <h1>The Winding Machine</h1>
+  <p class="standfirst" data-t="0">Complex numbers, spinning arrows, and the one trick that lets a computer pull a heartbeat out of a video of someone's face.</p>
+  <div class="meta-row">
+    <span><strong>6</strong> interactive figures</span>
+    <span><strong>3</strong> parts &mdash; arrows, projection, calculus</span>
+    <span>Drag, slide, and press things. Nothing here breaks.</span>
+  </div>
+</header>
+
+<!-- ============================================================
+     WHY
+     ============================================================ -->
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">00 &mdash; Orientation</div>
+    <h2 data-t="1">Why any of this is on your plate</h2>
+  </div>
+  <div class="prose">
+    <p data-t="2">When you run an FFT in Python, every value that comes back is a <em>complex number</em>:</p>
+  </div>
+  <div class="math">X = np.fft.rfft(signal)
+X[40]   <span class="dim">→</span> <span class="hi">(-2.1 + 3.4j)</span></div>
+  <div class="prose">
+    <p data-t="3">That is not a bug or a quirk of numpy. Each output has to carry <strong>two</strong> facts at once, and a complex number is the natural container for a pair of facts. So if complex numbers feel hazy, your FFT output stays hazy forever, and you will not be able to tell a real heartbeat from noise.</p>
+    <p data-t="4">Everything on this page exists to make that one line of output feel obvious. There are three parts:</p>
+    <ul>
+      <li data-t="5"><strong>Part A &mdash; Arrows.</strong> Complex numbers, Euler's formula, and the winding machine. This is the bulk of it.</li>
+      <li data-t="6"><strong>Part B &mdash; Projection.</strong> One idea from linear algebra, which turns out to explain why the standard method in your field beats the naive one.</li>
+      <li data-t="7"><strong>Part C &mdash; Calculus.</strong> Two minutes. Genuinely.</li>
+    </ul>
+  </div>
+  <div class="plain">
+    <div class="lbl">Plain English</div>
+    <p data-t="166"><strong>FFT</strong> stands for Fast Fourier Transform. It is a piece of code that takes a recording and tells you which rhythms are hiding inside it. That is the entire job. The rest of this page is about <em>how</em> it manages to do that.</p>
+  </div>
+</section>
+
+<div class="part-break">
+  <div class="eyebrow">Part A</div>
+  <h2 data-t="8">Arrows</h2>
+</div>
+
+<!-- ============================================================
+     1. THE ARROW
+     ============================================================ -->
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">01 &mdash; The object</div>
+    <h2 data-t="9">A complex number is an <em>arrow</em></h2>
+  </div>
+  <div class="prose">
+    <p data-t="10">Forget the word "imaginary." It is a historical accident and it has confused students for three hundred years. Think geometry instead.</p>
+    <p data-t="167"><span class="m">z = a + jb</span> is an arrow drawn from the origin to the point <span class="m">(a, b)</span>. The real part <span class="m">a</span> is how far right you go. The imaginary part <span class="m">b</span> is how far up. That is the whole definition.</p>
+    <p data-t="11">Engineers write <span class="m">j</span> instead of <span class="m">i</span>, because <span class="m">i</span> already means electrical current.</p>
+    <p data-t="12">Drag the dot below. Watch how the four numbers describing it change together.</p>
+  </div>
+
+  <figure class="fig" style="margin:0">
+    <div class="fig-bar">
+      <span class="tag">Figure 1</span>
+      <span class="name" data-t="13">Complex plane explorer &mdash; drag the dot</span>
+    </div>
+    <div class="fig-canvas-wrap"><canvas id="cv-plane" height="380"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <button data-preset="1,1">z = 1 + 1j</button>
+        <button data-preset="-1,1">z = -1 + 1j</button>
+        <button data-preset="3,-3">z = 3 - 3j</button>
+        <button data-preset="3,4">z = 3 + 4j</button>
+      </div>
+      <div class="readout">
+        <div><span class="k">real part (a)</span><span class="v" id="ro-a">1.00</span></div>
+        <div><span class="k">imag part (b)</span><span class="v" id="ro-b">1.00</span></div>
+        <div><span class="k">magnitude r</span><span class="v hot" id="ro-r">1.41</span></div>
+        <div><span class="k">phase θ</span><span class="v hot" id="ro-t">45.0°</span></div>
+        <div><span class="k">quadrant</span><span class="v" id="ro-q">Q1</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="14"><strong>Magnitude</strong> is the length of the arrow, found with Pythagoras: <span class="m">r = √(a² + b²)</span>. <strong>Phase</strong> is the angle it points at, measured counter-clockwise from the arrow pointing due right.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <h3 data-t="15">Reading the quadrant off the signs</h3>
+    <p data-t="16">Quadrants are numbered counter-clockwise starting from due right. You never need to compute anything to find one; just read the two signs.</p>
+  </div>
+
+  <div class="quad">
+    <div><span class="qn">Q2</span><span class="qs">(−, +) left and up</span><span class="qa">90° to 180°</span></div>
+    <div><span class="qn">Q1</span><span class="qs">(+, +) right and up</span><span class="qa">0° to 90°</span></div>
+    <div><span class="qn">Q3</span><span class="qs">(−, −) left and down</span><span class="qa">180° to 270°</span></div>
+    <div><span class="qn">Q4</span><span class="qs">(+, −) right and down</span><span class="qa">270° to 360°</span></div>
+  </div>
+
+  <div class="prose">
+    <p data-t="17">So <span class="m">-1 + 1j</span> has a negative real part (left) and a positive imaginary part (up). Left and up is <strong>Q2</strong>, at 135°. Left <em>and down</em> would be Q3, which is <span class="m">-1 - 1j</span> at 225°. Press the preset buttons above and watch the quadrant readout confirm it.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     2. j = ROTATE
+     ============================================================ -->
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">02 &mdash; The operator</div>
+    <h2 data-t="18"><em>j</em> means "rotate by a quarter turn"</h2>
+  </div>
+  <div class="prose">
+    <p data-t="19">Here is the reframing that makes complex numbers click. Multiplying by <span class="m">j</span> is not an abstract algebra move. It rotates the arrow 90° counter-clockwise. Nothing else.</p>
+    <p data-t="20">Press the button below four times and watch the arrow walk around the circle.</p>
+  </div>
+
+  <figure class="fig" style="margin:0">
+    <div class="fig-bar">
+      <span class="tag">Figure 2</span>
+      <span class="name" data-t="21">Multiplying by j, one quarter turn at a time</span>
+    </div>
+    <div class="fig-canvas-wrap"><canvas id="cv-rot" height="300"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <button id="btn-rot">Multiply by j &nbsp;×</button>
+        <button id="btn-rot-reset">Reset to 1</button>
+        <span style="font-family:var(--font-mono);font-size:.85rem;color:var(--ink-2)">now at: <strong id="rot-label" style="color:var(--accent)">1</strong></span>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="22">Start at <span class="m">1</span> (pointing right). One press gives <span class="m">j</span> (up). Another gives <span class="m">j² = -1</span> (left). So <strong>j² = -1</strong> is not a strange rule to memorise. It is the observation that <em>turning 90° twice leaves you facing backwards</em>, which is obviously true. Two more presses bring you home.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================
+     3. TWO DESCRIPTIONS
+     ============================================================ -->
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">03 &mdash; Coordinates</div>
+    <h2 data-t="23">Two ways to describe one arrow</h2>
+  </div>
+  <div class="prose">
+    <p data-t="24">The same arrow can be described two ways, and switching between them is most of the skill.</p>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Form</th><th>Written</th><th>Reads as</th><th>Useful for</th></tr></thead>
+      <tbody>
+        <tr><td>Rectangular</td><td class="num">a + jb</td><td>go right <em>a</em>, go up <em>b</em></td><td>adding two arrows</td></tr>
+        <tr><td><strong>Polar</strong></td><td class="num">r · e<sup>jθ</sup></td><td>face angle <em>θ</em>, walk distance <em>r</em></td><td><strong>physics and meaning</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="math">r = √(a² + b²)      <span class="dim">magnitude — the length of the arrow</span>
+θ = atan2(b, a)     <span class="dim">phase — the angle it points at</span>
+
+<span class="dim">worked example:</span>  z = 3 + 4j
+r = √(9 + 16) = √25 = <span class="hi">5</span>
+θ = atan2(4, 3)      = <span class="hi">53.13°</span></div>
+  <div class="prose">
+    <p data-t="25">So <span class="m">3 + 4j</span> and <span class="m">5·e^(j·53.13°)</span> are the same arrow, wearing different clothes.</p>
+  </div>
+  <div class="plain">
+    <div class="lbl">Plain English</div>
+    <p data-t="168"><strong>atan2</strong> is just arctangent that knows about quadrants. Plain <span class="m">atan(b/a)</span> cannot tell <span class="m">1+1j</span> from <span class="m">-1-1j</span>, because both give <span class="m">b/a = 1</span>. Feeding <span class="m">a</span> and <span class="m">b</span> in separately lets it read the signs and return the correct quadrant. Every language has it. Always use it.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     4. EULER
+     ============================================================ -->
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">04 &mdash; The formula</div>
+    <h2 data-t="26">Euler's formula, defused</h2>
+  </div>
+  <div class="math">e<sup>jθ</sup> = cos θ + j·sin θ</div>
+  <div class="prose">
+    <p data-t="27">Read geometrically it stops being intimidating:</p>
+  </div>
+  <div class="keypoint" data-t="28"><strong>e<sup>jθ</sup> is the point on the unit circle at angle θ.</strong> Its length is always exactly 1. Its angle is exactly θ. That is the entire content of the formula.</div>
+  <div class="prose">
+    <p data-t="29">Check it yourself at <span class="m">θ = 180°</span>: <span class="m">e^(j·180°) = cos 180° + j·sin 180° = -1 + 0j = -1</span>. That is the celebrated identity, and all it says is <em>"half a turn around the circle lands you on the left."</em> Figure 2 already showed you that with two button presses.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     5. THE SHADOW  ← the one they got stuck on
+     ============================================================ -->
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">05 &mdash; The first sticking point</div>
+    <h2 data-t="30">A sine wave <em>is</em> a spinning arrow, seen from the side</h2>
+  </div>
+  <div class="prose">
+    <p data-t="31">Now take the fixed angle <span class="m">θ</span> and let it grow with time:</p>
+  </div>
+  <div class="math">e<sup>j·2πf·t</sup>       <span class="dim">an arrow spinning at f revolutions per second</span></div>
+  <div class="prose">
+    <p data-t="32">The <span class="m">2π</span> is there only because one full turn is 2π radians. A heart rate of 72 BPM is <span class="m">72/60 = 1.2 Hz</span>, so <span class="m">e^(j·2π·1.2·t)</span> completes 1.2 turns every second, one turn every 0.833 seconds. That spinning arrow <em>is</em> the mathematical object meaning "a 72 BPM rhythm."</p>
+
+    <h3 data-t="33">The carousel</h3>
+    <p data-t="34">Picture a carousel with one horse, seen from above. It goes round in a circle. Now walk far away and crouch until your eye is level with the platform. You have lost depth perception, so you can no longer tell whether the horse is near or far. All you see is the horse sliding <strong>left, right, left, right.</strong></p>
+    <p data-t="35">The horse did not change what it was doing. Your <em>view</em> changed. And that side-on view is a sine wave.</p>
+  </div>
+
+  <div class="keypoint" data-t="36">Circular motion, viewed edge-on, <strong>is</strong> a sine wave. Not "looks like." <strong>Is.</strong></div>
+
+  <div class="prose">
+    <p data-t="37">Below, the arrow on the left spins. Its horizontal position, its shadow, is carried across to the right and drawn against time. Press play.</p>
+  </div>
+
+  <figure class="fig" style="margin:0">
+    <div class="fig-bar">
+      <span class="tag">Figure 3</span>
+      <span class="name" data-t="38">Spinning arrow → wave &mdash; the carousel, seen both ways</span>
+    </div>
+    <div class="fig-canvas-wrap"><canvas id="cv-spin" height="330"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <button id="btn-spin" aria-pressed="true">Pause</button>
+        <label class="chk"><input type="checkbox" id="chk-sin"> also show the vertical shadow (sine)</label>
+      </div>
+      <div class="ctl-row">
+        <div class="ctl">
+          <label for="sl-bpm">heart rate</label>
+          <input type="range" id="sl-bpm" min="40" max="180" value="72" step="1">
+        </div>
+      </div>
+      <div class="readout">
+        <div><span class="k">rate</span><span class="v hot" id="ro-bpm">72 BPM</span></div>
+        <div><span class="k">frequency</span><span class="v" id="ro-hz">1.200 Hz</span></div>
+        <div><span class="k">period (1/f)</span><span class="v" id="ro-per">0.833 s</span></div>
+        <div><span class="k">angle now</span><span class="v" id="ro-ang">0°</span></div>
+        <div><span class="k">shadow now</span><span class="v" id="ro-shad">+1.00</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="39">The <span style="color:var(--accent);font-weight:600">crimson</span> trace is the horizontal shadow, <span class="m">cos(2πft)</span>. Tick the box to reveal the <span style="color:var(--signal);font-weight:600">teal</span> vertical shadow, <span class="m-sig">sin(2πft)</span> &mdash; the same arrow, same instant, viewed from below instead of from the side.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <h3 data-t="40">So why keep the arrow, if I only wanted the cosine?</h3>
+    <p data-t="41">Tick that second checkbox and the answer becomes visible. The arrow carries <strong>two</strong> shadows at once: horizontal is a cosine, vertical is a sine. One object, both waves.</p>
+    <p data-t="42">Why would you need both? Because a real heartbeat is not guaranteed to start at a peak. It might start mid-rise, or at a trough, depending on the arbitrary moment you pressed record. Two signals can share an identical 1.2 Hz rhythm and still be <strong>shifted in time</strong> relative to each other.</p>
+    <p data-t="43">Track only the cosine shadow and you cannot tell those cases apart. The arrow's <strong>angle</strong> captures the shift for free. That angle is what we call <strong>phase</strong>, and it is the second number in every FFT bin.</p>
+  </div>
+
+  <div class="plain">
+    <div class="lbl">Plain English</div>
+    <p data-t="169"><strong>Phase</strong> answers "where in its cycle was this rhythm when the recording started?" <strong>Magnitude</strong> answers "how strong is this rhythm?" For finding a heart rate you want magnitude and can throw phase away, because the moment you hit record is arbitrary and tells you nothing about the rate. For the HRV layer of your project, where the exact timing of individual beats matters, phase comes straight back.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     6. WINDING MACHINE  ← the other sticking point
+     ============================================================ -->
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">06 &mdash; The second sticking point</div>
+    <h2 data-t="44">The winding machine</h2>
+  </div>
+  <div class="prose">
+    <p data-t="45">This is the most important idea in your course, so it gets the biggest figure on the page.</p>
+    <p data-t="46">The question an FFT answers is:</p>
+  </div>
+  <div class="keypoint" data-t="47">"Is there a <strong>1.2 Hz</strong> rhythm hiding in this messy signal, and if so, how strong is it?"</div>
+  <div class="prose">
+    <h3 data-t="48">The trick</h3>
+    <p data-t="49">Take the signal, which is just a list of numbers over time, and <strong>wrap it around a circle</strong> at some test speed. For each sample:</p>
+    <ul>
+      <li data-t="50">its <strong>value</strong> decides how far from the centre you place a dot</li>
+      <li data-t="51">the <strong>test frequency</strong> decides at what angle you place it, with the angle advancing steadily as time advances</li>
+    </ul>
+    <p data-t="52">Then find the <strong>average of all those dots</strong>, their centre of mass. That single point is your answer:</p>
+    <ul>
+      <li data-t="53"><strong>Dots pile up lopsided</strong> → centre of mass sits far from the origin → <strong>big magnitude</strong> → that rhythm is present</li>
+      <li data-t="54"><strong>Dots smear evenly around</strong> → they cancel → centre of mass near the origin → <strong>near zero</strong> → that rhythm is absent</li>
+    </ul>
+    <p data-t="55">Everything depends on whether the signal's peaks keep landing at the <em>same</em> angle, or at scattered angles.</p>
+    <p data-t="56">Drag the test frequency slider slowly from left to right. Watch the wound-up shape below, and watch the spectrum build as you sweep.</p>
+  </div>
+
+  <figure class="fig" style="margin:0">
+    <div class="fig-bar">
+      <span class="tag">Figure 4</span>
+      <span class="name" data-t="57">The winding machine &mdash; sweep the test frequency and watch the pile go lopsided</span>
+    </div>
+    <div class="fig-canvas-wrap"><canvas id="cv-wind" height="520"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl">
+          <label for="sl-test">test freq</label>
+          <input type="range" id="sl-test" min="0.4" max="4" value="0.75" step="0.005">
+        </div>
+        <button id="btn-sweep">Auto sweep</button>
+      </div>
+      <div class="ctl-row">
+        <label class="chk"><input type="checkbox" id="chk-noise"> add heavy noise to the signal</label>
+        <label class="chk"><input type="checkbox" id="chk-second"> add a second person at 100 BPM</label>
+      </div>
+      <div class="readout">
+        <div><span class="k">test frequency</span><span class="v" id="ro-tf">0.750 Hz</span></div>
+        <div><span class="k">testing for</span><span class="v" id="ro-tbpm">45 BPM</span></div>
+        <div><span class="k">centre of mass</span><span class="v" id="ro-mag">0.03</span></div>
+        <div><span class="k">verdict</span><span class="v" id="ro-verd">no match</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="58">The hidden signal is a <strong>72 BPM</strong> pulse (1.2 Hz). Sweep until the dots stop being evenly spread and clump to one side &mdash; the centre of mass leaps away from the origin and the spectrum spikes. That spike <em>is</em> the heart rate. Now tick "add heavy noise": the trace on top becomes visually unreadable, but the spike survives almost untouched. <strong>The noise cancelling itself out is not luck. It is the mechanism.</strong></figcaption>
+  </figure>
+
+  <div class="prose">
+    <h3 data-t="59">The same thing, by hand</h3>
+    <p data-t="60">If you want to verify the machine rather than trust it, here are eight samples of a 1.2 Hz cosine, wound at the matching frequency of 1.2 Hz, so the angle steps by 45° each sample.</p>
+  </div>
+  <div class="math"><span class="dim">n   value     angle      resulting dot</span>
+0   +1.00     0°         (<span class="ok">+1.00</span>,  0.00)
+1   +0.71    -45°        (<span class="ok">+0.50</span>, -0.50)
+2    0.00    -90°        ( 0.00,  0.00)
+3   -0.71   -135°        (<span class="ok">+0.50</span>, +0.50)
+4   -1.00   -180°        (<span class="ok">+1.00</span>,  0.00)
+5   -0.71   -225°        (<span class="ok">+0.50</span>, -0.50)
+6    0.00   -270°        ( 0.00,  0.00)
+7   +0.71   -315°        (<span class="ok">+0.50</span>, +0.50)
+                         ─────────────────
+                   SUM   (<span class="hi">+4.00</span>,  0.00)</div>
+  <div class="prose">
+    <p data-t="61">Every single horizontal contribution is positive. Nothing cancels, so they stack up on the right.</p>
+    <p data-t="62">Look closely at rows 3 and 4. Those samples have <em>negative</em> values, yet they still contributed positively. At those moments the winding had carried the angle round to the left side, and a negative value placed on the left lands on the <strong>right</strong>. Negative times negative. The signal's dips and the winding's dips line up exactly. That is what resonance means.</p>
+    <p data-t="63">Run the same eight samples at a mismatched 2.4 Hz, where the angle steps 90° each time, and the sum comes out <span class="m">(0.00, 0.00)</span>. The <span class="m">+1.00</span> from row 0 is killed by the <span class="m">-1.00</span> from row 4, and the two <span class="m">-0.71</span>s are killed by the two <span class="m">+0.71</span>s.</p>
+  </div>
+  <div class="keypoint" data-t="64"><strong>4.0 versus 0.0.</strong> The winding machine cleanly separated "this rhythm is here" from "this rhythm is not." An FFT simply runs this same procedure at many test frequencies at once.</div>
+
+  <div class="prose">
+    <h3 data-t="65">And that is literally your project</h3>
+    <p data-t="66">Your rPPG pipeline feeds in a faint, noisy skin-brightness signal. The FFT winds it at every candidate frequency across your 0.7 to 4 Hz band. Random noise smears evenly and cancels almost everywhere. The genuine pulse rhythm piles up at one frequency. You take the biggest pile, multiply by 60, and that is your BPM.</p>
+    <p data-t="67">This is why you can extract a heartbeat from a colour change far too faint for the human eye to notice.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     7. RESOLUTION
+     ============================================================ -->
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">07 &mdash; The consequence</div>
+    <h2 data-t="68">Why you can never report "exactly 72.0000 BPM"</h2>
+  </div>
+  <div class="prose">
+    <p data-t="69">Ask the winding machine to distinguish 72.0 BPM from 72.5 BPM:</p>
+  </div>
+  <div class="math">72.0 BPM = 1.20000 Hz
+72.5 BPM = 1.20833 Hz
+           ─────────
+difference = <span class="hi">0.00833 Hz</span>   <span class="dim">→ they need 1/0.00833 ≈ 120 s to drift a full turn apart</span></div>
+  <div class="prose">
+    <p data-t="70">Two windings at nearly identical speeds stay nearly in step with each other. In a 30-second window they have barely separated, so both produce almost the same lopsided pile. The FFT genuinely cannot tell them apart &mdash; not because the algorithm is weak, but because <strong>you did not watch for long enough.</strong></p>
+    <p data-t="71">That gives the single most practical formula in your project:</p>
+  </div>
+  <div class="math">resolution  Δf = <span class="hi">1 / T</span>        <span class="dim">T = how many seconds you recorded</span>
+
+T = 10 s  →  0.100 Hz  →  <span class="hi">6.0 BPM</span>  <span class="dim">coarse</span>
+T = 30 s  →  0.033 Hz  →  <span class="hi">2.0 BPM</span>  <span class="dim">typical</span>
+T = 60 s  →  0.017 Hz  →  <span class="hi">1.0 BPM</span>  <span class="dim">fine, but slow to respond</span></div>
+  <div class="prose">
+    <p data-t="72">Below, two people sit in frame at once, one at 72 BPM and one at 78 BPM. Drag the window length and watch whether the machine can tell there are two of them.</p>
+  </div>
+
+  <figure class="fig" style="margin:0">
+    <div class="fig-bar">
+      <span class="tag">Figure 5</span>
+      <span class="name" data-t="73">Window length vs. resolution &mdash; can you see two people, or one?</span>
+    </div>
+    <div class="fig-canvas-wrap"><canvas id="cv-res" height="300"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl">
+          <label for="sl-win">window length</label>
+          <input type="range" id="sl-win" min="3" max="40" value="6" step="0.5">
+        </div>
+      </div>
+      <div class="readout">
+        <div><span class="k">window T</span><span class="v" id="ro-win">6.0 s</span></div>
+        <div><span class="k">resolution Δf</span><span class="v" id="ro-df">0.167 Hz</span></div>
+        <div><span class="k">in BPM</span><span class="v hot" id="ro-dbpm">10.0 BPM</span></div>
+        <div><span class="k">gap to resolve</span><span class="v">6.0 BPM</span></div>
+        <div><span class="k">verdict</span><span class="v" id="ro-resv">merged</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="74">At short windows the two peaks fuse into one fat hump and you would report a single wrong heart rate around 75 BPM. Past about 10 seconds they separate. The small ripples either side are <strong>spectral leakage</strong>, the imperfect cancellation left over from a finite recording &mdash; Tier 1 covers the fix, which is called windowing.</figcaption>
+  </figure>
+
+  <div class="aside-note">
+    <div class="lbl">This is a real design decision in your project</div>
+    <p data-t="75">Longer window means better frequency precision, but worse responsiveness, because heart rate genuinely changes and a long window smears those changes together. It also gives motion more chance to contaminate the segment. There is no free lunch here, and picking your window length is something you should be ready to defend in your report. Most rPPG work lands somewhere between 10 and 30 seconds.</p>
+  </div>
+</section>
+
+<div class="part-break">
+  <div class="eyebrow">Part B</div>
+  <h2 data-t="76">Projection</h2>
+</div>
+
+<!-- ============================================================
+     8. PROJECTION
+     ============================================================ -->
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">08 &mdash; One idea from linear algebra</div>
+    <h2 data-t="77">The dot product, and why <em>CHROM</em> beats the green channel</h2>
+  </div>
+  <div class="prose">
+    <p data-t="78">You need exactly one idea from linear algebra: <strong>projection</strong>.</p>
+    <p data-t="79">The dot product multiplies matching components and adds them up:</p>
+  </div>
+  <div class="math">a = (3, 4)
+b = (1, 0)
+
+a · b = (3)(1) + (4)(0) = <span class="hi">3</span></div>
+  <div class="prose">
+    <p data-t="80">Geometrically it asks: <strong>"how much of <span class="m">a</span> points along the direction of <span class="m">b</span>?"</strong> Here <span class="m">b</span> is the pure horizontal direction, and the answer 3 is exactly how far right <span class="m">a</span> reaches. You cast a shadow again, same as the carousel.</p>
+    <p data-t="81">The critical property: <strong>if two vectors are perpendicular, their dot product is zero.</strong> Nothing of one points along the other.</p>
+
+    <h3 data-t="82">Where this lands in your pipeline</h3>
+    <p data-t="83">Every video frame gives you three numbers: R, G and B averaged over the skin patch. So each frame is a 3D vector. To do an FFT you need a single 1D signal, so you must collapse those three numbers into one. You do it with a dot product against a chosen direction.</p>
+    <p data-t="170"><strong>Choosing that direction is choosing what kind of colour change you are sensitive to.</strong> And that choice is the entire difference between the naive method and the published one.</p>
+    <p data-t="84">Pick a direction below and watch what survives.</p>
+  </div>
+
+  <figure class="fig" style="margin:0">
+    <div class="fig-bar">
+      <span class="tag">Figure 6</span>
+      <span class="name" data-t="85">Projection test bench &mdash; what passes through, what gets blocked</span>
+    </div>
+    <div class="fig-canvas-wrap"><canvas id="cv-proj" height="290"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <button class="proj-btn on" data-dir="0,1,0">Green channel &nbsp;(0, 1, 0)</button>
+        <button class="proj-btn" data-dir="1,-1,0">CHROM-style &nbsp;(1, −1, 0)</button>
+        <button class="proj-btn" data-dir="1,1,1">Brightness &nbsp;(1, 1, 1)</button>
+      </div>
+      <div class="readout">
+        <div><span class="k">lighting artifact</span><span class="v" id="ro-art">1.00</span></div>
+        <div><span class="k">heartbeat pulse</span><span class="v" id="ro-pul">−0.40</span></div>
+        <div><span class="k">pulse ÷ artifact</span><span class="v" id="ro-rat">0.40</span></div>
+        <div><span class="k">verdict</span><span class="v" id="ro-pverd">leaky</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="86">A <strong>lighting artifact</strong> (the person shifts, a cloud passes) brightens all three channels roughly together: <span class="m">(0.5, 0.5, 0.5)</span>. A <strong>heartbeat</strong> does something different, because hemoglobin absorbs green far more strongly than red, so green dips hardest: <span class="m">(−0.1, −0.4, −0.2)</span>. A good projection direction blocks the first and passes the second.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <h3 data-t="87">The result, stated plainly</h3>
+    <p data-t="88">Test the CHROM-style direction <span class="m">(1, −1, 0)</span> against a uniform brightening:</p>
+  </div>
+  <div class="math">(0.5)(1) + (0.5)(−1) + (0.5)(0)  =  0.5 − 0.5 + 0  =  <span class="ok">0</span>     <span class="dim">artifact is invisible</span>
+
+(−0.1)(1) + (−0.4)(−1) + (−0.2)(0)  =  −0.1 + 0.4  =  <span class="hi">+0.3</span>   <span class="dim">pulse survives</span></div>
+  <div class="prose">
+    <p data-t="89">Now do the same for the naive green channel, which is the projection onto <span class="m">(0, 1, 0)</span>:</p>
+  </div>
+  <div class="math">(0, 1, 0) · (1, 1, 1) = 0 + 1 + 0 = <span class="hi">1</span>     <span class="dim">not zero — not perpendicular</span></div>
+  <div class="keypoint" data-t="90">Lighting shifts and motion pass <strong>straight through the green channel at full strength.</strong> CHROM's direction is perpendicular to them; green's is not.</div>
+  <div class="prose">
+    <p data-t="91">That single comparison answers "why does naive green-channel collapse under motion while CHROM survives", which is the central question of de Haan &amp; Jeanne (2013), paper 3 on your reading list. You now understand the result before opening the paper.</p>
+    <p data-t="92">There is no learning and no fitting anywhere in this. The direction comes from the optics of skin. That is exactly why Section 17 of your plan can honestly describe CHROM as classical preprocessing rather than a model.</p>
+  </div>
+</section>
+
+<div class="part-break">
+  <div class="eyebrow">Part C</div>
+  <h2 data-t="93">Calculus</h2>
+</div>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">09 &mdash; Two minutes</div>
+    <h2 data-t="94">The only thing you need</h2>
+  </div>
+  <div class="prose">
+    <p data-t="95">You need to recognise that <span class="m">∫ f(t) dt</span> means "add up <span class="m">f</span> across a continuous range," so that you can read the textbook definition of the Fourier transform without flinching.</p>
+    <p data-t="96">You will never evaluate one by hand in this project. Your signal is a finite list of samples, not a continuous function, so every integral in every paper you read becomes a <span class="m">sum()</span> in your code. The integral sign is the continuous version; the sum is the version you actually run.</p>
+  </div>
+  <div class="math"><span class="dim">what the textbook writes</span>       <span class="dim">what you will write</span>
+∫ x(t) · e^(-j2πft) dt        <span class="hi">np.sum(x * np.exp(-2j*np.pi*f*t))</span></div>
+  <div class="prose">
+    <p data-t="97">And look closely at that right-hand side, because you have already met it. <span class="m">x</span> sets the distance from the centre. <span class="m">e^(-j2πft)</span> sets the angle. <span class="m">sum</span> piles them up. <strong>That line is the winding machine.</strong> The Fourier transform's official definition and Figure 4 are the same object.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     GLOSSARY
+     ============================================================ -->
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">10 &mdash; Reference</div>
+    <h2 data-t="98">Every term on this page, in plain words</h2>
+  </div>
+  <div class="gloss">
+    <div><dt data-t="99">Complex number</dt><dd data-t="100">An arrow in a flat plane. Carries two facts at once, which is why it can hold both "how strong" and "when in the cycle."</dd></div>
+    <div><dt data-t="101">Real part</dt><dd data-t="102">How far right the arrow reaches. The horizontal shadow.</dd></div>
+    <div><dt data-t="103">Imaginary part</dt><dd data-t="104">How far up the arrow reaches. The vertical shadow. Badly named; nothing about it is imaginary.</dd></div>
+    <div><dt>j</dt><dd data-t="105">An instruction to rotate 90° counter-clockwise. Engineers use j because i means current.</dd></div>
+    <div><dt data-t="106">Magnitude (r)</dt><dd data-t="107">Length of the arrow. In a spectrum: how strong that rhythm is.</dd></div>
+    <div><dt data-t="108">Phase (θ)</dt><dd data-t="109">Angle of the arrow. In a spectrum: where in its cycle the rhythm was when recording began.</dd></div>
+    <div><dt data-t="110">Quadrant</dt><dd data-t="111">Which quarter of the plane the arrow points into. Read it off the two signs, never compute it.</dd></div>
+    <div><dt data-t="112">atan2(b, a)</dt><dd data-t="113">Arctangent that reads the signs of both inputs, so it returns the correct quadrant. Always prefer it to plain atan.</dd></div>
+    <div><dt data-t="114">Euler's formula</dt><dd data-t="115">e<sup>jθ</sup> is the point on the unit circle at angle θ. That is all it claims.</dd></div>
+    <div><dt data-t="116">Frequency (f)</dt><dd data-t="117">Turns per second, measured in hertz. A 72 BPM heartbeat is 1.2 Hz.</dd></div>
+    <div><dt data-t="118">Period (T)</dt><dd data-t="119">Seconds per turn. The reciprocal of frequency: T = 1/f.</dd></div>
+    <div><dt data-t="120">Hz (hertz)</dt><dd data-t="121">Cycles per second. Multiply by seconds to get a count of cycles; the units cancel and protect you from slips.</dd></div>
+    <div><dt data-t="122">BPM</dt><dd data-t="123">Beats per minute. BPM = Hz × 60.</dd></div>
+    <div><dt data-t="124">Spectrum</dt><dd data-t="125">The chart of "how strong is each frequency", produced by running the winding machine at every candidate rate.</dd></div>
+    <div><dt data-t="126">Bin</dt><dd data-t="127">One slot in that chart. The FFT reports only at fixed slots, spaced 1/T apart, so it cannot return a value between them.</dd></div>
+    <div><dt data-t="128">Resolution (Δf)</dt><dd data-t="129">The spacing between those slots, equal to 1/T. Your finest possible frequency precision.</dd></div>
+    <div><dt data-t="130">Spectral leakage</dt><dd data-t="131">The small leftover energy at non-matching frequencies, because a finite recording never cancels perfectly. It is why a real spectrum has a lumpy floor rather than a flat one.</dd></div>
+    <div><dt data-t="132">Dot product</dt><dd data-t="133">Multiply matching components, add them up. Answers "how much of this points along that."</dd></div>
+    <div><dt data-t="134">Perpendicular</dt><dd data-t="135">Dot product exactly zero. One is completely invisible to the other, which is precisely what you want for rejecting artifacts.</dd></div>
+    <div><dt data-t="136">Projection</dt><dd data-t="137">Collapsing a multi-dimensional thing (R, G, B) down to one number by dot-producting it with a chosen direction.</dd></div>
+    <div><dt data-t="138">rPPG</dt><dd data-t="139">Remote photoplethysmography. Reading a pulse from ordinary video by tracking invisible colour changes in skin.</dd></div>
+    <div><dt data-t="140">CHROM</dt><dd data-t="141">A published rPPG method that projects RGB onto a direction chosen so lighting and motion artifacts land perpendicular and vanish.</dd></div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SELF CHECK
+     ============================================================ -->
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">11 &mdash; Before Tier 1</div>
+    <h2 data-t="142">Check yourself</h2>
+  </div>
+  <div class="prose">
+    <p data-t="143">Work these out before opening the answers. Getting one wrong is more useful than getting all of them right by looking.</p>
+  </div>
+
+  <details>
+    <summary data-t="144">You want 1 BPM resolution from a plain FFT, with no interpolation tricks. How long must your recording be?</summary>
+    <div class="ans">
+      <p data-t="145">Convert to hertz first. <span class="m">1 BPM = 1/60 Hz = 0.0167 Hz</span>.</p>
+      <p data-t="146">Then <span class="m">Δf = 1/T</span>, so <span class="m">T = 1/Δf = 1/0.0167 = 60 seconds.</span></p>
+      <p data-t="147">A full minute for 1 BPM precision. That is a real constraint, and it is why parabolic interpolation, which estimates where the peak truly sits <em>between</em> two bins, is worth the five lines of code it costs you.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="148">Would projecting RGB onto direction (1, 1, 1) be a good pulse detector, or a terrible one?</summary>
+    <div class="ans">
+      <p data-t="149">Terrible. <span class="m">(1,1,1)</span> is the direction of "everything brightens together," so it is <em>maximally</em> sensitive to exactly the artifact you want to reject. It measures overall brightness, which means it measures room lighting and how the person is moving.</p>
+      <p data-t="150">Press the Brightness button in Figure 6 and you will see the artifact readout jump to its highest possible value while the pulse barely registers. It is the worst of the three directions offered, and it is the precise opposite of the CHROM choice.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="151">A heart rate is 90 BPM. In a 10-second recording, how many full revolutions does the arrow complete?</summary>
+    <div class="ans">
+      <p data-t="171"><span class="m">90 BPM = 1.5 Hz</span>. Hz means <em>cycles per second</em>, so multiply: <span class="m">1.5 cycles/s × 10 s = 15 cycles.</span> The seconds cancel and leave cycles.</p>
+      <p data-t="152">Dividing instead of multiplying is the classic slip here, and the units are what catch it: <span class="m">10 ÷ 1.5</span> would leave you with seconds² per cycle, which means nothing.</p>
+      <p data-t="153">Sanity check with no formula at all: 90 beats per minute, and 10 seconds is one sixth of a minute, so <span class="m">90 ÷ 6 = 15</span> beats. Same answer. Always cross-check BPM problems this way.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="154">Why does adding heavy noise in Figure 4 barely move the spike?</summary>
+    <div class="ans">
+      <p data-t="155">Noise is, by definition, not rhythmic. When you wind a noisy signal at any test frequency, its dots scatter to random angles rather than clumping, so they very nearly cancel and contribute almost nothing to the centre of mass.</p>
+      <p data-t="156">The genuine pulse, being rhythmic, keeps landing at the same angle and keeps stacking up. So the pulse accumulates while the noise cancels itself out.</p>
+      <p data-t="157">This is the single most important reason rPPG is possible at all. The colour change on someone's cheek is far weaker than the noise sitting on top of it, and the winding machine still digs it out.</p>
+    </div>
+  </details>
+</section>
+
+<!-- ============================================================
+     NEXT
+     ============================================================ -->
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">12 &mdash; Ahead</div>
+    <h2 data-t="158">What Tier 1 adds</h2>
+  </div>
+  <div class="prose">
+    <p data-t="159">You now have the two ideas everything else hangs on: <strong>a spinning arrow is a rhythm</strong>, and <strong>winding a signal against a test rhythm reveals whether it is present.</strong> Tier 1 turns those into working machinery.</p>
+    <ul>
+      <li data-t="160"><strong>Signals and systems basics</strong> &mdash; why spinning arrows are the natural language for filters, not just for spectra.</li>
+      <li data-t="161"><strong>Fourier series</strong> &mdash; why your spectrum often shows a second bump at exactly double the heart rate, and why naive peak-picking sometimes reports 144 BPM for a perfectly healthy person.</li>
+      <li data-t="162"><strong>Fourier transform</strong> &mdash; the properties you will actually use, including the convolution theorem your project checklist requires you to demonstrate.</li>
+      <li data-t="163"><strong>Convolution</strong> &mdash; what filtering <em>is</em>, and the wraparound trap that will corrupt the edges of your signal the first time you filter with an FFT.</li>
+      <li data-t="164"><strong>Sampling</strong> &mdash; why 30 fps is comfortably enough for a heartbeat, and why dropped webcam frames quietly break the assumption underneath every figure on this page.</li>
+      <li data-t="165"><strong>DFT and FFT</strong> &mdash; bins, leakage, windowing, and why zero-padding looks like it improves resolution but does not.</li>
+    </ul>
+  </div>
+</section>
+
+<footer class="foot">
+  <span>TRACE-rPPG &mdash; Tier 0 of 5</span>
+  <span>Signals &amp; Systems &mdash; Fourier series, Fourier transform, convolution</span>
+</footer>
+
+<script>
+"use strict";
+
+/* ============================================================
+   THEME-AWARE CANVAS COLOURS
+   ============================================================ */
+var C = {};
+function refreshTheme() {
+  var s = getComputedStyle(document.documentElement);
+  ["paper","paper-2","paper-3","ink","ink-2","ink-3","rule","rule-2",
+   "accent","accent-2","signal","warn"].forEach(function (k) {
+    C[k] = s.getPropertyValue("--" + k).trim();
+  });
+}
+refreshTheme();
+if (window.matchMedia) {
+  var mq = window.matchMedia("(prefers-color-scheme: dark)");
+  if (mq.addEventListener) mq.addEventListener("change", function () { refreshTheme(); redrawAll(); });
+}
+new MutationObserver(function () { refreshTheme(); redrawAll(); })
+  .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+var REDUCED = window.matchMedia &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+var redraws = [];
+function redrawAll() { redraws.forEach(function (f) { f(); }); }
+
+/* ---- canvas sizing helper ----
+   The CSS height is read ONCE and cached. Reading it back from the element
+   each time is wrong: assigning cv.height reflects into the height attribute,
+   so re-reading it compounds by the device pixel ratio on every single frame
+   and the canvas grows without bound. The backing store is only reallocated
+   when the width or DPR actually changes, so animated figures no longer
+   clear and re-lay-out themselves 60 times a second. */
+var _fitCache = new WeakMap();
+function fit(cv) {
+  var st = _fitCache.get(cv);
+  if (!st) {
+    st = {
+      cssH: parseInt(cv.getAttribute("height"), 10),
+      ctx: cv.getContext("2d"),
+      w: 0,
+      dpr: 0
+    };
+    _fitCache.set(cv, st);
+  }
+  var dpr = window.devicePixelRatio || 1;
+  var w = cv.clientWidth || cv.parentNode.clientWidth || 600;
+  if (w !== st.w || dpr !== st.dpr) {
+    st.w = w;
+    st.dpr = dpr;
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(st.cssH * dpr);
+    cv.style.height = st.cssH + "px";
+    st.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  return { ctx: st.ctx, w: st.w, h: st.cssH };
+}
+
+function arrow(ctx, x0, y0, x1, y1, col, width) {
+  var dx = x1 - x0, dy = y1 - y0;
+  var len = Math.hypot(dx, dy);
+  ctx.strokeStyle = col; ctx.fillStyle = col;
+  ctx.lineWidth = width || 2.5;
+  ctx.lineCap = "round";
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+  if (len < 6) return;
+  var a = Math.atan2(dy, dx), hs = Math.min(10, len * 0.35);
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x1 - hs * Math.cos(a - 0.4), y1 - hs * Math.sin(a - 0.4));
+  ctx.lineTo(x1 - hs * Math.cos(a + 0.4), y1 - hs * Math.sin(a + 0.4));
+  ctx.closePath(); ctx.fill();
+}
+
+function label(ctx, txt, x, y, col, size, align) {
+  ctx.fillStyle = col;
+  ctx.font = (size || 11) + 'px "IBM Plex Mono", monospace';
+  ctx.textAlign = align || "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(txt, x, y);
+}
+
+/* ============================================================
+   FIG 1 — COMPLEX PLANE EXPLORER
+   ============================================================ */
+(function () {
+  var cv = document.getElementById("cv-plane");
+  var pt = { a: 1, b: 1 };
+  var geo = {};
+
+  function draw() {
+    var f = fit(cv), ctx = f.ctx, w = f.w, h = f.h;
+    var cx = w / 2, cy = h / 2;
+    var unit = Math.min(w, h) / 11;
+    geo = { cx: cx, cy: cy, unit: unit };
+
+    ctx.clearRect(0, 0, w, h);
+
+    /* grid */
+    ctx.strokeStyle = C.rule; ctx.lineWidth = 1;
+    for (var i = -5; i <= 5; i++) {
+      if (i === 0) continue;
+      ctx.beginPath(); ctx.moveTo(cx + i * unit, 0); ctx.lineTo(cx + i * unit, h); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, cy + i * unit); ctx.lineTo(w, cy + i * unit); ctx.stroke();
+    }
+
+    /* quadrant tint for active quadrant */
+    var qx = pt.a >= 0 ? cx : 0, qy = pt.b >= 0 ? 0 : cy;
+    ctx.fillStyle = C["accent-soft"];
+    ctx.globalAlpha = 0.55;
+    ctx.fillRect(qx, qy, w / 2, h / 2);
+    ctx.globalAlpha = 1;
+
+    /* axes */
+    ctx.strokeStyle = C["ink-3"]; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+    label(ctx, "real →", w - 8, cy - 12, C["ink-3"], 11, "right");
+    label(ctx, "↑ imaginary", cx + 8, 12, C["ink-3"], 11, "left");
+
+    var px = cx + pt.a * unit, py = cy - pt.b * unit;
+
+    /* components */
+    ctx.strokeStyle = C["ink-3"]; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(cx, py); ctx.stroke();
+    ctx.setLineDash([]);
+
+    /* angle arc */
+    var ang = Math.atan2(pt.b, pt.a);
+    ctx.strokeStyle = C.signal; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, unit * 0.85, 0, -ang, ang > 0);
+    ctx.stroke();
+
+    /* the arrow */
+    arrow(ctx, cx, cy, px, py, C.accent, 3);
+
+    /* dot */
+    ctx.fillStyle = C.accent;
+    ctx.beginPath(); ctx.arc(px, py, 7, 0, 6.2832); ctx.fill();
+    ctx.strokeStyle = C.paper; ctx.lineWidth = 2; ctx.stroke();
+
+    label(ctx, "r", cx + (px - cx) / 2 - 10, cy + (py - cy) / 2 - 10, C.accent, 13);
+    label(ctx, "θ", cx + unit * 1.05 * Math.cos(ang / 2),
+                cy - unit * 1.05 * Math.sin(ang / 2), C.signal, 13);
+
+    /* readouts */
+    var r = Math.hypot(pt.a, pt.b);
+    var deg = ang * 180 / Math.PI;
+    var q = (pt.a >= 0 && pt.b >= 0) ? "Q1" :
+            (pt.a < 0 && pt.b >= 0) ? "Q2" :
+            (pt.a < 0 && pt.b < 0) ? "Q3" : "Q4";
+    document.getElementById("ro-a").textContent = pt.a.toFixed(2);
+    document.getElementById("ro-b").textContent = pt.b.toFixed(2);
+    document.getElementById("ro-r").textContent = r.toFixed(2);
+    document.getElementById("ro-t").textContent = deg.toFixed(1) + "°";
+    document.getElementById("ro-q").textContent = q;
+  }
+
+  function setFromEvent(e) {
+    var rect = cv.getBoundingClientRect();
+    var x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    var y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    pt.a = Math.max(-5, Math.min(5, (x - geo.cx) / geo.unit));
+    pt.b = Math.max(-5, Math.min(5, (geo.cy - y) / geo.unit));
+    draw();
+  }
+
+  var dragging = false;
+  cv.addEventListener("pointerdown", function (e) {
+    dragging = true; cv.setPointerCapture(e.pointerId); setFromEvent(e);
+  });
+  cv.addEventListener("pointermove", function (e) { if (dragging) setFromEvent(e); });
+  cv.addEventListener("pointerup", function () { dragging = false; });
+  cv.addEventListener("pointercancel", function () { dragging = false; });
+
+  document.querySelectorAll("[data-preset]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var p = b.getAttribute("data-preset").split(",");
+      pt.a = parseFloat(p[0]); pt.b = parseFloat(p[1]);
+      draw();
+    });
+  });
+
+  redraws.push(draw);
+  window.addEventListener("resize", draw);
+  draw();
+})();
+
+/* ============================================================
+   FIG 2 — MULTIPLY BY j
+   ============================================================ */
+(function () {
+  var cv = document.getElementById("cv-rot");
+  var target = 0, current = 0, anim = null;
+  var names = ["1", "j", "j² = −1", "j³ = −j"];
+
+  function draw() {
+    var f = fit(cv), ctx = f.ctx, w = f.w, h = f.h;
+    var cx = w / 2, cy = h / 2;
+    var R = Math.min(w, h) / 2 - 46;
+
+    ctx.clearRect(0, 0, w, h);
+
+    ctx.strokeStyle = C.rule; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, 6.2832); ctx.stroke();
+
+    ctx.strokeStyle = C["ink-3"]; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx - R - 22, cy); ctx.lineTo(cx + R + 22, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy - R - 22); ctx.lineTo(cx, cy + R + 22); ctx.stroke();
+
+    var marks = [["1", 0], ["j", 90], ["−1", 180], ["−j", 270]];
+    marks.forEach(function (m) {
+      var a = m[1] * Math.PI / 180;
+      var mx = cx + (R + 22) * Math.cos(a), my = cy - (R + 22) * Math.sin(a);
+      var active = Math.abs(((current % 360) + 360) % 360 - m[1]) < 3;
+      ctx.fillStyle = active ? C.accent : C["ink-3"];
+      ctx.beginPath(); ctx.arc(cx + R * Math.cos(a), cy - R * Math.sin(a), active ? 5 : 3, 0, 6.2832); ctx.fill();
+      label(ctx, m[0], mx, my, active ? C.accent : C["ink-3"], active ? 14 : 12, "center");
+    });
+
+    var ar = current * Math.PI / 180;
+    arrow(ctx, cx, cy, cx + R * Math.cos(ar), cy - R * Math.sin(ar), C.accent, 3.5);
+
+    document.getElementById("rot-label").textContent = names[(Math.round(target / 90) % 4 + 4) % 4];
+  }
+
+  function animate() {
+    if (Math.abs(current - target) < 0.4) { current = target; draw(); anim = null; return; }
+    current += (target - current) * 0.16;
+    draw();
+    anim = requestAnimationFrame(animate);
+  }
+
+  document.getElementById("btn-rot").addEventListener("click", function () {
+    target += 90;
+    if (REDUCED) { current = target; draw(); }
+    else if (!anim) anim = requestAnimationFrame(animate);
+  });
+  document.getElementById("btn-rot-reset").addEventListener("click", function () {
+    target = 0; current = 0; draw();
+  });
+
+  redraws.push(draw);
+  window.addEventListener("resize", draw);
+  draw();
+})();
+
+/* ============================================================
+   FIG 3 — SPINNING ARROW → WAVE
+   ============================================================ */
+(function () {
+  var cv = document.getElementById("cv-spin");
+  var running = !REDUCED, t = 0, last = null;
+  var histC = [], histS = [];
+  var MAXH = 400;
+  var bpmEl = document.getElementById("sl-bpm");
+
+  function bpm() { return parseFloat(bpmEl.value); }
+  function freq() { return bpm() / 60; }
+
+  function draw() {
+    var f = fit(cv), ctx = f.ctx, w = f.w, h = f.h;
+    ctx.clearRect(0, 0, w, h);
+
+    var R = Math.min(h / 2 - 30, 110);
+    var cx = R + 34, cy = h / 2;
+    var traceX0 = cx + R + 30, traceW = w - traceX0 - 10;
+
+    /* circle */
+    ctx.strokeStyle = C.rule; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, 6.2832); ctx.stroke();
+    ctx.strokeStyle = C["rule-2"]; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx - R - 14, cy); ctx.lineTo(cx + R + 14, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy - R - 14); ctx.lineTo(cx, cy + R + 14); ctx.stroke();
+
+    var ang = 2 * Math.PI * freq() * t;
+    var ax = cx + R * Math.cos(ang), ay = cy - R * Math.sin(ang);
+
+    /* shadow guides */
+    ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5;
+    ctx.strokeStyle = C.accent;
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax, cy); ctx.stroke();
+    var showSin = document.getElementById("chk-sin").checked;
+    if (showSin) {
+      ctx.strokeStyle = C.signal;
+      ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(cx, ay); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    /* shadow markers on the axes */
+    ctx.fillStyle = C.accent;
+    ctx.beginPath(); ctx.arc(ax, cy, 5, 0, 6.2832); ctx.fill();
+    label(ctx, "shadow", ax, cy + 18, C.accent, 10, "center");
+    if (showSin) {
+      ctx.fillStyle = C.signal;
+      ctx.beginPath(); ctx.arc(cx, ay, 5, 0, 6.2832); ctx.fill();
+    }
+
+    arrow(ctx, cx, cy, ax, ay, C.ink, 3);
+    ctx.fillStyle = C.ink;
+    ctx.beginPath(); ctx.arc(cx, cy, 3.5, 0, 6.2832); ctx.fill();
+
+    /* trace region */
+    ctx.strokeStyle = C["rule-2"]; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(traceX0, cy); ctx.lineTo(w - 6, cy); ctx.stroke();
+    label(ctx, "time →", w - 8, cy - 14, C["ink-3"], 10, "right");
+
+    /* connector from arrow shadow into the trace */
+    if (histC.length) {
+      ctx.strokeStyle = C.accent; ctx.globalAlpha = 0.35; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(ax, cy - histC[0] * R);
+      ctx.lineTo(traceX0, cy - histC[0] * R);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    /* traces: newest at left, scrolling right */
+    function plot(hist, col, wid) {
+      ctx.strokeStyle = col; ctx.lineWidth = wid; ctx.lineJoin = "round";
+      ctx.beginPath();
+      for (var i = 0; i < hist.length; i++) {
+        var x = traceX0 + (i / MAXH) * traceW;
+        if (x > w - 6) break;
+        var y = cy - hist[i] * R;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    if (showSin) plot(histS, C.signal, 2);
+    plot(histC, C.accent, 2.5);
+
+    /* leading dot on the trace */
+    if (histC.length) {
+      ctx.fillStyle = C.accent;
+      ctx.beginPath(); ctx.arc(traceX0, cy - histC[0] * R, 5, 0, 6.2832); ctx.fill();
+    }
+
+    /* readouts */
+    var degs = ((ang * 180 / Math.PI) % 360 + 360) % 360;
+    document.getElementById("ro-bpm").textContent = bpm().toFixed(0) + " BPM";
+    document.getElementById("ro-hz").textContent = freq().toFixed(3) + " Hz";
+    document.getElementById("ro-per").textContent = (1 / freq()).toFixed(3) + " s";
+    document.getElementById("ro-ang").textContent = degs.toFixed(0) + "°";
+    var sh = Math.cos(ang);
+    document.getElementById("ro-shad").textContent = (sh >= 0 ? "+" : "") + sh.toFixed(2);
+  }
+
+  function step(ts) {
+    if (last === null) last = ts;
+    var dt = Math.min((ts - last) / 1000, 0.05);
+    last = ts;
+    if (running) {
+      t += dt;
+      var a = 2 * Math.PI * freq() * t;
+      histC.unshift(Math.cos(a));
+      histS.unshift(Math.sin(a));
+      if (histC.length > MAXH) { histC.pop(); histS.pop(); }
+    }
+    draw();
+    requestAnimationFrame(step);
+  }
+
+  document.getElementById("btn-spin").addEventListener("click", function () {
+    running = !running;
+    this.textContent = running ? "Pause" : "Play";
+    this.setAttribute("aria-pressed", running ? "true" : "false");
+  });
+  document.getElementById("chk-sin").addEventListener("change", draw);
+  bpmEl.addEventListener("input", draw);
+
+  if (!running) {
+    document.getElementById("btn-spin").textContent = "Play";
+    document.getElementById("btn-spin").setAttribute("aria-pressed", "false");
+  }
+  redraws.push(draw);
+  window.addEventListener("resize", draw);
+  requestAnimationFrame(step);
+})();
+
+/* ============================================================
+   FIG 4 — THE WINDING MACHINE
+   ============================================================ */
+(function () {
+  var cv = document.getElementById("cv-wind");
+  var slider = document.getElementById("sl-test");
+  var FS = 30, DUR = 5, N = FS * DUR;
+  var TRUE_F = 1.2;
+  var sweeping = false, sweepDir = 1;
+
+  /* fixed pseudo-random noise so the picture is stable */
+  var seed = 12345;
+  function rnd() { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648 * 2 - 1; }
+  var noiseTable = [];
+  for (var i = 0; i < N; i++) noiseTable.push(rnd() + rnd() + rnd());
+
+  function signal() {
+    var noisy = document.getElementById("chk-noise").checked;
+    var second = document.getElementById("chk-second").checked;
+    var x = [];
+    for (var n = 0; n < N; n++) {
+      var t = n / FS;
+      var v = Math.cos(2 * Math.PI * TRUE_F * t);
+      if (second) v += 0.9 * Math.cos(2 * Math.PI * (100 / 60) * t + 1.1);
+      if (noisy) v += 1.6 * noiseTable[n];
+      x.push(v);
+    }
+    var mx = 0;
+    for (var k = 0; k < N; k++) mx = Math.max(mx, Math.abs(x[k]));
+    for (var k2 = 0; k2 < N; k2++) x[k2] /= (mx || 1);
+    return x;
+  }
+
+  function wind(x, f) {
+    var sx = 0, sy = 0;
+    for (var n = 0; n < N; n++) {
+      var a = -2 * Math.PI * f * (n / FS);
+      sx += x[n] * Math.cos(a);
+      sy += x[n] * Math.sin(a);
+    }
+    return { x: sx / N, y: sy / N };
+  }
+
+  /* The spectrum only depends on the signal, never on the test frequency,
+     so it is computed once per signal change instead of once per frame.
+     Sweeping was otherwise doing ~66,000 trig calls every frame. */
+  var FMIN = 0.4, FMAX = 4, STEPS = 220;
+  var cacheKey = null, cacheX = null, cacheVals = null, cacheMax = 0.0001;
+
+  function ensureCache() {
+    var key = (document.getElementById("chk-noise").checked ? "n" : "-") +
+              (document.getElementById("chk-second").checked ? "s" : "-");
+    if (key === cacheKey) return;
+    cacheKey = key;
+    cacheX = signal();
+    cacheVals = [];
+    cacheMax = 0.0001;
+    for (var s = 0; s <= STEPS; s++) {
+      var ff = FMIN + (FMAX - FMIN) * s / STEPS;
+      var c = wind(cacheX, ff);
+      var v = Math.hypot(c.x, c.y);
+      cacheVals.push(v);
+      if (v > cacheMax) cacheMax = v;
+    }
+  }
+
+  function draw() {
+    var f = fit(cv), ctx = f.ctx, w = f.w, h = f.h;
+    ctx.clearRect(0, 0, w, h);
+
+    ensureCache();
+    var x = cacheX;
+    var tf = parseFloat(slider.value);
+
+    /* ---- panel 1: the raw signal ---- */
+    var p1h = 96, p1y = 6;
+    label(ctx, "THE SIGNAL YOU RECORDED  (what your webcam actually gives you)", 4, p1y + 8, C["ink-3"], 10);
+    var by = p1y + 24, bh = p1h - 28;
+    ctx.strokeStyle = C.rule; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, by + bh / 2); ctx.lineTo(w, by + bh / 2); ctx.stroke();
+    ctx.strokeStyle = C.ink; ctx.lineWidth = 1.6; ctx.lineJoin = "round";
+    ctx.beginPath();
+    for (var n = 0; n < N; n++) {
+      var px = (n / (N - 1)) * (w - 8) + 4;
+      var py = by + bh / 2 - x[n] * (bh / 2 - 2);
+      if (n === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    /* ---- panel 2: winding circle ---- */
+    var p2y = p1y + p1h + 12;
+    var R = 108;
+    var ccx = R + 34, ccy = p2y + R + 22;
+    label(ctx, "WOUND AROUND A CIRCLE AT THE TEST FREQUENCY", 4, p2y + 8, C["ink-3"], 10);
+
+    ctx.strokeStyle = C.rule; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(ccx, ccy, R, 0, 6.2832); ctx.stroke();
+    ctx.beginPath(); ctx.arc(ccx, ccy, R / 2, 0, 6.2832); ctx.stroke();
+    ctx.strokeStyle = C["rule-2"];
+    ctx.beginPath(); ctx.moveTo(ccx - R - 10, ccy); ctx.lineTo(ccx + R + 10, ccy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ccx, ccy - R - 10); ctx.lineTo(ccx, ccy + R + 10); ctx.stroke();
+
+    /* the wound path */
+    ctx.strokeStyle = C.ink; ctx.globalAlpha = 0.5; ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    for (var m = 0; m < N; m++) {
+      var a = -2 * Math.PI * tf * (m / FS);
+      var rr = x[m] * R;
+      var wx = ccx + rr * Math.cos(a), wy = ccy - rr * Math.sin(a);
+      if (m === 0) ctx.moveTo(wx, wy); else ctx.lineTo(wx, wy);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    /* the dots */
+    for (var m2 = 0; m2 < N; m2 += 2) {
+      var a2 = -2 * Math.PI * tf * (m2 / FS);
+      var rr2 = x[m2] * R;
+      ctx.fillStyle = C.accent;
+      ctx.globalAlpha = 0.4;
+      ctx.beginPath();
+      ctx.arc(ccx + rr2 * Math.cos(a2), ccy - rr2 * Math.sin(a2), 2.2, 0, 6.2832);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    /* centre of mass */
+    var com = wind(x, tf);
+    var mag = Math.hypot(com.x, com.y);
+    var mx = ccx + com.x * R * 2, my = ccy - com.y * R * 2;
+    arrow(ctx, ccx, ccy, mx, my, C.signal, 3);
+    ctx.fillStyle = C.signal;
+    ctx.beginPath(); ctx.arc(mx, my, 7, 0, 6.2832); ctx.fill();
+    ctx.strokeStyle = C.paper; ctx.lineWidth = 2; ctx.stroke();
+    label(ctx, "centre of mass", ccx, ccy + R + 26, C.signal, 10, "center");
+
+    /* ---- panel 3: the spectrum ---- */
+    var spx0 = ccx + R + 46, spw = w - spx0 - 8;
+    var spy0 = p2y + 24, sph = 2 * R - 20;
+    label(ctx, "THE SPECTRUM YOU BUILD BY SWEEPING", spx0, p2y + 8, C["ink-3"], 10);
+
+    var fmin = FMIN, fmax = FMAX, steps = STEPS;
+    var vals = cacheVals, maxv = cacheMax;
+
+    ctx.strokeStyle = C.rule; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(spx0, spy0 + sph); ctx.lineTo(spx0 + spw, spy0 + sph); ctx.stroke();
+
+    /* the band your project searches */
+    ctx.fillStyle = C.signal; ctx.globalAlpha = 0.07;
+    var bx0 = spx0 + ((0.7 - fmin) / (fmax - fmin)) * spw;
+    var bx1 = spx0 + ((4.0 - fmin) / (fmax - fmin)) * spw;
+    ctx.fillRect(bx0, spy0, bx1 - bx0, sph);
+    ctx.globalAlpha = 1;
+
+    ctx.strokeStyle = C.accent; ctx.lineWidth = 2; ctx.lineJoin = "round";
+    ctx.beginPath();
+    for (var s2 = 0; s2 <= steps; s2++) {
+      var px2 = spx0 + (s2 / steps) * spw;
+      var py2 = spy0 + sph - (vals[s2] / maxv) * (sph - 8);
+      if (s2 === 0) ctx.moveTo(px2, py2); else ctx.lineTo(px2, py2);
+    }
+    ctx.stroke();
+
+    /* current test-frequency marker */
+    var cxp = spx0 + ((tf - fmin) / (fmax - fmin)) * spw;
+    ctx.strokeStyle = C.signal; ctx.lineWidth = 2; ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(cxp, spy0); ctx.lineTo(cxp, spy0 + sph); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = C.signal;
+    ctx.beginPath();
+    ctx.arc(cxp, spy0 + sph - (mag / maxv) * (sph - 8), 5, 0, 6.2832);
+    ctx.fill();
+
+    /* axis ticks in BPM */
+    [60, 90, 120, 180, 240].forEach(function (b) {
+      var ff2 = b / 60;
+      if (ff2 < fmin || ff2 > fmax) return;
+      var xx = spx0 + ((ff2 - fmin) / (fmax - fmin)) * spw;
+      ctx.strokeStyle = C["rule-2"]; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(xx, spy0 + sph); ctx.lineTo(xx, spy0 + sph + 4); ctx.stroke();
+      label(ctx, b, xx, spy0 + sph + 13, C["ink-3"], 9.5, "center");
+    });
+    label(ctx, "BPM", spx0 + spw, spy0 + sph + 26, C["ink-3"], 9.5, "right");
+
+    /* readouts */
+    document.getElementById("ro-tf").textContent = tf.toFixed(3) + " Hz";
+    document.getElementById("ro-tbpm").textContent = Math.round(tf * 60) + " BPM";
+    document.getElementById("ro-mag").textContent = mag.toFixed(3);
+    var v = document.getElementById("ro-verd");
+    var strong = mag > maxv * 0.55;
+    v.textContent = strong ? "MATCH" : (mag > maxv * 0.25 ? "close" : "no match");
+    v.className = "v" + (strong ? " good" : "");
+  }
+
+  slider.addEventListener("input", draw);
+  document.getElementById("chk-noise").addEventListener("change", draw);
+  document.getElementById("chk-second").addEventListener("change", draw);
+
+  var btn = document.getElementById("btn-sweep");
+  btn.addEventListener("click", function () {
+    sweeping = !sweeping;
+    btn.classList.toggle("on", sweeping);
+    btn.textContent = sweeping ? "Stop sweep" : "Auto sweep";
+    if (sweeping) tick();
+  });
+
+  function tick() {
+    if (!sweeping) return;
+    var v = parseFloat(slider.value) + 0.014 * sweepDir;
+    if (v >= 4) { v = 4; sweepDir = -1; }
+    if (v <= 0.4) { v = 0.4; sweepDir = 1; }
+    slider.value = v;
+    draw();
+    requestAnimationFrame(tick);
+  }
+
+  redraws.push(draw);
+  window.addEventListener("resize", draw);
+  draw();
+})();
+
+/* ============================================================
+   FIG 5 — RESOLUTION
+   ============================================================ */
+(function () {
+  var cv = document.getElementById("cv-res");
+  var slider = document.getElementById("sl-win");
+  var FS = 30, F1 = 72 / 60, F2 = 78 / 60;
+
+  function draw() {
+    var f = fit(cv), ctx = f.ctx, w = f.w, h = f.h;
+    ctx.clearRect(0, 0, w, h);
+
+    var T = parseFloat(slider.value);
+    var N = Math.round(FS * T);
+
+    var x = [];
+    for (var n = 0; n < N; n++) {
+      var t = n / FS;
+      x.push(Math.cos(2 * Math.PI * F1 * t) + Math.cos(2 * Math.PI * F2 * t + 0.7));
+    }
+
+    var bmin = 50, bmax = 100, steps = 300;
+    var vals = [], maxv = 0.0001;
+    for (var s = 0; s <= steps; s++) {
+      var bp = bmin + (bmax - bmin) * s / steps;
+      var ff = bp / 60, sx = 0, sy = 0;
+      for (var m = 0; m < N; m++) {
+        var a = -2 * Math.PI * ff * (m / FS);
+        sx += x[m] * Math.cos(a); sy += x[m] * Math.sin(a);
+      }
+      var v = Math.hypot(sx, sy) / N;
+      vals.push(v); if (v > maxv) maxv = v;
+    }
+
+    var px0 = 40, pw = w - px0 - 14, py0 = 18, ph = h - py0 - 42;
+
+    ctx.strokeStyle = C.rule; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(px0, py0 + ph); ctx.lineTo(px0 + pw, py0 + ph); ctx.stroke();
+
+    /* true positions */
+    [[72, "72"], [78, "78"]].forEach(function (p) {
+      var xx = px0 + ((p[0] - bmin) / (bmax - bmin)) * pw;
+      ctx.strokeStyle = C.signal; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
+      ctx.beginPath(); ctx.moveTo(xx, py0); ctx.lineTo(xx, py0 + ph); ctx.stroke();
+      ctx.setLineDash([]);
+      label(ctx, p[1], xx, py0 - 6, C.signal, 10, "center");
+    });
+
+    ctx.strokeStyle = C.accent; ctx.lineWidth = 2.2; ctx.lineJoin = "round";
+    ctx.beginPath();
+    for (var s2 = 0; s2 <= steps; s2++) {
+      var xx2 = px0 + (s2 / steps) * pw;
+      var yy2 = py0 + ph - (vals[s2] / maxv) * (ph - 6);
+      if (s2 === 0) ctx.moveTo(xx2, yy2); else ctx.lineTo(xx2, yy2);
+    }
+    ctx.stroke();
+
+    [50, 60, 70, 80, 90, 100].forEach(function (b) {
+      var xx3 = px0 + ((b - bmin) / (bmax - bmin)) * pw;
+      ctx.strokeStyle = C["rule-2"];
+      ctx.beginPath(); ctx.moveTo(xx3, py0 + ph); ctx.lineTo(xx3, py0 + ph + 4); ctx.stroke();
+      label(ctx, b, xx3, py0 + ph + 14, C["ink-3"], 9.5, "center");
+    });
+    label(ctx, "BPM", px0 + pw, py0 + ph + 30, C["ink-3"], 9.5, "right");
+    label(ctx, "strength", 4, py0 + 6, C["ink-3"], 9.5, "left");
+
+    /* count local maxima to decide merged vs resolved */
+    var peaks = 0;
+    for (var i = 2; i < steps - 1; i++) {
+      if (vals[i] > vals[i - 1] && vals[i] > vals[i + 1] && vals[i] > maxv * 0.45) peaks++;
+    }
+
+    var df = 1 / T;
+    document.getElementById("ro-win").textContent = T.toFixed(1) + " s";
+    document.getElementById("ro-df").textContent = df.toFixed(3) + " Hz";
+    document.getElementById("ro-dbpm").textContent = (df * 60).toFixed(1) + " BPM";
+    var rv = document.getElementById("ro-resv");
+    rv.textContent = peaks >= 2 ? "TWO PEOPLE" : "merged — looks like one";
+    rv.className = "v" + (peaks >= 2 ? " good" : " hot");
+  }
+
+  slider.addEventListener("input", draw);
+  redraws.push(draw);
+  window.addEventListener("resize", draw);
+  draw();
+})();
+
+/* ============================================================
+   FIG 6 — PROJECTION TEST BENCH
+   ============================================================ */
+(function () {
+  var cv = document.getElementById("cv-proj");
+  var dir = [0, 1, 0];
+  var ARTIFACT = [0.5, 0.5, 0.5];
+  var PULSE = [-0.1, -0.4, -0.2];
+
+  function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+
+  function draw() {
+    var f = fit(cv), ctx = f.ctx, w = f.w, h = f.h;
+    ctx.clearRect(0, 0, w, h);
+
+    var art = dot(ARTIFACT, dir);
+    var pul = dot(PULSE, dir);
+
+    var colW = Math.min((w - 40) / 2, 300);
+    var x0 = (w - colW * 2 - 24) / 2;
+
+    function panel(px, title, sub, vec, out, isPulse) {
+      var py = 16, pw = colW, ph = h - 34;
+
+      ctx.fillStyle = C["paper-2"];
+      ctx.strokeStyle = C.rule; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.rect(px, py, pw, ph); ctx.fill(); ctx.stroke();
+
+      label(ctx, title, px + 12, py + 18, isPulse ? C.signal : C.warn, 11);
+      label(ctx, sub, px + 12, py + 34, C["ink-3"], 9.5);
+
+      /* the three channel bars */
+      var names = ["R", "G", "B"], cols = ["#D0342C", "#2E9E4F", "#3B6FD4"];
+      var barY = py + 54, barH = 15, gap = 9, maxAbs = 0.55;
+      var zeroX = px + 12 + (pw - 40) / 2;
+      for (var i = 0; i < 3; i++) {
+        var yy = barY + i * (barH + gap);
+        ctx.strokeStyle = C["rule-2"]; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(zeroX, yy - 3); ctx.lineTo(zeroX, yy + barH + 3); ctx.stroke();
+        var bw = (vec[i] / maxAbs) * ((pw - 44) / 2);
+        ctx.fillStyle = cols[i];
+        ctx.globalAlpha = 0.85;
+        ctx.fillRect(zeroX, yy, bw, barH);
+        ctx.globalAlpha = 1;
+        label(ctx, names[i], px + 14, yy + barH / 2, C["ink-2"], 10);
+        label(ctx, (vec[i] > 0 ? "+" : "") + vec[i].toFixed(2),
+              px + pw - 12, yy + barH / 2, C["ink-2"], 10, "right");
+      }
+
+      /* the arithmetic */
+      var ay = barY + 3 * (barH + gap) + 12;
+      ctx.font = '10.5px "IBM Plex Mono", monospace';
+      ctx.fillStyle = C["ink-3"];
+      ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      var line = "(" + vec.map(function (v) { return v.toFixed(1); }).join(",") + ") · (" +
+                 dir.join(",") + ")";
+      ctx.fillText(line, px + 12, ay);
+
+      /* result */
+      var strong = Math.abs(out) > 0.15;
+      var resCol = isPulse ? (strong ? C.signal : C["ink-3"])
+                           : (strong ? C.accent : C.signal);
+      ctx.font = '600 26px "IBM Plex Mono", monospace';
+      ctx.fillStyle = resCol;
+      ctx.fillText("= " + (out > 0 ? "+" : "") + out.toFixed(2), px + 12, ay + 28);
+
+      var verdict = isPulse
+        ? (strong ? "pulse survives ✓" : "pulse destroyed ✗")
+        : (strong ? "artifact leaks through ✗" : "artifact blocked ✓");
+      ctx.font = '10.5px "IBM Plex Mono", monospace';
+      ctx.fillStyle = resCol;
+      ctx.fillText(verdict, px + 12, ay + 52);
+    }
+
+    panel(x0, "LIGHTING ARTIFACT", "person shifts / cloud passes", ARTIFACT, art, false);
+    panel(x0 + colW + 24, "HEARTBEAT PULSE", "blood volume rises, green dips most", PULSE, pul, true);
+
+    /* readouts */
+    document.getElementById("ro-art").textContent = (art > 0 ? "+" : "") + art.toFixed(2);
+    document.getElementById("ro-pul").textContent = (pul > 0 ? "+" : "") + pul.toFixed(2);
+    var ratio = Math.abs(art) < 0.001 ? Infinity : Math.abs(pul / art);
+    document.getElementById("ro-rat").textContent =
+      ratio === Infinity ? "∞" : ratio.toFixed(2);
+    var vd = document.getElementById("ro-pverd");
+    if (ratio === Infinity) { vd.textContent = "clean"; vd.className = "v good"; }
+    else if (ratio >= 1) { vd.textContent = "usable"; vd.className = "v"; }
+    else { vd.textContent = "leaky"; vd.className = "v hot"; }
+  }
+
+  document.querySelectorAll(".proj-btn").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll(".proj-btn").forEach(function (o) { o.classList.remove("on"); });
+      b.classList.add("on");
+      dir = b.getAttribute("data-dir").split(",").map(Number);
+      draw();
+    });
+  });
+
+  redraws.push(draw);
+  window.addEventListener("resize", draw);
+  draw();
+})();
+</script>
+
+<script>
+(function(){
+  var BN = {"0": "জটিল সংখ্যা, ঘূর্ণায়মান তীর, এবং সেই একটি কৌশল যা একটি কম্পিউটারকে কারো মুখের ভিডিও থেকে হৃৎস্পন্দন বের করে আনতে দেয়।", "1": "কেন এই জিনিসটা আপনাকে শিখতে হচ্ছে", "2": "আপনি যখন Python-এ একটা FFT চালান, প্রতিটা ফেরত আসা মান হয় একটা <em>জটিল সংখ্যা</em> (complex number):", "3": "এটা কোনো bug না, numpy-এর খামখেয়ালিও না। প্রতিটা আউটপুটকে একসাথে <strong>দুইটা</strong> তথ্য বহন করতে হয়, আর দুইটা তথ্য ধরে রাখার স্বাভাবিক পাত্র হলো জটিল সংখ্যা। তাই জটিল সংখ্যা যদি ঝাপসা মনে হয়, আপনার FFT-এর আউটপুটও চিরকাল ঝাপসা থাকবে, এবং আপনি আসল হৃৎস্পন্দন আর noise-এর পার্থক্য ধরতে পারবেন না।", "4": "এই পুরো পেজটার উদ্দেশ্য ওই এক লাইন আউটপুটকে স্পষ্ট করে তোলা। তিনটা ভাগ আছে:", "5": "<strong>ভাগ ক &mdash; তীর।</strong> জটিল সংখ্যা, Euler-এর সূত্র, আর winding machine। এটাই সবচেয়ে বড় অংশ।", "6": "<strong>ভাগ খ &mdash; Projection।</strong> linear algebra থেকে একটা মাত্র ধারণা, যেটা আসলে ব্যাখ্যা করে দেয় কেন আপনার ক্ষেত্রের প্রচলিত পদ্ধতিটা সহজ পদ্ধতিটাকে হারিয়ে দেয়।", "7": "<strong>ভাগ গ &mdash; ক্যালকুলাস।</strong> দুই মিনিট। সত্যিই।", "9": "একটা জটিল সংখ্যা আসলে একটা <em>তীর</em>", "10": "\"কাল্পনিক\" (imaginary) শব্দটা ভুলে যান। এটা একটা ঐতিহাসিক দুর্ঘটনা এবং তিনশো বছর ধরে শিক্ষার্থীদের বিভ্রান্ত করেছে। এর বদলে জ্যামিতি হিসেবে ভাবুন।", "11": "প্রকৌশলীরা <span class=\"m\">i</span>-এর বদলে <span class=\"m\">j</span> লেখেন, কারণ <span class=\"m\">i</span> দিয়ে আগে থেকেই বিদ্যুৎ প্রবাহ (current) বোঝানো হয়।", "12": "নিচের বিন্দুটা টেনে সরান। খেয়াল করুন এটাকে বর্ণনা করা চারটা সংখ্যা কীভাবে একসাথে বদলায়।", "13": "Complex plane explorer &mdash; বিন্দুটা টেনে সরান", "14": "<strong>Magnitude</strong> হলো তীরের দৈর্ঘ্য, পিথাগোরাস দিয়ে বের করা: <span class=\"m\">r = √(a² + b²)</span>। <strong>Phase</strong> হলো তীরটা যে কোণে তাক করা, ঠিক ডানদিকে তাক করা তীর থেকে ঘড়ির কাঁটার উল্টো দিকে মাপা।", "15": "চিহ্ন দেখে quadrant বের করা", "16": "Quadrant গোনা হয় ঘড়ির কাঁটার উল্টো দিকে, ঠিক ডান দিক থেকে শুরু করে। কোনো quadrant বের করতে আপনার কখনো হিসাব করার দরকার নেই; শুধু দুইটা চিহ্ন পড়ুন।", "17": "সুতরাং <span class=\"m\">-1 + 1j</span>-এর বাস্তব অংশ ঋণাত্মক (বামে) আর কাল্পনিক অংশ ধনাত্মক (উপরে)। বাম এবং উপর মানে <strong>Q2</strong>, ১৩৫°-তে। বাম <em>এবং নিচ</em> হতো Q3, যেটা <span class=\"m\">-1 - 1j</span>, ২২৫°-তে। উপরের প্রিসেট বোতামগুলো চাপুন আর quadrant রিডআউটে মিলিয়ে দেখুন।", "18": "<em>j</em> মানে \"এক পোয়া পাক ঘোরাও\"", "19": "এই একটা দৃষ্টিভঙ্গিই জটিল সংখ্যাকে পরিষ্কার করে দেয়। <span class=\"m\">j</span> দিয়ে গুণ করা কোনো বিমূর্ত বীজগণিতের চাল না। এটা তীরটাকে ঘড়ির কাঁটার উল্টো দিকে ৯০° ঘুরিয়ে দেয়। ব্যস, আর কিছু না।", "20": "নিচের বোতামটা চারবার চাপুন আর দেখুন তীরটা বৃত্তের চারপাশে হেঁটে যাচ্ছে।", "21": "j দিয়ে গুণ, একবারে এক পোয়া পাক", "22": "শুরু <span class=\"m\">1</span>-এ (ডানে তাক করা)। একবার চাপলে <span class=\"m\">j</span> (উপরে)। আরেকবার চাপলে <span class=\"m\">j² = -1</span> (বামে)। তাহলে <strong>j² = -1</strong> মুখস্থ করার মতো কোনো অদ্ভুত নিয়ম না। এটা এই পর্যবেক্ষণ যে <em>৯০° করে দুইবার ঘুরলে আপনি উল্টো দিকে মুখ করে থাকবেন</em>, যেটা স্পষ্টতই সত্য। আরও দুইবার চাপলে আপনি আবার শুরুতে ফিরে আসবেন।", "23": "একটা তীর বর্ণনার দুইটা উপায়", "24": "একই তীরকে দুইভাবে বর্ণনা করা যায়, আর এই দুইয়ের মধ্যে যাওয়া-আসাই আসল দক্ষতা।", "25": "সুতরাং <span class=\"m\">3 + 4j</span> আর <span class=\"m\">5·e^(j·53.13°)</span> একই তীর, শুধু আলাদা পোশাকে।", "26": "Euler-এর সূত্র, ভয় কাটিয়ে", "27": "জ্যামিতিকভাবে পড়লে এটা আর ভীতিকর থাকে না:", "28": "<strong>e<sup>jθ</sup> হলো একক বৃত্তের উপরে θ কোণে থাকা বিন্দুটা।</strong> এর দৈর্ঘ্য সবসময় ঠিক ১। এর কোণ ঠিক θ। সূত্রটার পুরো বক্তব্য এটুকুই।", "29": "নিজেই মিলিয়ে দেখুন <span class=\"m\">θ = 180°</span>-তে: <span class=\"m\">e^(j·180°) = cos 180° + j·sin 180° = -1 + 0j = -1</span>। এটাই সেই বিখ্যাত অভেদ, আর এটা শুধু বলছে <em>\"বৃত্তের অর্ধেক পাক ঘুরলে আপনি বামে গিয়ে পড়বেন।\"</em> Figure 2 দুইটা বোতাম চাপাতেই আপনাকে এটা দেখিয়ে দিয়েছে।", "30": "একটা sine wave <em>আসলেই</em> একটা ঘূর্ণায়মান তীর, পাশ থেকে দেখা", "31": "এবার স্থির কোণ <span class=\"m\">θ</span>-কে সময়ের সাথে বাড়তে দিন:", "32": "<span class=\"m\">2π</span> আছে শুধু এই কারণে যে এক পূর্ণ পাক হলো 2π রেডিয়ান। ৭২ BPM হার্ট রেট মানে <span class=\"m\">72/60 = 1.2 Hz</span>, তাই <span class=\"m\">e^(j·2π·1.2·t)</span> প্রতি সেকেন্ডে ১.২ পাক শেষ করে, অর্থাৎ প্রতি ০.৮৩৩ সেকেন্ডে এক পাক। ওই ঘূর্ণায়মান তীরটাই <em>হলো</em> \"৭২ BPM ছন্দ\" বোঝানোর গাণিতিক বস্তু।", "33": "নাগরদোলা", "34": "একটা নাগরদোলা কল্পনা করুন যার একটাই ঘোড়া, উপর থেকে দেখা। এটা বৃত্তাকারে ঘুরছে। এবার অনেক দূরে হেঁটে গিয়ে বসে পড়ুন যতক্ষণ না আপনার চোখ প্ল্যাটফর্মের সমান উচ্চতায় আসে। আপনি গভীরতা বোঝার ক্ষমতা হারিয়েছেন, তাই ঘোড়াটা কাছে না দূরে সেটা আর বুঝতে পারছেন না। আপনি শুধু দেখছেন ঘোড়াটা <strong>বামে, ডানে, বামে, ডানে</strong> সরছে।", "35": "ঘোড়াটা তার কাজ বদলায়নি। আপনার <em>দেখার কোণ</em> বদলেছে। আর ওই পাশ থেকে দেখা দৃশ্যটাই একটা sine wave।", "36": "বৃত্তাকার গতি, পাশ থেকে দেখলে, <strong>একটা</strong> sine wave। \"দেখতে লাগে\" না। <strong>হয়।</strong>", "37": "নিচে, বাম পাশের তীরটা ঘুরছে। এর অনুভূমিক অবস্থান, অর্থাৎ এর ছায়া, ডান পাশে নিয়ে গিয়ে সময়ের সাপেক্ষে আঁকা হচ্ছে। Play চাপুন।", "38": "ঘূর্ণায়মান তীর → ঢেউ &mdash; নাগরদোলা, দুইভাবে দেখা", "39": "<span style=\"color:var(--accent);font-weight:600\">লাল</span> রেখাটা অনুভূমিক ছায়া, <span class=\"m\">cos(2πft)</span>। বাক্সে টিক দিলে <span style=\"color:var(--signal);font-weight:600\">সবুজ</span> উল্লম্ব ছায়া দেখা যাবে, <span class=\"m-sig\">sin(2πft)</span> &mdash; একই তীর, একই মুহূর্ত, শুধু পাশের বদলে নিচ থেকে দেখা।", "40": "শুধু cosine দরকার হলে তীর রাখব কেন?", "41": "ওই দ্বিতীয় বাক্সে টিক দিন, উত্তরটা চোখে পড়বে। তীরটা একসাথে <strong>দুইটা</strong> ছায়া বহন করে: অনুভূমিকটা cosine, উল্লম্বটা sine। এক বস্তু, দুই ঢেউ।", "42": "দুইটাই কেন লাগবে? কারণ বাস্তব হৃৎস্পন্দন যে সর্বোচ্চ বিন্দু থেকেই শুরু হবে তার কোনো নিশ্চয়তা নেই। আপনি রেকর্ড চাপার সেই এলোমেলো মুহূর্তটার উপর নির্ভর করে এটা ওঠার মাঝপথে বা সর্বনিম্ন বিন্দুতেও শুরু হতে পারে। দুইটা সিগন্যালের ছন্দ একই ১.২ Hz হতে পারে, অথচ একে অপরের তুলনায় <strong>সময়ে সরানো</strong> থাকতে পারে।", "43": "শুধু cosine ছায়াটা দেখলে আপনি এই দুই অবস্থার পার্থক্য ধরতে পারবেন না। তীরের <strong>কোণ</strong> এই সরে যাওয়াটা এমনিতেই ধরে রাখে। ওই কোণটাকেই আমরা বলি <strong>phase</strong>, আর এটাই প্রতিটা FFT bin-এর দ্বিতীয় সংখ্যা।", "44": "Winding machine", "45": "এটা আপনার কোর্সের সবচেয়ে গুরুত্বপূর্ণ ধারণা, তাই এই পেজের সবচেয়ে বড় ছবিটা এটাই পাচ্ছে।", "46": "একটা FFT যে প্রশ্নের উত্তর দেয় সেটা হলো:", "47": "\"এই এলোমেলো সিগন্যালের ভেতরে কি <strong>১.২ Hz</strong> ছন্দ লুকিয়ে আছে, আর থাকলে সেটা কতটা শক্তিশালী?\"", "48": "কৌশলটা", "49": "সিগন্যালটা নিন, যেটা আসলে সময়ের সাপেক্ষে কিছু সংখ্যার তালিকা মাত্র, আর সেটাকে কোনো একটা পরীক্ষামূলক গতিতে <strong>বৃত্তের চারপাশে পেঁচিয়ে দিন</strong>। প্রতিটা নমুনার জন্য:", "50": "এর <strong>মান</strong> ঠিক করে কেন্দ্র থেকে কত দূরে বিন্দুটা বসাবেন", "51": "<strong>পরীক্ষামূলক frequency</strong> ঠিক করে কোন কোণে বসাবেন, আর সময় এগোনোর সাথে সাথে কোণটাও নিয়মিত এগোতে থাকে", "52": "তারপর <strong>ওই সব বিন্দুর গড়</strong> বের করুন, অর্থাৎ তাদের ভরকেন্দ্র। ওই একটা বিন্দুই আপনার উত্তর:", "53": "<strong>বিন্দুগুলো একদিকে জমে গেল</strong> → ভরকেন্দ্র মূলবিন্দু থেকে অনেক দূরে → <strong>বড় magnitude</strong> → ওই ছন্দ উপস্থিত আছে", "54": "<strong>বিন্দুগুলো সমানভাবে ছড়িয়ে গেল</strong> → তারা কাটাকাটি হয়ে যায় → ভরকেন্দ্র মূলবিন্দুর কাছে → <strong>প্রায় শূন্য</strong> → ওই ছন্দ নেই", "55": "সবকিছু নির্ভর করে সিগন্যালের চূড়াগুলো বারবার <em>একই</em> কোণে পড়ছে নাকি এলোমেলো কোণে পড়ছে তার উপর।", "56": "পরীক্ষামূলক frequency-র স্লাইডারটা ধীরে ধীরে বাম থেকে ডানে টানুন। নিচের পেঁচানো আকৃতিটা দেখুন, আর টানার সাথে সাথে spectrum তৈরি হতে দেখুন।", "57": "Winding machine &mdash; frequency বদলান আর দেখুন স্তূপটা একদিকে হেলে পড়ছে", "58": "লুকানো সিগন্যালটা একটা <strong>৭২ BPM</strong> পালস (১.২ Hz)। ততক্ষণ টানুন যতক্ষণ না বিন্দুগুলো সমানভাবে ছড়ানো বন্ধ করে একদিকে জমতে শুরু করে &mdash; ভরকেন্দ্র হঠাৎ মূলবিন্দু থেকে ছিটকে যায় আর spectrum-এ একটা চূড়া ওঠে। ওই চূড়াটাই <em>হলো</em> হার্ট রেট। এবার \"add heavy noise\"-এ টিক দিন: উপরের রেখাটা চোখে পড়ার মতো অপাঠ্য হয়ে যায়, কিন্তু চূড়াটা প্রায় অটুট থাকে। <strong>Noise-এর নিজে নিজে কাটাকাটি হয়ে যাওয়াটা ভাগ্য না। এটাই পদ্ধতিটার মূল কৌশল।</strong>", "59": "একই জিনিস, হাতে কলমে", "60": "যন্ত্রটাকে বিশ্বাস করার বদলে যদি যাচাই করতে চান, এখানে একটা ১.২ Hz cosine-এর আটটা নমুনা দেওয়া আছে, মিলে যাওয়া ১.২ Hz frequency-তে পেঁচানো, তাই প্রতি নমুনায় কোণ ৪৫° করে বাড়ছে।", "61": "প্রতিটা অনুভূমিক অবদানই ধনাত্মক। কিছুই কাটাকাটি হয় না, তাই সবগুলো ডান পাশে জমা হয়।", "62": "৩ আর ৪ নম্বর সারি ভালো করে দেখুন। ওই নমুনাগুলোর মান <em>ঋণাত্মক</em>, তবু তারা ধনাত্মক অবদান রেখেছে। ওই মুহূর্তগুলোতে পেঁচানোটা কোণকে বাম পাশে নিয়ে গিয়েছিল, আর বাম পাশে বসানো ঋণাত্মক মান গিয়ে পড়ে <strong>ডানে</strong>। ঋণাত্মক গুণ ঋণাত্মক। সিগন্যালের নিচু জায়গা আর পেঁচানোর নিচু জায়গা ঠিক মিলে যায়। এটাকেই বলে অনুরণন (resonance)।", "63": "একই আটটা নমুনা যদি বেমানান ২.৪ Hz-এ চালান, যেখানে কোণ প্রতিবার ৯০° করে বাড়ে, যোগফল দাঁড়ায় <span class=\"m\">(0.00, 0.00)</span>। ০ নম্বর সারির <span class=\"m\">+1.00</span> মেরে ফেলে ৪ নম্বর সারির <span class=\"m\">-1.00</span>, আর দুইটা <span class=\"m\">-0.71</span> মেরে ফেলে দুইটা <span class=\"m\">+0.71</span>।", "64": "<strong>৪.০ বনাম ০.০।</strong> Winding machine পরিষ্কারভাবে \"এই ছন্দ আছে\" আর \"এই ছন্দ নেই\" আলাদা করে দিল। একটা FFT শুধু এই একই কাজ বহু frequency-তে একসাথে চালায়।", "65": "আর এটাই আক্ষরিক অর্থে আপনার প্রজেক্ট", "66": "আপনার rPPG pipeline একটা ক্ষীণ, noisy চামড়ার উজ্জ্বলতার সিগন্যাল ভেতরে নেয়। FFT সেটাকে আপনার ০.৭ থেকে ৪ Hz ব্যান্ডের প্রতিটা সম্ভাব্য frequency-তে পেঁচায়। এলোমেলো noise সমানভাবে ছড়িয়ে প্রায় সব জায়গাতেই কাটাকাটি হয়ে যায়। আসল পালসের ছন্দ একটা নির্দিষ্ট frequency-তে জমা হয়। আপনি সবচেয়ে বড় স্তূপটা নিয়ে ৬০ দিয়ে গুণ করেন, আর সেটাই আপনার BPM।", "67": "এই কারণেই আপনি এমন একটা রঙের পরিবর্তন থেকে হৃৎস্পন্দন বের করতে পারেন যেটা মানুষের চোখে ধরা পড়ার পক্ষে অনেক বেশি ক্ষীণ।", "68": "কেন আপনি কখনো \"ঠিক ৭২.০০০০ BPM\" বলতে পারবেন না", "69": "Winding machine-কে বলুন ৭২.০ BPM আর ৭২.৫ BPM আলাদা করতে:", "70": "প্রায় একই গতিতে পেঁচানো দুইটা জিনিস একে অপরের সাথে প্রায় তাল মিলিয়ে চলে। ৩০ সেকেন্ডের জানালায় তারা সবে আলাদা হতে শুরু করেছে, তাই দুইটাই প্রায় একই রকম হেলে পড়া স্তূপ তৈরি করে। FFT সত্যিই এদের আলাদা করতে পারে না &mdash; অ্যালগরিদম দুর্বল বলে না, বরং <strong>আপনি যথেষ্ট সময় ধরে দেখেননি বলে।</strong>", "71": "এখান থেকেই আপনার প্রজেক্টের সবচেয়ে কাজের সূত্রটা আসে:", "72": "নিচে, একসাথে দুইজন মানুষ ফ্রেমে বসে আছে, একজনের ৭২ BPM আর একজনের ৭৮ BPM। জানালার দৈর্ঘ্য টেনে বদলান আর দেখুন যন্ত্রটা বুঝতে পারে কিনা যে ওখানে দুইজন আছে।", "73": "জানালার দৈর্ঘ্য বনাম resolution &mdash; আপনি কি দুইজন দেখছেন, না একজন?", "74": "ছোট জানালায় দুইটা চূড়া মিলে গিয়ে একটা মোটা ঢিবি হয়ে যায় আর আপনি ৭৫ BPM-এর আশপাশে একটাই ভুল হার্ট রেট বলবেন। প্রায় ১০ সেকেন্ড পার হলে তারা আলাদা হয়। দুই পাশের ছোট ঢেউগুলো হলো <strong>spectral leakage</strong>, সসীম রেকর্ডিং থেকে থেকে যাওয়া অসম্পূর্ণ কাটাকাটি &mdash; Tier 1-এ এর সমাধান আছে, যেটাকে বলে windowing।", "75": "লম্বা জানালা মানে ভালো frequency নির্ভুলতা, কিন্তু খারাপ সাড়া দেওয়ার ক্ষমতা, কারণ হার্ট রেট সত্যিই বদলায় আর লম্বা জানালা সেই পরিবর্তনগুলোকে মিশিয়ে ফেলে। এটা নড়াচড়াকেও ওই অংশটা নষ্ট করার বেশি সুযোগ দেয়। এখানে বিনামূল্যে কিছু পাওয়ার উপায় নেই, আর জানালার দৈর্ঘ্য বাছাই এমন একটা জিনিস যেটা আপনাকে রিপোর্টে যুক্তি দিয়ে রক্ষা করতে হবে। বেশিরভাগ rPPG কাজ ১০ থেকে ৩০ সেকেন্ডের মধ্যে গিয়ে থামে।", "77": "Dot product, আর কেন <em>CHROM</em> green channel-কে হারায়", "78": "linear algebra থেকে আপনার ঠিক একটা ধারণা দরকার: <strong>projection</strong>।", "79": "Dot product মিলে যাওয়া উপাংশগুলোকে গুণ করে যোগ করে দেয়:", "80": "জ্যামিতিকভাবে এটা প্রশ্ন করে: <strong>\"<span class=\"m\">a</span>-এর কতটুকু <span class=\"m\">b</span>-এর দিকে তাক করা আছে?\"</strong> এখানে <span class=\"m\">b</span> হলো বিশুদ্ধ অনুভূমিক দিক, আর উত্তর ৩ হলো ঠিক ততটুকু যতটা <span class=\"m\">a</span> ডানে পৌঁছায়। আপনি আবার একটা ছায়া ফেললেন, ঠিক নাগরদোলার মতোই।", "81": "সবচেয়ে গুরুত্বপূর্ণ ধর্ম: <strong>দুইটা ভেক্টর যদি লম্ব হয়, তাদের dot product শূন্য।</strong> একটার কোনো অংশই অন্যটার দিকে তাক করা নেই।", "82": "আপনার pipeline-এ এটা কোথায় লাগে", "83": "প্রতিটা ভিডিও ফ্রেম আপনাকে তিনটা সংখ্যা দেয়: চামড়ার অংশ জুড়ে R, G আর B-এর গড়। তাই প্রতিটা ফ্রেম একটা 3D ভেক্টর। FFT করতে হলে আপনার একটা মাত্র 1D সিগন্যাল দরকার, তাই তিনটা সংখ্যাকে একটাতে নামাতে হবে। এটা করা হয় একটা বাছাই করা দিকের সাথে dot product করে।", "84": "নিচে একটা দিক বাছুন আর দেখুন কী টিকে থাকে।", "85": "Projection test bench &mdash; কী পার হয়ে যায়, কী আটকে যায়", "86": "একটা <strong>lighting artifact</strong> (মানুষটা নড়ল, একটা মেঘ সরে গেল) তিনটা চ্যানেলকেই মোটামুটি একসাথে উজ্জ্বল করে: <span class=\"m\">(0.5, 0.5, 0.5)</span>। একটা <strong>হৃৎস্পন্দন</strong> ভিন্ন কাজ করে, কারণ hemoglobin লাল আলোর চেয়ে সবুজ আলো অনেক বেশি শোষণ করে, তাই সবুজ সবচেয়ে বেশি নামে: <span class=\"m\">(−0.1, −0.4, −0.2)</span>। একটা ভালো projection দিক প্রথমটা আটকায় আর দ্বিতীয়টা পার হতে দেয়।", "87": "ফলাফলটা পরিষ্কার ভাষায়", "88": "CHROM-ধাঁচের দিক <span class=\"m\">(1, −1, 0)</span>-কে একটা সমান উজ্জ্বলতা বৃদ্ধির বিরুদ্ধে পরীক্ষা করুন:", "89": "এবার সহজ green channel-এর জন্য একই কাজ করুন, যেটা <span class=\"m\">(0, 1, 0)</span>-এর উপরে projection:", "90": "আলোর পরিবর্তন আর নড়াচড়া <strong>green channel-এর ভেতর দিয়ে পূর্ণ শক্তিতে সোজা পার হয়ে যায়।</strong> CHROM-এর দিকটা তাদের সাথে লম্ব; green-এরটা না।", "91": "ওই একটা তুলনাই উত্তর দেয় \"কেন নড়াচড়ায় সহজ green-channel ভেঙে পড়ে অথচ CHROM টিকে থাকে\", যেটা আপনার পড়ার তালিকার ৩ নম্বর পেপার, de Haan &amp; Jeanne (2013)-এর মূল প্রশ্ন। পেপারটা খোলার আগেই আপনি ফলাফলটা বুঝে ফেলেছেন।", "92": "এর কোথাও কোনো শেখা বা fitting নেই। দিকটা আসে চামড়ার আলোকবিজ্ঞান থেকে। ঠিক এই কারণেই আপনার প্ল্যানের Section 17 সততার সাথে CHROM-কে classical preprocessing বলতে পারে।", "94": "একমাত্র যেটা আপনার দরকার", "95": "আপনাকে শুধু চিনতে হবে যে <span class=\"m\">∫ f(t) dt</span> মানে \"একটা অবিচ্ছিন্ন পরিসর জুড়ে <span class=\"m\">f</span> যোগ করো\", যাতে আপনি Fourier transform-এর পাঠ্যবইয়ের সংজ্ঞাটা না ঘাবড়ে পড়তে পারেন।", "96": "এই প্রজেক্টে আপনি কখনো হাতে একটাও হিসাব করবেন না। আপনার সিগন্যাল একটা সসীম নমুনার তালিকা, অবিচ্ছিন্ন ফাংশন না, তাই আপনার পড়া প্রতিটা পেপারের প্রতিটা integral আপনার কোডে হয়ে যায় একটা <span class=\"m\">sum()</span>। Integral চিহ্নটা অবিচ্ছিন্ন সংস্করণ; sum হলো যেটা আপনি আসলে চালান।", "97": "আর ডান পাশটা ভালো করে দেখুন, কারণ এর সাথে আপনার আগেই দেখা হয়েছে। <span class=\"m\">x</span> ঠিক করে কেন্দ্র থেকে দূরত্ব। <span class=\"m\">e^(-j2πft)</span> ঠিক করে কোণ। <span class=\"m\">sum</span> সেগুলো জমা করে। <strong>ওই লাইনটাই winding machine।</strong> Fourier transform-এর সরকারি সংজ্ঞা আর Figure 4 একই বস্তু।", "98": "এই পেজের প্রতিটা শব্দ, সহজ ভাষায়", "100": "একটা সমতলে আঁকা তীর। একসাথে দুইটা তথ্য বহন করে, তাই এটা \"কতটা শক্তিশালী\" আর \"চক্রের কোন জায়গায়\" দুইটাই ধরে রাখতে পারে।", "102": "তীরটা কতটা ডানে পৌঁছায়। অনুভূমিক ছায়া।", "104": "তীরটা কতটা উপরে পৌঁছায়। উল্লম্ব ছায়া। নামটা খারাপ; এতে কাল্পনিক কিছুই নেই।", "105": "ঘড়ির কাঁটার উল্টো দিকে ৯০° ঘোরার নির্দেশ। প্রকৌশলীরা j ব্যবহার করেন কারণ i মানে current।", "107": "তীরের দৈর্ঘ্য। Spectrum-এ: ওই ছন্দ কতটা শক্তিশালী।", "109": "তীরের কোণ। Spectrum-এ: রেকর্ডিং শুরুর সময় ছন্দটা তার চক্রের কোথায় ছিল।", "111": "তীরটা সমতলের কোন চতুর্থাংশে তাক করা। দুইটা চিহ্ন দেখে পড়ুন, কখনো হিসাব করবেন না।", "113": "এমন arctangent যা দুইটা ইনপুটেরই চিহ্ন পড়ে, তাই সঠিক quadrant ফেরত দেয়। সাধারণ atan-এর বদলে সবসময় এটাই ব্যবহার করুন।", "115": "e<sup>jθ</sup> হলো একক বৃত্তে θ কোণে থাকা বিন্দু। এর দাবি এটুকুই।", "117": "প্রতি সেকেন্ডে কত পাক, হার্জে মাপা। ৭২ BPM হৃৎস্পন্দন মানে ১.২ Hz।", "119": "প্রতি পাকে কত সেকেন্ড। Frequency-র বিপরীত: T = 1/f।", "121": "প্রতি সেকেন্ডে কত চক্র। সেকেন্ড দিয়ে গুণ করলে চক্রের সংখ্যা পাওয়া যায়; একক কাটাকাটি হয়ে যায় আর আপনাকে ভুল থেকে বাঁচায়।", "123": "প্রতি মিনিটে কত বিট। BPM = Hz × ৬০।", "125": "\"প্রতিটা frequency কতটা শক্তিশালী\" তার চার্ট, প্রতিটা সম্ভাব্য হারে winding machine চালিয়ে তৈরি করা।", "127": "ওই চার্টের একটা ঘর। FFT শুধু নির্দিষ্ট ঘরেই রিপোর্ট করে, যেগুলোর ব্যবধান 1/T, তাই এর মাঝখানের কোনো মান ফেরত দিতে পারে না।", "129": "ওই ঘরগুলোর মধ্যেকার ব্যবধান, যা 1/T-এর সমান। আপনার সম্ভাব্য সর্বোচ্চ frequency নির্ভুলতা।", "131": "বেমানান frequency-তে থেকে যাওয়া সামান্য শক্তি, কারণ সসীম রেকর্ডিংয়ে কখনো নিখুঁতভাবে কাটাকাটি হয় না। এই কারণেই বাস্তব spectrum-এর মেঝে সমতল না হয়ে অসমান হয়।", "133": "মিলে যাওয়া উপাংশ গুণ করে যোগ করা। উত্তর দেয় \"এটার কতটুকু ওটার দিকে তাক করা।\"", "135": "Dot product ঠিক শূন্য। একটা অন্যটার কাছে সম্পূর্ণ অদৃশ্য, যেটা artifact বাতিল করার জন্য ঠিক যা দরকার।", "137": "একটা বহুমাত্রিক জিনিসকে (R, G, B) একটা বাছাই করা দিকের সাথে dot product করে একটা সংখ্যায় নামিয়ে আনা।", "139": "Remote photoplethysmography। সাধারণ ভিডিও থেকে চামড়ার অদৃশ্য রঙের পরিবর্তন ধরে পালস পড়া।", "141": "একটা প্রকাশিত rPPG পদ্ধতি যা RGB-কে এমন একটা দিকে project করে যাতে আলো আর নড়াচড়ার artifact লম্বভাবে গিয়ে মিলিয়ে যায়।", "142": "নিজেকে যাচাই করুন", "143": "উত্তর খোলার আগে এগুলো নিজে বের করুন। একটা ভুল করা, সব কয়টা দেখে দেখে ঠিক করার চেয়ে বেশি কাজে লাগে।", "144": "কোনো interpolation কৌশল ছাড়া সাধারণ FFT থেকে আপনি ১ BPM resolution চান। আপনার রেকর্ডিং কত লম্বা হতে হবে?", "145": "আগে হার্জে বদলান। <span class=\"m\">১ BPM = 1/60 Hz = 0.0167 Hz</span>।", "146": "তারপর <span class=\"m\">Δf = 1/T</span>, সুতরাং <span class=\"m\">T = 1/Δf = 1/0.0167 = ৬০ সেকেন্ড।</span>", "147": "১ BPM নির্ভুলতার জন্য পুরো এক মিনিট। এটা একটা বাস্তব সীমাবদ্ধতা, আর এই কারণেই parabolic interpolation, যেটা চূড়াটা দুইটা bin-এর <em>মাঝখানে</em> ঠিক কোথায় আছে তা আন্দাজ করে, তার পাঁচ লাইন কোডের দাম আছে।", "148": "RGB-কে <span class=\"m\">(1, 1, 1)</span> দিকে project করলে সেটা কি ভালো পালস ডিটেক্টর হবে, নাকি ভয়ংকর খারাপ?", "149": "ভয়ংকর খারাপ। <span class=\"m\">(1,1,1)</span> হলো \"সবকিছু একসাথে উজ্জ্বল হওয়া\"-র দিক, তাই আপনি যে artifact-টা বাতিল করতে চান এটা ঠিক তার প্রতি <em>সর্বোচ্চ</em> সংবেদনশীল। এটা সামগ্রিক উজ্জ্বলতা মাপে, মানে ঘরের আলো আর মানুষটা কীভাবে নড়ছে সেটা মাপে।", "150": "Figure 6-এ Brightness বোতাম চাপুন, দেখবেন artifact রিডআউট সর্বোচ্চ সম্ভাব্য মানে লাফিয়ে উঠছে আর পালস প্রায় ধরাই পড়ছে না। তিনটা দিকের মধ্যে এটাই সবচেয়ে খারাপ, আর এটা CHROM-এর বাছাইয়ের ঠিক উল্টো।", "151": "একটা হার্ট রেট ৯০ BPM। ১০ সেকেন্ডের রেকর্ডিংয়ে তীরটা কতগুলো পূর্ণ পাক শেষ করে?", "152": "গুণের বদলে ভাগ করাটাই এখানে সবচেয়ে প্রচলিত ভুল, আর একক দেখেই সেটা ধরা যায়: <span class=\"m\">10 ÷ 1.5</span> করলে আপনি পাবেন প্রতি চক্রে সেকেন্ড-বর্গ, যার কোনো মানে নেই।", "153": "কোনো সূত্র ছাড়াই মিলিয়ে দেখুন: প্রতি মিনিটে ৯০ বিট, আর ১০ সেকেন্ড হলো মিনিটের এক-ষষ্ঠাংশ, তাই <span class=\"m\">৯০ ÷ ৬ = ১৫</span> বিট। একই উত্তর। BPM-এর অঙ্ক সবসময় এভাবেই যাচাই করুন।", "154": "Figure 4-এ প্রচুর noise যোগ করলেও চূড়াটা প্রায় নড়ে না কেন?", "155": "Noise সংজ্ঞা অনুযায়ীই ছন্দময় না। আপনি যখন একটা noisy সিগন্যালকে যেকোনো পরীক্ষামূলক frequency-তে পেঁচান, তার বিন্দুগুলো জমা না হয়ে এলোমেলো কোণে ছিটকে যায়, তাই তারা প্রায় পুরোপুরি কাটাকাটি হয়ে যায় আর ভরকেন্দ্রে প্রায় কিছুই যোগ করে না।", "156": "আসল পালস, ছন্দময় হওয়ায়, বারবার একই কোণে পড়ে আর জমতেই থাকে। তাই পালস জমা হয় আর noise নিজে নিজে কাটাকাটি হয়ে যায়।", "157": "rPPG আদৌ সম্ভব হওয়ার সবচেয়ে বড় কারণ এটাই। কারো গালের রঙের পরিবর্তন তার উপরে বসে থাকা noise-এর চেয়ে অনেক দুর্বল, তবু winding machine সেটা খুঁড়ে বের করে আনে।", "158": "Tier 1 কী যোগ করে", "159": "সবকিছু যে দুইটা ধারণার উপরে দাঁড়িয়ে আছে সেগুলো এখন আপনার হাতে: <strong>একটা ঘূর্ণায়মান তীর মানে একটা ছন্দ</strong>, আর <strong>একটা সিগন্যালকে পরীক্ষামূলক ছন্দের বিরুদ্ধে পেঁচালে বোঝা যায় সেটা উপস্থিত কিনা।</strong> Tier 1 এগুলোকে কাজের যন্ত্রে পরিণত করে।", "160": "<strong>Signals and systems-এর ভিত্তি</strong> &mdash; কেন ঘূর্ণায়মান তীর শুধু spectrum-এর না, filter-এরও স্বাভাবিক ভাষা।", "161": "<strong>Fourier series</strong> &mdash; কেন আপনার spectrum প্রায়ই হার্ট রেটের ঠিক দ্বিগুণে আরেকটা ঢিবি দেখায়, আর কেন সহজ peak-বাছাই মাঝে মাঝে একজন সুস্থ মানুষের জন্য ১৪৪ BPM বলে।", "162": "<strong>Fourier transform</strong> &mdash; যেসব ধর্ম আপনি আসলেই ব্যবহার করবেন, যার মধ্যে আছে convolution theorem যেটা আপনার প্রজেক্টের চেকলিস্টে দেখানোর কথা আছে।", "163": "<strong>Convolution</strong> &mdash; filtering আসলে <em>কী</em>, আর সেই wraparound ফাঁদ যেটা আপনি প্রথমবার FFT দিয়ে filter করার সময় আপনার সিগন্যালের দুই প্রান্ত নষ্ট করে দেবে।", "164": "<strong>Sampling</strong> &mdash; কেন হৃৎস্পন্দনের জন্য ৩০ fps স্বচ্ছন্দে যথেষ্ট, আর কেন ওয়েবক্যামের frame পড়ে যাওয়া চুপচাপ এই পেজের প্রতিটা ছবির ভিত্তি ভেঙে দেয়।", "165": "<strong>DFT আর FFT</strong> &mdash; bin, leakage, windowing, আর কেন zero-padding দেখতে resolution বাড়ানোর মতো লাগে কিন্তু আসলে বাড়ায় না।", "8": "তীর", "76": "Projection", "93": "ক্যালকুলাস", "166": "<strong>FFT</strong> মানে Fast Fourier Transform। এটা এমন একটা কোড যেটা একটা রেকর্ডিং নিয়ে বলে দেয় ভেতরে কোন কোন ছন্দ লুকিয়ে আছে। কাজ ওইটুকুই। এই পেজের বাকিটা হলো সে <em>কীভাবে</em> এটা করতে পারে তা নিয়ে।", "167": "<span class=\"m\">z = a + jb</span> হলো মূলবিন্দু থেকে <span class=\"m\">(a, b)</span> বিন্দু পর্যন্ত আঁকা একটা তীর। বাস্তব অংশ <span class=\"m\">a</span> বলে আপনি কতটা ডানে যাবেন। কাল্পনিক অংশ <span class=\"m\">b</span> বলে কতটা উপরে। সংজ্ঞা এটুকুই।", "168": "<strong>atan2</strong> আসলে এমন একটা arctangent যেটা quadrant চেনে। সাধারণ <span class=\"m\">atan(b/a)</span> দিয়ে <span class=\"m\">1+1j</span> আর <span class=\"m\">-1-1j</span> আলাদা করা যায় না, কারণ দুইটাতেই <span class=\"m\">b/a = 1</span>। <span class=\"m\">a</span> আর <span class=\"m\">b</span> আলাদাভাবে দিলে এটা চিহ্ন দুইটা পড়ে সঠিক quadrant ফেরত দেয়। প্রতিটা ভাষাতেই এটা আছে। সবসময় এটাই ব্যবহার করুন।", "169": "<strong>Phase</strong> উত্তর দেয় \"রেকর্ডিং শুরু হওয়ার সময় এই ছন্দটা তার চক্রের কোন জায়গায় ছিল?\" <strong>Magnitude</strong> উত্তর দেয় \"এই ছন্দটা কতটা শক্তিশালী?\" হার্ট রেট বের করার জন্য আপনার magnitude দরকার আর phase ফেলে দিলেই চলে, কারণ আপনি কখন রেকর্ড চেপেছেন সেটা এলোমেলো এবং হারের ব্যাপারে কিছুই বলে না। আপনার প্রজেক্টের HRV স্তরে, যেখানে প্রতিটা বিটের সঠিক সময় গুরুত্বপূর্ণ, সেখানে phase সরাসরি ফিরে আসে।", "170": "<strong>ওই দিকটা বাছাই করা মানেই ঠিক করা আপনি কোন ধরনের রঙের পরিবর্তনের প্রতি সংবেদনশীল হবেন।</strong> আর ওই বাছাইটাই সহজ পদ্ধতি আর প্রকাশিত পদ্ধতির মধ্যে পুরো পার্থক্য।", "171": "<span class=\"m\">৯০ BPM = 1.5 Hz</span>। Hz মানে <em>প্রতি সেকেন্ডে কত চক্র</em>, তাই গুণ করুন: <span class=\"m\">1.5 চক্র/সেকেন্ড × ১০ সেকেন্ড = ১৫ চক্র।</span> সেকেন্ড কাটাকাটি হয়ে চক্র থেকে যায়।"};
+  var EN = {};
+  var nodes = document.querySelectorAll("[data-t]");
+  nodes.forEach(function(el){ EN[el.getAttribute("data-t")] = el.innerHTML; });
+  var btn = document.getElementById("langbtn");
+  function apply(l){
+    document.documentElement.setAttribute("data-lang", l);
+    nodes.forEach(function(el){
+      var k = el.getAttribute("data-t");
+      var v = (l === "bn" && BN[k]) ? BN[k] : EN[k];
+      if (el.innerHTML !== v) el.innerHTML = v;
+    });
+    btn.textContent = (l === "bn") ? "English" : "বাংলা";
+    try { localStorage.setItem("lessonLang", l); } catch(e){}
+    if (typeof redrawAll === "function") { try { redrawAll(); } catch(e){} }
+  }
+  var saved = "en";
+  try { saved = localStorage.getItem("lessonLang") || "en"; } catch(e){}
+  apply(saved);
+  btn.addEventListener("click", function(){
+    apply(document.documentElement.getAttribute("data-lang") === "bn" ? "en" : "bn");
+  });
+  window.addEventListener("resize", function(){
+    if (typeof redrawAll === "function") { try { redrawAll(); } catch(e){} }
+  });
+})();
+</script>
+

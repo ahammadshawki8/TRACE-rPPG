@@ -1,0 +1,937 @@
+<title>Parallel or Fanning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap">
+
+<style>
+:root {
+  --paper:#FAF7F8; --paper-2:#F2EDEF; --paper-3:#E9E1E5;
+  --ink:#1F1720; --ink-2:#5A4E58; --ink-3:#8C7F88;
+  --rule:#E0D6DB; --rule-2:#CDBFC7;
+  --accent:#B01B3F; --accent-2:#8E1533; --accent-soft:#F7DEE5;
+  --signal:#10796B; --signal-soft:#DBEFEA;
+  --warn:#9C5A12; --warn-soft:#F7E8D4;
+  --shadow:0 1px 2px rgba(31,23,32,.05), 0 8px 24px -12px rgba(31,23,32,.18);
+  --sp-1:.35rem; --sp-2:.7rem; --sp-3:1.1rem; --sp-4:1.7rem; --sp-5:2.6rem; --sp-6:4rem;
+  --font-display:"Spectral",Georgia,"Times New Roman",serif;
+  --font-body:"Archivo",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --spine:40rem; --wide:60rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#16111A; --paper-2:#1F1824; --paper-3:#29202F;
+    --ink:#F0E9EE; --ink-2:#B3A5AE; --ink-3:#7D6F79;
+    --rule:#322A38; --rule-2:#443A4B;
+    --accent:#FF6B8A; --accent-2:#FF93A9; --accent-soft:#3B1D28;
+    --signal:#45D6B0; --signal-soft:#123029;
+    --warn:#E0A050; --warn-soft:#33260F;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"] {
+  --paper:#16111A; --paper-2:#1F1824; --paper-3:#29202F;
+  --ink:#F0E9EE; --ink-2:#B3A5AE; --ink-3:#7D6F79;
+  --rule:#322A38; --rule-2:#443A4B;
+  --accent:#FF6B8A; --accent-2:#FF93A9; --accent-soft:#3B1D28;
+  --signal:#45D6B0; --signal-soft:#123029;
+  --warn:#E0A050; --warn-soft:#33260F;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.65;margin:0;padding:0 var(--sp-3) var(--sp-6);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--font-display);text-wrap:balance;line-height:1.2;margin:0}
+p{margin:0}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+code,.m{font-family:var(--font-mono);font-size:.92em;font-variant-ligatures:none}
+.m{color:var(--accent);font-weight:500}
+.masthead{max-width:var(--wide);margin:0 auto;padding:var(--sp-6) 0 var(--sp-5);border-bottom:1px solid var(--rule);display:flex;flex-direction:column;gap:var(--sp-3)}
+.eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:500}
+.masthead h1{font-size:clamp(2.6rem,7vw,4.4rem);font-weight:700;letter-spacing:-.02em}
+.masthead .standfirst{font-family:var(--font-display);font-size:clamp(1.05rem,2.2vw,1.3rem);color:var(--ink-2);max-width:34rem;line-height:1.5}
+.meta-row{display:flex;flex-wrap:wrap;gap:var(--sp-3) var(--sp-4);font-family:var(--font-mono);font-size:.76rem;color:var(--ink-3);letter-spacing:.04em;padding-top:var(--sp-2)}
+.meta-row span strong{color:var(--ink-2);font-weight:500}
+.sec{max-width:var(--wide);margin:0 auto;padding-top:var(--sp-6);display:flex;flex-direction:column;gap:var(--sp-4)}
+.sec-head{display:flex;flex-direction:column;gap:var(--sp-2)}
+.sec-num{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.16em;color:var(--ink-3);text-transform:uppercase}
+.sec-head h2{font-size:clamp(1.7rem,3.6vw,2.4rem);font-weight:600;letter-spacing:-.015em}
+.sec-head h2 em{font-style:italic;color:var(--accent)}
+.prose{max-width:var(--spine);display:flex;flex-direction:column;gap:var(--sp-3)}
+.prose h3{font-size:1.18rem;font-weight:600;margin-top:var(--sp-2)}
+.prose ul,.prose ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:var(--sp-2)}
+.prose strong{font-weight:600}
+.part-break{max-width:var(--wide);margin:var(--sp-6) auto 0;padding-top:var(--sp-5);border-top:2px solid var(--ink);display:flex;flex-direction:column;gap:var(--sp-2)}
+.part-break .eyebrow{color:var(--ink-3)}
+.part-break h2{font-size:clamp(2rem,4.6vw,3rem);font-weight:700;letter-spacing:-.02em}
+.plain{background:var(--paper-2);border-left:3px solid var(--signal);padding:var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-1);max-width:var(--spine)}
+.plain .lbl{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--signal);font-weight:600}
+.plain p{color:var(--ink-2);font-size:.95rem}
+.keypoint{background:var(--accent-soft);padding:var(--sp-3) var(--sp-4);max-width:var(--spine);border-radius:2px;font-family:var(--font-display);font-size:1.1rem;line-height:1.5}
+.keypoint strong{font-weight:700;color:var(--accent-2)}
+.aside-note{border:1px solid var(--rule);border-radius:3px;padding:var(--sp-3);max-width:var(--spine);font-size:.92rem;color:var(--ink-2);display:flex;flex-direction:column;gap:var(--sp-2)}
+.aside-note .lbl{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--warn);font-weight:600}
+.fig{border:1px solid var(--rule-2);border-radius:4px;background:var(--paper-2);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;margin:0}
+.fig-bar{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-2) var(--sp-3);background:var(--paper-3);border-bottom:1px solid var(--rule-2);flex-wrap:wrap}
+.fig-bar .tag{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.fig-bar .name{font-family:var(--font-body);font-size:.85rem;color:var(--ink-2);font-weight:500}
+.fig-canvas-wrap{padding:var(--sp-3);background:var(--paper)}
+.fig canvas{display:block;width:100%;height:auto;touch-action:none}
+.fig-controls{border-top:1px solid var(--rule);padding:var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-3)}
+.ctl-row{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2) var(--sp-3)}
+.ctl{display:flex;align-items:center;gap:var(--sp-2);flex:1 1 15rem}
+.ctl label{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.06em;color:var(--ink-2);text-transform:uppercase;white-space:nowrap}
+.ctl input[type=range]{flex:1;min-width:5rem;accent-color:var(--accent);height:1.4rem}
+button{font-family:var(--font-mono);font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;font-weight:500;padding:.42rem .8rem;background:var(--paper);color:var(--ink);border:1px solid var(--rule-2);border-radius:3px;cursor:pointer;transition:background .12s,border-color .12s,color .12s}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button[aria-pressed="true"],button.on{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+.chk{display:inline-flex;align-items:center;gap:.45rem;font-family:var(--font-mono);font-size:.73rem;color:var(--ink-2);cursor:pointer;text-transform:uppercase;letter-spacing:.05em}
+.chk input{accent-color:var(--signal);width:1rem;height:1rem}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(7.5rem,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+.readout div{background:var(--paper);padding:var(--sp-2);display:flex;flex-direction:column;gap:.15rem}
+.readout .k{font-family:var(--font-mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.readout .v{font-family:var(--font-mono);font-size:1.02rem;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.readout .v.hot{color:var(--accent)}
+.readout .v.good{color:var(--signal)}
+.readout .v.warn{color:var(--warn)}
+.fig-note{padding:var(--sp-2) var(--sp-3) var(--sp-3);font-size:.86rem;color:var(--ink-2);border-top:1px dashed var(--rule);background:var(--paper-2)}
+.fig-note strong{color:var(--ink);font-weight:600}
+.math{font-family:var(--font-mono);font-size:.95rem;background:var(--paper-2);border:1px solid var(--rule);border-radius:3px;padding:var(--sp-3);overflow-x:auto;max-width:var(--spine);line-height:1.75;white-space:pre;color:var(--ink)}
+.math .hi{color:var(--accent);font-weight:600}
+.math .dim{color:var(--ink-3)}
+.math .ok{color:var(--signal);font-weight:600}
+.tbl-wrap{overflow-x:auto;max-width:var(--spine)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:26rem}
+th,td{text-align:left;padding:.5rem .7rem;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:500;border-bottom:1px solid var(--rule-2)}
+td.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.gloss{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--rule);max-width:var(--spine)}
+.gloss>div{padding:var(--sp-3) 0;border-bottom:1px solid var(--rule);display:grid;grid-template-columns:11rem 1fr;gap:var(--sp-3)}
+.gloss dt{font-family:var(--font-mono);font-size:.82rem;font-weight:600;color:var(--accent);margin:0}
+.gloss dd{margin:0;font-size:.93rem;color:var(--ink-2)}
+@media (max-width:34rem){.gloss>div{grid-template-columns:1fr;gap:var(--sp-1)}}
+details{border:1px solid var(--rule);border-radius:3px;background:var(--paper-2);padding:var(--sp-3);max-width:var(--spine)}
+details+details{margin-top:var(--sp-2)}
+summary{cursor:pointer;font-weight:600;font-family:var(--font-display);font-size:1.05rem;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸ ";color:var(--accent);font-family:var(--font-mono)}
+details[open] summary::before{content:"▾ "}
+details .ans{margin-top:var(--sp-3);padding-top:var(--sp-3);border-top:1px dashed var(--rule-2);font-size:.95rem;color:var(--ink-2);display:flex;flex-direction:column;gap:var(--sp-2)}
+.foot{max-width:var(--wide);margin:var(--sp-6) auto 0;padding-top:var(--sp-4);border-top:1px solid var(--rule);font-family:var(--font-mono);font-size:.76rem;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:var(--sp-3);justify-content:space-between}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+
+/* ---- bilingual ---- */
+:root[data-lang="bn"] body,
+:root[data-lang="bn"] .prose,
+:root[data-lang="bn"] .sec-head h2,
+:root[data-lang="bn"] .keypoint,
+:root[data-lang="bn"] .fig-note,
+:root[data-lang="bn"] .plain p,
+:root[data-lang="bn"] .aside-note,
+:root[data-lang="bn"] .gloss dd,
+:root[data-lang="bn"] details,
+:root[data-lang="bn"] .masthead .standfirst {
+  font-family: "Hind Siliguri", "Noto Sans Bengali", var(--font-body);
+}
+:root[data-lang="bn"] .prose p,
+:root[data-lang="bn"] .prose li { line-height: 1.9; }
+:root[data-lang="bn"] .keypoint { line-height: 1.75; }
+#langbtn{
+  position:fixed; top:.75rem; right:.75rem; z-index:200;
+  font-family:var(--font-mono); font-size:.75rem; letter-spacing:.06em;
+  padding:.45rem .85rem; border-radius:4px; cursor:pointer;
+  background:var(--accent); color:var(--paper); border:1px solid var(--accent);
+  box-shadow:0 2px 10px -4px rgba(0,0,0,.4);
+}
+#langbtn:hover{ filter:brightness(1.08); }
+@media print{ #langbtn{ display:none; } }
+</style>
+<button id="langbtn" type="button" aria-label="Switch language">বাংলা</button>
+
+
+<header class="masthead">
+  <div class="eyebrow">TRACE-rPPG · Foundations · Tier 6</div>
+  <h1>Parallel or Fanning</h1>
+  <p class="standfirst" data-t="0">Your project stopped being a system you build and became a question you answer. This is how to answer it so that a reviewer believes you.</p>
+  <div class="meta-row">
+    <span><strong>5</strong> interactive figures</span>
+    <span>Follows <strong>Tier 5</strong> &mdash; when averages lie</span>
+    <span>Written for the NSysS poster, 20 November.</span>
+  </div>
+</header>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">00 &mdash; Orientation</div>
+    <h2 data-t="1">What changed</h2>
+  </div>
+  <div class="prose">
+    <p data-t="2">Until now the project was: build a signal-quality-adaptive fusion system, validate it, show it works. That is a good course project.</p>
+    <p data-t="3">The literature search changed the target. Four of the five things you planned to claim are already published, some of them within the last year. What remains open is not a system at all. It is a <strong>question nobody has measured</strong>:</p>
+  </div>
+  <div class="keypoint" data-t="4">Does video compression <strong>amplify</strong> the skin-tone accuracy gap in rPPG?</div>
+  <div class="prose">
+    <p data-t="5">Both halves are known separately. Darker skin gives a weaker pulse signal because melanin absorbs more light. Compression destroys weak colour detail. Nobody has asked whether the second makes the first worse.</p>
+    <p data-t="6">That changes what you are building toward. You are no longer writing a systems paper. You are writing a <strong>measurement paper</strong>, and measurement papers live or die on experimental design rather than on engineering.</p>
+    <p data-t="7">So this tier is about design and evidence, not about signals. Your TRACE pipeline is still built exactly as planned. It just becomes the instrument rather than the finding.</p>
+  </div>
+  <div class="plain">
+    <div class="lbl">Plain English</div>
+    <p data-t="8">A <strong>measurement paper</strong> does not propose a new method. It measures something carefully that nobody measured before, and reports the number honestly. Many of the most cited papers in any field are this kind. They are also the right size for a poster.</p>
+  </div>
+</section>
+
+<div class="part-break">
+  <div class="eyebrow">Part A</div>
+  <h2 data-t="9">The idea everything rests on</h2>
+</div>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">01 &mdash; The core concept</div>
+    <h2 data-t="10">Main effects, and why they are <em>not enough</em></h2>
+  </div>
+  <div class="prose">
+    <p data-t="11">Suppose you run your experiment and report two findings:</p>
+    <ul>
+      <li data-t="12">Lower bitrate makes accuracy worse. <em>(an effect of compression)</em></li>
+      <li data-t="13">Darker skin makes accuracy worse. <em>(an effect of skin tone)</em></li>
+    </ul>
+    <p data-t="14">Both are true. Both are already published. Reporting them adds nothing, and a reviewer will say so.</p>
+    <p data-t="15">Those two are called <strong>main effects</strong>: what each factor does on its own, averaged over the other. Your claim is not about either of them. It is about a third thing:</p>
+  </div>
+  <div class="keypoint" data-t="16">An <strong>interaction</strong> is when the effect of one factor <em>depends on the level of the other.</em> Compression hurting darker skin <strong>more than</strong> it hurts lighter skin is an interaction, and it is a separate claim from either main effect.</div>
+  <div class="prose">
+    <p data-t="17">The visual test is simple enough to state in one line, and it is why this page is called what it is:</p>
+    <ul>
+      <li data-t="18"><strong>Parallel curves</strong> → no interaction. Compression hurts everyone equally. The gap is constant.</li>
+      <li data-t="19"><strong>Fanning curves</strong> → interaction. Compression hurts one group more. The gap grows.</li>
+    </ul>
+    <p data-t="20">Drag the sliders below until this is second nature. Set the interaction to zero and the lines stay parallel no matter how large you make either main effect. That is the whole point.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 1</span><span class="name" data-t="21">Main effects vs interaction &mdash; parallel or fanning</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-int" height="360"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-b">bitrate effect</label><input type="range" id="sl-b" min="0" max="10" step="0.1" value="5"></div>
+        <div class="ctl"><label for="sl-g">skin-tone gap</label><input type="range" id="sl-g" min="0" max="8" step="0.1" value="3"></div>
+      </div>
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-i">interaction</label><input type="range" id="sl-i" min="0" max="10" step="0.1" value="0"></div>
+        <button id="btn-demo">Show the difference</button>
+      </div>
+      <div class="readout">
+        <div><span class="k">gap at high bitrate</span><span class="v" id="ro-gh">3.0</span></div>
+        <div><span class="k">gap at low bitrate</span><span class="v" id="ro-gl">3.0</span></div>
+        <div><span class="k">interaction size</span><span class="v" id="ro-is">0.0</span></div>
+        <div><span class="k">shape</span><span class="v" id="ro-shape">parallel</span></div>
+        <div><span class="k">your claim</span><span class="v" id="ro-claim">not supported</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="22">Two groups: <span style="color:var(--signal);font-weight:600">lighter skin</span> and <span style="color:var(--accent);font-weight:600">darker skin</span>. <strong>Push the bitrate effect to maximum with interaction at zero.</strong> Both curves rise steeply, both main effects are huge, and the vertical gap between them never changes. That is a result you cannot publish. Now raise the interaction and watch the gap widen as bitrate falls.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <h3 data-t="23">Why this matters more than it sounds</h3>
+    <p data-t="24">It is easy to run the experiment, see both curves going up as bitrate drops, and conclude you found something. You did not. You found two things already known.</p>
+    <p data-t="25">The number you must extract, report, and defend is the <strong>size of the fan</strong>: how much larger the gap is at low bitrate than at high bitrate. That single quantity is your contribution.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">02 &mdash; Writing it down</div>
+    <h2 data-t="26">The model, in one line</h2>
+  </div>
+  <div class="prose">
+    <p data-t="27">Statisticians write the same idea as an equation. It is less frightening than it looks, and you will need it in the abstract.</p>
+  </div>
+  <div class="math">error = β₀ + β₁·(bitrate) + β₂·(skin tone) + <span class="hi">β₃·(bitrate × skin tone)</span> + noise
+       <span class="dim">↑           ↑                ↑                    ↑</span>
+   <span class="dim">baseline   main effect      main effect       THE INTERACTION</span>
+                                                <span class="dim">your entire contribution</span></div>
+  <div class="prose">
+    <p data-t="28">The last term is a product of the two factors, which is exactly what "depends on the level of the other" means arithmetically. If <span class="m">β₃</span> is zero, the lines are parallel. If it is not, they fan.</p>
+    <p data-t="29">So your poster's headline result reduces to three numbers:</p>
+    <ol>
+      <li data-t="30"><strong>The estimate of β₃</strong> &mdash; how big the fan is.</li>
+      <li data-t="31"><strong>A confidence interval on β₃</strong> &mdash; how sure you are.</li>
+      <li data-t="32"><strong>Whether that interval includes zero</strong> &mdash; if it does, you cannot claim the effect exists.</li>
+    </ol>
+    <p data-t="33">In Python this is a few lines. <span class="m">statsmodels</span> will fit it and hand you all three, and the formula syntax mirrors the equation almost exactly.</p>
+  </div>
+  <div class="math"><span class="dim"># the * operator expands to both main effects AND their interaction</span>
+model = smf.ols("mae ~ bitrate <span class="hi">*</span> skin_group", data=df).fit()
+print(model.summary())
+print(model.conf_int())      <span class="dim"># the interval that decides your claim</span></div>
+  <div class="plain">
+    <div class="lbl">Plain English</div>
+    <p data-t="34">A <strong>confidence interval</strong> is the range your true value probably sits in. "The gap widened by 4.1 BPM, 95% CI [1.8, 6.4]" means: the best estimate is 4.1, and values from 1.8 to 6.4 are all plausible. Because that range does not include zero, you can say an effect exists. If it read [-0.9, 6.2], zero is plausible and you cannot.</p>
+  </div>
+</section>
+
+<div class="part-break">
+  <div class="eyebrow">Part B</div>
+  <h2 data-t="35">Designing it</h2>
+</div>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">03 &mdash; The grid</div>
+    <h2 data-t="36">Every cell must be <em>filled</em></h2>
+  </div>
+  <div class="prose">
+    <p data-t="37">An interaction can only be measured if you observe every combination. Miss a cell and the term is not estimable, which is a fancy way of saying the analysis simply will not run.</p>
+    <p data-t="38">Your grid has three dimensions:</p>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Dimension</th><th>Levels</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Skin tone</strong></td><td>Fitzpatrick I&ndash;III vs IV&ndash;VI</td><td>Two groups is the minimum. Finer is better if subject counts allow.</td></tr>
+        <tr><td><strong>Bitrate</strong></td><td>5 levels + lossless control</td><td>Spread across a realistic telehealth range. The control is essential.</td></tr>
+        <tr><td><strong>Method</strong></td><td>green, CHROM, POS, TRACE, 1 neural</td><td>The neural baseline is now required, not optional.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="prose">
+    <p data-t="39">That is 2 × 6 × 5 = <strong>60 cells</strong>, each needing several subjects. Explore it below and see how quickly the requirement grows.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 2</span><span class="name" data-t="40">The experiment grid &mdash; what you actually have to run</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-grid" height="330"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-rates">bitrate levels</label><input type="range" id="sl-rates" min="2" max="9" step="1" value="6"></div>
+        <div class="ctl"><label for="sl-subj">subjects per group</label><input type="range" id="sl-subj" min="3" max="40" step="1" value="12"></div>
+      </div>
+      <div class="readout">
+        <div><span class="k">cells</span><span class="v" id="ro-cells">60</span></div>
+        <div><span class="k">total runs</span><span class="v" id="ro-runs">720</span></div>
+        <div><span class="k">video-minutes</span><span class="v" id="ro-mins">720</span></div>
+        <div><span class="k">compute feasible?</span><span class="v" id="ro-feas">yes</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="41">Every cell must contain data. The good news is that this is <strong>entirely automated</strong> once the harness exists: the same subjects pass through every bitrate, so you record once and re-encode many times. The expensive axis is subjects, not runs.</figcaption>
+  </figure>
+
+  <div class="aside-note">
+    <div class="lbl">Use the same subjects at every bitrate</div>
+    <p data-t="42">Do not record different people at different bitrates. Pass the <em>same</em> recordings through every compression level, so each subject acts as their own control. This removes person-to-person variation from the comparison entirely and makes a much smaller sample sufficient. It is called a within-subject design, and it is the single biggest gift available to you here.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">04 &mdash; The threat</div>
+    <h2 data-t="43">Your source video must be <em>clean</em></h2>
+  </div>
+  <div class="prose">
+    <p data-t="44">This is the most likely way the whole study fails, so it gets its own section.</p>
+    <p data-t="45">If your source video has <strong>already been compressed</strong>, then your "high bitrate" condition is not a clean baseline. It is already damaged. Re-encoding it adds a second round of loss on top of the first, and the two interact in ways you cannot separate afterwards.</p>
+    <p data-t="46">This matters immediately, because <strong>MMPD, the obvious dataset for skin tone, ships compressed to 320&times;240</strong>. It cannot serve as your primary source.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 3</span><span class="name" data-t="47">The confound &mdash; what pre-compressed source does to your curve</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-conf" height="330"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-pre">source already compressed</label><input type="range" id="sl-pre" min="0" max="1" step="0.02" value="0"></div>
+      </div>
+      <div class="readout">
+        <div><span class="k">source quality</span><span class="v" id="ro-src">pristine</span></div>
+        <div><span class="k">measured fan</span><span class="v" id="ro-mfan">4.0</span></div>
+        <div><span class="k">true fan</span><span class="v good">4.0</span></div>
+        <div><span class="k">conclusion</span><span class="v" id="ro-conc">valid</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="48">The dashed lines are the truth; the solid lines are what you would measure. As the source gets more pre-compressed, the curves <strong>flatten and compress toward each other</strong>, because the damage has already happened before your experiment begins. You would measure a smaller fan than exists and might conclude there is no effect when there is one.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <h3 data-t="49">What to use instead</h3>
+    <ol>
+      <li data-t="50"><strong>VitalVideo</strong> &mdash; 893 subjects across all six Fitzpatrick types. Confirm access terms and source quality first; this is the strongest option if it is clean.</li>
+      <li data-t="51"><strong>Your own recordings</strong> &mdash; recruiting Fitzpatrick IV to V participants in Dhaka is genuinely easier for you than for most labs, and a pulse oximeter costs very little. Needs consent and an ethics statement.</li>
+      <li data-t="52"><strong>UBFC-rPPG</strong> &mdash; uncompressed and free, but roughly 5 percent dark-skinned subjects, so it cannot carry the skin-tone axis. Useful as a clean control.</li>
+    </ol>
+    <p data-t="53">Whatever you choose, <strong>state the source codec and bitrate in the poster.</strong> A reviewer who knows this field will look for it, and its absence reads as carelessness.</p>
+  </div>
+</section>
+
+<div class="part-break">
+  <div class="eyebrow">Part C</div>
+  <h2 data-t="54">Believing the result</h2>
+</div>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">05 &mdash; Enough subjects</div>
+    <h2 data-t="55">Interactions need <em>more</em> data than main effects</h2>
+  </div>
+  <div class="prose">
+    <p data-t="56">Here is an uncomfortable rule that catches many first studies:</p>
+  </div>
+  <div class="keypoint" data-t="57">Detecting an interaction reliably takes roughly <strong>four times</strong> as many subjects as detecting a main effect of the same size.</div>
+  <div class="prose">
+    <p data-t="58">The reason is intuitive once seen. A main effect is a difference between two averages. An interaction is a <em>difference between two differences</em>, so it accumulates uncertainty from four groups instead of two. More uncertainty in, more data needed to see through it.</p>
+    <p data-t="59">This is why you must decide your sample size <strong>before</strong> collecting, not after. Running an underpowered study and finding nothing tells you nothing: you cannot distinguish "no effect exists" from "my study was too small to see it."</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 4</span><span class="name" data-t="60">How many subjects &mdash; and how often you would find the effect</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-power" height="330"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-eff">effect size</label><input type="range" id="sl-eff" min="0.2" max="2.5" step="0.05" value="0.8"></div>
+        <div class="ctl"><label for="sl-n">subjects per group</label><input type="range" id="sl-n" min="4" max="60" step="1" value="12"></div>
+      </div>
+      <div class="readout">
+        <div><span class="k">subjects/group</span><span class="v" id="ro-n">12</span></div>
+        <div><span class="k">power</span><span class="v" id="ro-pow">0.42</span></div>
+        <div><span class="k">need for 80%</span><span class="v hot" id="ro-need">26</span></div>
+        <div><span class="k">verdict</span><span class="v" id="ro-pv">underpowered</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="61"><strong>Power</strong> is the probability that your study finds the effect, given that it is really there. The convention is 0.80. Below that you are more likely than not to miss something real. Notice how steeply the requirement climbs as the effect gets smaller &mdash; that is why guessing at sample size is dangerous.</figcaption>
+  </figure>
+
+  <div class="plain">
+    <div class="lbl">Plain English</div>
+    <p data-t="126"><strong>Effect size</strong> means how big the difference is relative to how noisy the data is. A large effect in clean data is easy to see with few subjects. A small effect in noisy data needs many. Your within-subject design from Section 03 reduces noise substantially, which is exactly why it lets you get away with fewer people.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">06 &mdash; Reading your own plot</div>
+    <h2 data-t="62">Is that fan <em>real</em>, or is it noise?</h2>
+  </div>
+  <div class="prose">
+    <p data-t="63">You will get your plot. Two curves will separate somewhat. The question is whether you are looking at a finding or at randomness, and eyes are unreliable judges of this.</p>
+    <p data-t="64">The honest way to present it is with <strong>confidence bands</strong> around each curve. If the bands overlap everywhere, the separation you think you see is not supported. If they pull apart at low bitrate, you have something.</p>
+    <p data-t="65">Below is simulated data. Change the sample size and watch the bands tighten around exactly the same underlying truth.</p>
+  </div>
+
+  <figure class="fig">
+    <div class="fig-bar"><span class="tag">Figure 5</span><span class="name" data-t="66">Confidence bands &mdash; the same truth, different amounts of evidence</span></div>
+    <div class="fig-canvas-wrap"><canvas id="cv-bands" height="350"></canvas></div>
+    <div class="fig-controls">
+      <div class="ctl-row">
+        <div class="ctl"><label for="sl-n2">subjects per group</label><input type="range" id="sl-n2" min="3" max="50" step="1" value="8"></div>
+        <div class="ctl"><label for="sl-true">true interaction</label><input type="range" id="sl-true" min="0" max="8" step="0.1" value="4"></div>
+      </div>
+      <div class="ctl-row">
+        <button id="btn-resample">New sample</button>
+        <label class="chk"><input type="checkbox" id="chk-bands" checked> show confidence bands</label>
+      </div>
+      <div class="readout">
+        <div><span class="k">estimated β₃</span><span class="v" id="ro-b3">4.1</span></div>
+        <div><span class="k">95% CI</span><span class="v" id="ro-ci">[1.8, 6.4]</span></div>
+        <div><span class="k">includes zero?</span><span class="v" id="ro-zero">no</span></div>
+        <div><span class="k">can you claim it?</span><span class="v" id="ro-can">yes</span></div>
+      </div>
+    </div>
+    <figcaption class="fig-note" data-t="67">Press <strong>New sample</strong> repeatedly at 4 subjects per group. The estimate jumps around wildly and the interval sometimes includes zero, sometimes not &mdash; on identical underlying truth. Now raise it to 40 and press again. <strong>That stability is what sample size buys you</strong>, and it is why the number must be chosen before you collect rather than after.</figcaption>
+  </figure>
+
+  <div class="aside-note">
+    <div class="lbl">Set the true interaction to zero and look again</div>
+    <p data-t="68">With a genuinely zero effect, small samples will still occasionally produce an interval that excludes zero, and it will look like a discovery. That is a false positive, and it is why you commit to one analysis in advance rather than trying several and reporting the one that worked. Deciding the analysis after seeing the data is the most common way honest people produce wrong results.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">07 &mdash; The other outcome</div>
+    <h2 data-t="69">A negative result is still a <em>result</em></h2>
+  </div>
+  <div class="prose">
+    <p data-t="70">The curves may come out parallel. Compression may hurt all skin tones equally. Plan for this now, because how you react to it decides whether you have a poster or nothing.</p>
+    <p data-t="71">A clean negative finding here is genuinely worth reporting, for three reasons:</p>
+    <ul>
+      <li data-t="72">It <strong>contradicts a reasonable prior</strong>. The mechanism predicts amplification; showing it does not happen is informative.</li>
+      <li data-t="73">It has <strong>practical consequence</strong>. It would mean bandwidth policy in telehealth is not an equity issue, which is worth knowing before someone assumes otherwise.</li>
+      <li data-t="74">Nobody has measured it either way, so <strong>either answer is new.</strong></li>
+    </ul>
+    <p data-t="75">The protection is to write your abstract so both outcomes are reportable. Phrase the contribution as <em>"we measure whether..."</em> rather than <em>"we show that..."</em>. Then you cannot be wrong-footed by your own data.</p>
+  </div>
+  <div class="keypoint" data-t="76">A study designed so that only one outcome is publishable is a study under pressure to find that outcome. <strong>Design for either answer, and your result becomes trustworthy in a way that a positive-only design never is.</strong></div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">08 &mdash; Reference</div>
+    <h2 data-t="77">Tier 6 vocabulary, plainly</h2>
+  </div>
+  <div class="gloss">
+    <div><dt data-t="78">Main effect</dt><dd data-t="79">What one factor does on its own, averaged across the other. Both of yours are already published.</dd></div>
+    <div><dt data-t="80">Interaction</dt><dd data-t="81">When the effect of one factor depends on the level of the other. Parallel lines mean none; fanning lines mean one exists.</dd></div>
+    <div><dt data-t="82">Factor</dt><dd data-t="83">An input you deliberately vary. Yours are bitrate, skin tone group, and method.</dd></div>
+    <div><dt data-t="84">Level</dt><dd data-t="85">One setting of a factor. 500 kbps is a level of the bitrate factor.</dd></div>
+    <div><dt data-t="86">Cell</dt><dd data-t="87">One combination of levels across all factors. Every cell needs data or the interaction cannot be estimated.</dd></div>
+    <div><dt data-t="88">Control condition</dt><dd data-t="89">The clean, undamaged baseline you compare everything against. Here, lossless source video.</dd></div>
+    <div><dt data-t="90">Confound</dt><dd data-t="91">Something that varies alongside your factor and could explain the result instead. Pre-compressed source is yours.</dd></div>
+    <div><dt data-t="92">Within-subject</dt><dd data-t="93">The same people appear at every level, acting as their own control. Removes person-to-person variation and shrinks the sample you need.</dd></div>
+    <div><dt data-t="94">Effect size</dt><dd data-t="95">How big a difference is relative to the noise around it. Large effects need fewer subjects.</dd></div>
+    <div><dt data-t="96">Statistical power</dt><dd data-t="97">The chance your study finds a real effect. Convention is 0.80. Below that, absence of evidence means very little.</dd></div>
+    <div><dt data-t="98">Underpowered</dt><dd data-t="99">Too small to detect the effect you are looking for. Finding nothing then tells you nothing.</dd></div>
+    <div><dt data-t="100">Confidence interval</dt><dd data-t="101">The plausible range for the true value. If it contains zero, you cannot claim an effect exists.</dd></div>
+    <div><dt data-t="102">β₃</dt><dd data-t="103">The interaction coefficient. The size of the fan. Your entire contribution reduces to this number and its interval.</dd></div>
+    <div><dt data-t="104">Two-way ANOVA</dt><dd data-t="105">The standard test for two factors plus their interaction. Fit it with statsmodels in a few lines.</dd></div>
+    <div><dt data-t="106">False positive</dt><dd data-t="107">Concluding an effect exists when it does not. Small samples and analyses chosen after seeing the data both make this likelier.</dd></div>
+    <div><dt data-t="108">Measurement paper</dt><dd data-t="109">A paper whose contribution is a careful measurement rather than a new method. The right size for a poster.</dd></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">09 &mdash; Before you start</div>
+    <h2 data-t="110">Check yourself</h2>
+  </div>
+
+  <details>
+    <summary data-t="111">Your plot shows both curves rising steeply as bitrate falls. Have you found your effect?</summary>
+    <div class="ans">
+      <p data-t="112">Not yet. Both curves rising is the <em>main effect</em> of compression, which is already published, plus the main effect of skin tone if one curve sits above the other throughout.</p>
+      <p data-t="113">Your finding requires the vertical gap between the curves to be <strong>larger at low bitrate than at high bitrate</strong>. Measure that difference, put a confidence interval on it, and check whether the interval excludes zero. Rising curves alone are not a result.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="114">Why can't you use MMPD as your primary dataset?</summary>
+    <div class="ans">
+      <p data-t="115">Because its videos ship already compressed to 320&times;240. Your high-bitrate condition would not be a clean baseline, so you would be measuring compression on top of compression with no way to separate the two afterwards.</p>
+      <p data-t="116">Figure 3 shows the consequence: the measured fan comes out smaller than the real one, so you could conclude there is no effect when there is. Use VitalVideo if its source is clean, or record your own.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="117">You have 6 subjects per group and find nothing. What can you conclude?</summary>
+    <div class="ans">
+      <p data-t="118">Almost nothing, and this is the important part. At that size your power to detect a moderate interaction is well below 0.50, so you were more likely to miss a real effect than to find it.</p>
+      <p data-t="119">"We found no effect" and "our study was too small to see one" are indistinguishable from that data. Compute the required sample size <em>before</em> collecting, and if you cannot reach it, report the power you did have so readers can judge for themselves.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary data-t="120">Your interval comes out [-0.4, 7.8]. The estimate is 3.7. Can you claim the effect?</summary>
+    <div class="ans">
+      <p data-t="121">No. The interval includes zero, so no effect at all remains plausible given your data, however encouraging 3.7 looks.</p>
+      <p data-t="122">What you can honestly write is that your estimate points toward amplification but the study could not resolve it, and report the interval openly. That is a legitimate poster. Quietly dropping the interval and reporting only 3.7 is not.</p>
+    </div>
+  </details>
+</section>
+
+<section class="sec">
+  <div class="sec-head">
+    <div class="sec-num">10 &mdash; Ahead</div>
+    <h2 data-t="123">What happens next</h2>
+  </div>
+  <div class="prose">
+    <p data-t="124">You now have the whole picture. Tiers 0 to 4 give you the pipeline that produces a heart rate. Tier 5 gives you the statistics that prove it is right. This tier gives you the experimental design that turns those into a claim nobody has made before.</p>
+    <p data-t="125">The immediate tasks, in order: confirm the gap through native ACM and IEEE search, confirm VitalVideo access and its source quality, then build the pipeline exactly as originally planned. Nothing about the signal processing changed. Only what you point it at, and what you ask of the answer.</p>
+  </div>
+</section>
+
+<footer class="foot">
+  <span>TRACE-rPPG &mdash; Tier 6 of 6</span>
+  <span>Interaction effects · experiment design · statistical power</span>
+</footer>
+
+<script>
+"use strict";
+var C={};
+function refreshTheme(){
+  var s=getComputedStyle(document.documentElement);
+  ["paper","paper-2","paper-3","ink","ink-2","ink-3","rule","rule-2","accent","accent-2","signal","warn"]
+    .forEach(function(k){ C[k]=s.getPropertyValue("--"+k).trim(); });
+}
+refreshTheme();
+if(window.matchMedia){
+  var mq=window.matchMedia("(prefers-color-scheme: dark)");
+  if(mq.addEventListener) mq.addEventListener("change",function(){refreshTheme();redrawAll();});
+}
+new MutationObserver(function(){refreshTheme();redrawAll();})
+  .observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+var redraws=[];
+function redrawAll(){ redraws.forEach(function(f){ try{f();}catch(e){} }); }
+
+var _fitCache=new WeakMap();
+function fit(cv){
+  var st=_fitCache.get(cv);
+  if(!st){ st={cssH:parseInt(cv.getAttribute("height"),10),ctx:cv.getContext("2d"),w:0,dpr:0}; _fitCache.set(cv,st); }
+  var dpr=window.devicePixelRatio||1;
+  var w=cv.clientWidth||cv.parentNode.clientWidth||600;
+  if(w<2) return null;
+  if(w!==st.w||dpr!==st.dpr){
+    st.w=w; st.dpr=dpr;
+    cv.width=Math.round(w*dpr); cv.height=Math.round(st.cssH*dpr);
+    cv.style.height=st.cssH+"px";
+    st.ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  return {ctx:st.ctx,w:st.w,h:st.cssH};
+}
+function label(ctx,t,x,y,col,size,align){
+  ctx.fillStyle=col; ctx.font=(size||11)+'px "IBM Plex Mono", monospace';
+  ctx.textAlign=align||"left"; ctx.textBaseline="middle"; ctx.fillText(t,x,y);
+}
+var _seed=777;
+function rnd(){ _seed=(_seed*1103515245+12345)%2147483648; return _seed/2147483648*2-1; }
+function reseed(s){ _seed=s; }
+function gauss(){ return (rnd()+rnd()+rnd())/1.7; }
+function erf(x){
+  var s=x<0?-1:1; x=Math.abs(x);
+  var t=1/(1+0.3275911*x);
+  var y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);
+  return s*y;
+}
+function normcdf(z){ return 0.5*(1+erf(z/Math.SQRT2)); }
+
+/* ---------- FIG 1 : INTERACTION ---------- */
+(function(){
+  var cv=document.getElementById("cv-int");
+  var sb=document.getElementById("sl-b"), sg=document.getElementById("sl-g"), si=document.getElementById("sl-i");
+  var demo=null;
+  function draw(){
+    var f=fit(cv); if(!f) return;
+    var ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var B=parseFloat(sb.value), G=parseFloat(sg.value), I=parseFloat(si.value);
+    var pad=46,pw=w-pad-18,y0=26,ph=h-y0-52;
+    var YMAX=26;
+    function X(t){ return pad+t*pw; }
+    function Y(v){ return y0+ph-(v/YMAX)*ph; }
+    ctx.strokeStyle=C.rule; ctx.lineWidth=1; ctx.strokeRect(pad,y0,pw,ph);
+    label(ctx,"BPM ERROR",pad,14,C["ink-3"],10);
+
+    // t = 0 (high bitrate) .. 1 (low bitrate)
+    function light(t){ return 2 + B*t; }
+    function dark(t){ return 2 + G + B*t + I*t; }
+    function curve(fn,col,wid){
+      ctx.strokeStyle=col; ctx.lineWidth=wid; ctx.lineJoin="round"; ctx.beginPath();
+      for(var s=0;s<=60;s++){ var t=s/60; if(s===0)ctx.moveTo(X(t),Y(fn(t))); else ctx.lineTo(X(t),Y(fn(t))); }
+      ctx.stroke();
+    }
+    // shade the gap
+    ctx.fillStyle=C.accent; ctx.globalAlpha=.09;
+    ctx.beginPath();
+    for(var s2=0;s2<=60;s2++){ var t2=s2/60; if(s2===0)ctx.moveTo(X(t2),Y(dark(t2))); else ctx.lineTo(X(t2),Y(dark(t2))); }
+    for(var s3=60;s3>=0;s3--){ var t3=s3/60; ctx.lineTo(X(t3),Y(light(t3))); }
+    ctx.closePath(); ctx.fill(); ctx.globalAlpha=1;
+
+    curve(light,C.signal,3);
+    curve(dark,C.accent,3);
+    label(ctx,"lighter skin",X(0.03),Y(light(0.03))-14,C.signal,11);
+    label(ctx,"darker skin",X(0.03),Y(dark(0.03))-14,C.accent,11);
+
+    // gap arrows at both ends
+    [[0.06,"gap here"],[0.94,"gap here"]].forEach(function(g){
+      var t=g[0], xx=X(t);
+      ctx.strokeStyle=C.ink; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(xx,Y(light(t))); ctx.lineTo(xx,Y(dark(t))); ctx.stroke();
+      var gp=(dark(t)-light(t)).toFixed(1);
+      label(ctx,gp,xx+(t<0.5?6:-6),(Y(light(t))+Y(dark(t)))/2,C.ink,11,t<0.5?"left":"right");
+    });
+
+    label(ctx,"high bitrate",pad,y0+ph+16,C["ink-3"],10);
+    label(ctx,"low bitrate",pad+pw,y0+ph+16,C["ink-3"],10,"right");
+    [0,10,20].forEach(function(v){ label(ctx,v,pad-8,Y(v),C["ink-3"],9.5,"right"); });
+
+    var gh=dark(0)-light(0), gl=dark(1)-light(1);
+    document.getElementById("ro-gh").textContent=gh.toFixed(1);
+    document.getElementById("ro-gl").textContent=gl.toFixed(1);
+    document.getElementById("ro-is").textContent=I.toFixed(1);
+    var sh=document.getElementById("ro-shape");
+    var fan=I>0.4;
+    sh.textContent=fan?"FANNING":"parallel";
+    sh.className="v"+(fan?" good":" hot");
+    var cl=document.getElementById("ro-claim");
+    cl.textContent=fan?"supported":"not supported";
+    cl.className="v"+(fan?" good":" hot");
+    document.getElementById("ro-gl").className="v"+(fan?" good":"");
+  }
+  [sb,sg,si].forEach(function(e){e.addEventListener("input",draw);});
+  document.getElementById("btn-demo").addEventListener("click",function(){
+    if(demo){ clearInterval(demo); demo=null; this.classList.remove("on"); return; }
+    this.classList.add("on");
+    var ph=0, btn=this;
+    demo=setInterval(function(){
+      ph+=0.05;
+      si.value=(4.5+4.5*Math.sin(ph)).toFixed(1);
+      draw();
+      if(ph>Math.PI*4){ clearInterval(demo); demo=null; btn.classList.remove("on"); si.value=0; draw(); }
+    },45);
+  });
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 2 : GRID ---------- */
+(function(){
+  var cv=document.getElementById("cv-grid");
+  var sr=document.getElementById("sl-rates"), ss=document.getElementById("sl-subj");
+  function draw(){
+    var f=fit(cv); if(!f) return;
+    var ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var R=parseInt(sr.value,10), S=parseInt(ss.value,10);
+    var methods=["green","CHROM","POS","TRACE","neural"];
+    var groups=["I-III","IV-VI"];
+    var pad=54, gw=(w-pad-14)/R, rowH=20, gap=8;
+    label(ctx,"BITRATE LEVELS →",pad,12,C["ink-3"],10);
+    var y=28;
+    groups.forEach(function(g,gi){
+      label(ctx,g,4,y+8,gi===0?C.signal:C.accent,11);
+      methods.forEach(function(m,mi){
+        var yy=y+mi*(rowH+2);
+        label(ctx,m,pad-48,yy+rowH/2,C["ink-3"],9);
+        for(var r=0;r<R;r++){
+          ctx.fillStyle=gi===0?C.signal:C.accent;
+          ctx.globalAlpha=.18+0.5*(1-r/Math.max(1,R-1));
+          ctx.fillRect(pad+r*gw+1,yy,gw-2,rowH-2);
+          ctx.globalAlpha=1;
+          ctx.strokeStyle=C.rule; ctx.lineWidth=1;
+          ctx.strokeRect(pad+r*gw+1,yy,gw-2,rowH-2);
+        }
+      });
+      y+=methods.length*(rowH+2)+gap+10;
+    });
+    label(ctx,"lossless control ←",pad+2,h-14,C["ink-3"],9.5);
+    label(ctx,"→ heaviest compression",pad+R*gw,h-14,C["ink-3"],9.5,"right");
+
+    var cells=2*R*methods.length;
+    var runs=cells*S;
+    document.getElementById("ro-cells").textContent=cells;
+    document.getElementById("ro-runs").textContent=runs;
+    document.getElementById("ro-mins").textContent=Math.round(2*R*S);
+    var fe=document.getElementById("ro-feas");
+    var ok=runs<=4000;
+    fe.textContent=ok?"yes":"heavy";
+    fe.className="v"+(ok?" good":" warn");
+  }
+  [sr,ss].forEach(function(e){e.addEventListener("input",draw);});
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 3 : CONFOUND ---------- */
+(function(){
+  var cv=document.getElementById("cv-conf");
+  var sp=document.getElementById("sl-pre");
+  function draw(){
+    var f=fit(cv); if(!f) return;
+    var ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var P=parseFloat(sp.value);
+    var pad=46,pw=w-pad-18,y0=26,ph=h-y0-50, YMAX=26;
+    function X(t){ return pad+t*pw; }
+    function Y(v){ return y0+ph-(v/YMAX)*ph; }
+    ctx.strokeStyle=C.rule; ctx.strokeRect(pad,y0,pw,ph);
+    label(ctx,"BPM ERROR",pad,14,C["ink-3"],10);
+
+    var B=6, G=3, I=4;
+    function tl(t){ return 2+B*t; }
+    function td(t){ return 2+G+B*t+I*t; }
+    // pre-compression: shifts everyone up and compresses the dynamic range
+    function ml(t){ var off=P*7; var sc=1-P*0.72; return 2+off+B*t*sc; }
+    function md(t){ var off=P*7; var sc=1-P*0.72; return 2+off+G*(1-P*0.45)+B*t*sc+I*t*sc; }
+
+    function curve(fn,col,wid,dash){
+      ctx.strokeStyle=col; ctx.lineWidth=wid; ctx.lineJoin="round";
+      if(dash) ctx.setLineDash(dash); else ctx.setLineDash([]);
+      ctx.beginPath();
+      for(var s=0;s<=60;s++){ var t=s/60; if(s===0)ctx.moveTo(X(t),Y(fn(t))); else ctx.lineTo(X(t),Y(fn(t))); }
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    curve(tl,C.signal,1.5,[5,4]); curve(td,C.accent,1.5,[5,4]);
+    curve(ml,C.signal,3); curve(md,C.accent,3);
+    label(ctx,"truth",X(0.55),Y(td(0.55))-12,C["ink-3"],9.5);
+    label(ctx,"measured",X(0.2),Y(md(0.2))-14,C.accent,10);
+
+    label(ctx,"high bitrate",pad,y0+ph+16,C["ink-3"],10);
+    label(ctx,"low bitrate",pad+pw,y0+ph+16,C["ink-3"],10,"right");
+
+    var trueFan=(td(1)-tl(1))-(td(0)-tl(0));
+    var measFan=(md(1)-ml(1))-(md(0)-ml(0));
+    document.getElementById("ro-src").textContent = P<0.08?"pristine":P<0.4?"lightly compressed":P<0.75?"like MMPD":"heavily compressed";
+    document.getElementById("ro-mfan").textContent=measFan.toFixed(1);
+    document.getElementById("ro-mfan").className="v"+(measFan<trueFan*0.6?" hot":measFan<trueFan*0.85?" warn":" good");
+    var cc=document.getElementById("ro-conc");
+    var ok=measFan>trueFan*0.85;
+    cc.textContent=ok?"valid":(measFan>trueFan*0.5?"understated":"MISLEADING");
+    cc.className="v"+(ok?" good":measFan>trueFan*0.5?" warn":" hot");
+  }
+  sp.addEventListener("input",draw);
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 4 : POWER ---------- */
+(function(){
+  var cv=document.getElementById("cv-power");
+  var se=document.getElementById("sl-eff"), sn=document.getElementById("sl-n");
+  // power for a 2x2 interaction: se effectively /2 vs a main effect
+  function power(n,d){
+    var se2=Math.sqrt(4/n);            // SE of a difference-of-differences
+    var z=d/se2 - 1.959964;
+    return normcdf(z);
+  }
+  function needed(d){
+    for(var n=4;n<=400;n++) if(power(n,d)>=0.8) return n;
+    return 400;
+  }
+  function draw(){
+    var f=fit(cv); if(!f) return;
+    var ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var d=parseFloat(se.value), n=parseInt(sn.value,10);
+    var pad=44,pw=w-pad-16,y0=24,ph=h-y0-46;
+    function X(nn){ return pad+((nn-4)/56)*pw; }
+    function Y(p){ return y0+ph-p*ph; }
+    ctx.strokeStyle=C.rule; ctx.strokeRect(pad,y0,pw,ph);
+    label(ctx,"POWER  (chance of detecting a real effect)",pad,12,C["ink-3"],10);
+
+    // 0.8 threshold
+    ctx.strokeStyle=C.signal; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(pad,Y(0.8)); ctx.lineTo(pad+pw,Y(0.8)); ctx.stroke(); ctx.setLineDash([]);
+    label(ctx,"0.80 convention",pad+6,Y(0.8)-10,C.signal,9.5);
+
+    ctx.strokeStyle=C.accent; ctx.lineWidth=2.6; ctx.lineJoin="round"; ctx.beginPath();
+    for(var nn=4;nn<=60;nn++){ if(nn===4)ctx.moveTo(X(nn),Y(power(nn,d))); else ctx.lineTo(X(nn),Y(power(nn,d))); }
+    ctx.stroke();
+
+    var p=power(n,d);
+    ctx.strokeStyle=C.ink; ctx.lineWidth=1.5; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(X(n),y0); ctx.lineTo(X(n),y0+ph); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle=p>=0.8?C.signal:C.accent;
+    ctx.beginPath(); ctx.arc(X(n),Y(p),6,0,6.2832); ctx.fill();
+    ctx.strokeStyle=C.paper; ctx.lineWidth=2; ctx.stroke();
+
+    [10,20,30,40,50,60].forEach(function(t){ label(ctx,t,X(t),y0+ph+14,C["ink-3"],9.5,"center"); });
+    label(ctx,"subjects per group",pad+pw,y0+ph+30,C["ink-3"],9.5,"right");
+    [0,0.5,1].forEach(function(v){ label(ctx,v.toFixed(1),pad-8,Y(v),C["ink-3"],9.5,"right"); });
+
+    var need=needed(d);
+    document.getElementById("ro-n").textContent=n;
+    document.getElementById("ro-pow").textContent=p.toFixed(2);
+    document.getElementById("ro-pow").className="v"+(p>=0.8?" good":" hot");
+    document.getElementById("ro-need").textContent=need>=400?"400+":need;
+    var pv=document.getElementById("ro-pv");
+    pv.textContent=p>=0.8?"adequate":(p>=0.5?"weak":"underpowered");
+    pv.className="v"+(p>=0.8?" good":p>=0.5?" warn":" hot");
+  }
+  [se,sn].forEach(function(e){e.addEventListener("input",draw);});
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+
+/* ---------- FIG 5 : CONFIDENCE BANDS ---------- */
+(function(){
+  var cv=document.getElementById("cv-bands");
+  var sn=document.getElementById("sl-n2"), st=document.getElementById("sl-true");
+  var seedBase=4242;
+  function draw(){
+    var f=fit(cv); if(!f) return;
+    var ctx=f.ctx,w=f.w,h=f.h;
+    ctx.clearRect(0,0,w,h);
+    var n=parseInt(sn.value,10), I=parseFloat(st.value);
+    var showB=document.getElementById("chk-bands").checked;
+    var pad=46,pw=w-pad-18,y0=26,ph=h-y0-52, YMAX=28;
+    function X(t){ return pad+t*pw; }
+    function Y(v){ return y0+ph-(v/YMAX)*ph; }
+    ctx.strokeStyle=C.rule; ctx.strokeRect(pad,y0,pw,ph);
+    label(ctx,"BPM ERROR",pad,14,C["ink-3"],10);
+
+    var LV=6, B=6, G=3, SD=3.2;
+    var ts=[]; for(var k=0;k<LV;k++) ts.push(k/(LV-1));
+    reseed(seedBase);
+    var meanL=[],meanD=[],seL=[],seD=[];
+    ts.forEach(function(t){
+      var sl=0,sd=0,sl2=0,sd2=0;
+      for(var i=0;i<n;i++){
+        var a=2+B*t+SD*gauss(); var b=2+G+B*t+I*t+SD*gauss();
+        sl+=a; sd+=b; sl2+=a*a; sd2+=b*b;
+      }
+      var ml=sl/n, md=sd/n;
+      meanL.push(ml); meanD.push(md);
+      seL.push(Math.sqrt(Math.max(0,sl2/n-ml*ml))/Math.sqrt(n));
+      seD.push(Math.sqrt(Math.max(0,sd2/n-md*md))/Math.sqrt(n));
+    });
+
+    function band(m,s,col){
+      if(!showB) return;
+      ctx.fillStyle=col; ctx.globalAlpha=.16; ctx.beginPath();
+      for(var i=0;i<LV;i++){ var x=X(ts[i]),y=Y(m[i]+1.96*s[i]); if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+      for(var j=LV-1;j>=0;j--){ ctx.lineTo(X(ts[j]),Y(meanOf(m,s,j))); }
+      ctx.closePath(); ctx.fill(); ctx.globalAlpha=1;
+    }
+    function meanOf(m,s,j){ return m[j]-1.96*s[j]; }
+    band(meanL,seL,C.signal); band(meanD,seD,C.accent);
+
+    function line(m,col){
+      ctx.strokeStyle=col; ctx.lineWidth=2.8; ctx.lineJoin="round"; ctx.beginPath();
+      for(var i=0;i<LV;i++){ var x=X(ts[i]),y=Y(m[i]); if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+      ctx.stroke();
+      for(var k2=0;k2<LV;k2++){ ctx.fillStyle=col; ctx.beginPath(); ctx.arc(X(ts[k2]),Y(m[k2]),4,0,6.2832); ctx.fill(); }
+    }
+    line(meanL,C.signal); line(meanD,C.accent);
+    label(ctx,"lighter skin",X(0.03),Y(meanL[0])-14,C.signal,11);
+    label(ctx,"darker skin",X(0.03),Y(meanD[0])-14,C.accent,11);
+    label(ctx,"high bitrate",pad,y0+ph+16,C["ink-3"],10);
+    label(ctx,"low bitrate",pad+pw,y0+ph+16,C["ink-3"],10,"right");
+
+    var gapHi=meanD[0]-meanL[0], gapLo=meanD[LV-1]-meanL[LV-1];
+    var b3=gapLo-gapHi;
+    var seB3=Math.sqrt(seL[0]*seL[0]+seD[0]*seD[0]+seL[LV-1]*seL[LV-1]+seD[LV-1]*seD[LV-1]);
+    var lo=b3-1.96*seB3, hi=b3+1.96*seB3;
+    var inc=(lo<=0&&hi>=0);
+    document.getElementById("ro-b3").textContent=b3.toFixed(1);
+    document.getElementById("ro-ci").textContent="["+lo.toFixed(1)+", "+hi.toFixed(1)+"]";
+    var z=document.getElementById("ro-zero");
+    z.textContent=inc?"YES":"no";
+    z.className="v"+(inc?" hot":" good");
+    var can=document.getElementById("ro-can");
+    can.textContent=inc?"no":"yes";
+    can.className="v"+(inc?" hot":" good");
+  }
+  [sn,st].forEach(function(e){e.addEventListener("input",draw);});
+  document.getElementById("chk-bands").addEventListener("change",draw);
+  document.getElementById("btn-resample").addEventListener("click",function(){
+    seedBase=Math.floor(Math.random()*1e6); draw();
+  });
+  redraws.push(draw); window.addEventListener("resize",draw); draw();
+})();
+</script>
+
+<script>
+(function(){
+  var BN = {"0": "আপনার প্রজেক্ট আর কেবল একটা বানানো সিস্টেম নেই, এটা এখন একটা প্রশ্নের উত্তর। সেই উত্তরটা এমনভাবে দিতে হবে যাতে একজন reviewer বিশ্বাস করেন।", "1": "কী বদলে গেল", "2": "এতদিন প্রজেক্টটা ছিল: একটা signal-quality-adaptive fusion সিস্টেম বানানো, যাচাই করা, দেখানো যে কাজ করে। কোর্স প্রজেক্ট হিসেবে এটা ভালো।", "3": "Literature search লক্ষ্যটা বদলে দিয়েছে। আপনি যে পাঁচটা দাবি করার পরিকল্পনা করেছিলেন, তার চারটাই ইতিমধ্যে প্রকাশিত, কয়েকটা তো গত এক বছরের মধ্যেই। যা এখনো খোলা আছে সেটা কোনো সিস্টেম না। সেটা <strong>এমন একটা প্রশ্ন যা কেউ মাপেনি</strong>:", "4": "Video compression কি rPPG-তে গায়ের রঙজনিত নির্ভুলতার ফারাকটা <strong>আরও বাড়িয়ে দেয়</strong>?", "5": "দুইটা অংশই আলাদাভাবে জানা। গাঢ় ত্বক দুর্বল পালস সিগন্যাল দেয়, কারণ melanin বেশি আলো শোষণ করে। Compression দুর্বল রঙের বিস্তারিত নষ্ট করে। কিন্তু দ্বিতীয়টা প্রথমটাকে আরও খারাপ করে কিনা, সেটা কেউ জিজ্ঞেস করেনি।", "6": "এতে আপনার লক্ষ্য বদলে যায়। আপনি আর systems paper লিখছেন না। আপনি লিখছেন একটা <strong>measurement paper</strong>, আর measurement paper বাঁচে বা মরে experimental design-এর উপর, engineering-এর উপর না।", "7": "তাই এই tier সিগন্যাল নিয়ে না, design আর প্রমাণ নিয়ে। আপনার TRACE pipeline ঠিক আগের পরিকল্পনামতোই বানানো হবে। শুধু সেটা এখন আবিষ্কার না হয়ে যন্ত্র হয়ে যাচ্ছে।", "8": "একটা <strong>measurement paper</strong> নতুন কোনো পদ্ধতি প্রস্তাব করে না। এটা এমন কিছু যত্ন করে মাপে যা আগে কেউ মাপেনি, আর সংখ্যাটা সৎভাবে জানায়। যেকোনো ক্ষেত্রের সবচেয়ে বেশি উদ্ধৃত পেপারগুলোর অনেকগুলোই এই ধরনের। আর poster-এর জন্য এটাই ঠিক মাপের।", "9": "যে ধারণার উপর সবকিছু দাঁড়িয়ে", "10": "Main effect, আর কেন সেগুলো <em>যথেষ্ট না</em>", "11": "ধরুন আপনি পরীক্ষাটা চালালেন আর দুইটা ফলাফল জানালেন:", "12": "কম bitrate নির্ভুলতা খারাপ করে। <em>(compression-এর প্রভাব)</em>", "13": "গাঢ় ত্বক নির্ভুলতা খারাপ করে। <em>(গায়ের রঙের প্রভাব)</em>", "14": "দুইটাই সত্য। দুইটাই ইতিমধ্যে প্রকাশিত। এগুলো জানালে নতুন কিছু যোগ হয় না, আর reviewer সেটা বলেও দেবেন।", "15": "এই দুইটাকে বলে <strong>main effect</strong>: প্রতিটা factor একা কী করে, অন্যটার উপর গড় করে। আপনার দাবি এদের কোনোটা নিয়েই না। আপনার দাবি তৃতীয় একটা জিনিস নিয়ে:", "16": "<strong>Interaction</strong> হলো যখন একটা factor-এর প্রভাব <em>অন্য factor-এর মাত্রার উপর নির্ভর করে।</em> Compression হালকা ত্বকের চেয়ে গাঢ় ত্বকের <strong>বেশি</strong> ক্ষতি করা একটা interaction, আর এটা দুইটা main effect থেকে আলাদা একটা দাবি।", "17": "চোখে দেখার পরীক্ষাটা এক লাইনে বলা যায়, আর এই কারণেই এই পেজের নাম এটা:", "18": "<strong>সমান্তরাল রেখা</strong> → কোনো interaction নেই। Compression সবার সমান ক্ষতি করে। ফারাকটা স্থির।", "19": "<strong>ছড়িয়ে যাওয়া রেখা</strong> → interaction আছে। Compression এক দলের বেশি ক্ষতি করে। ফারাকটা বাড়ে।", "20": "নিচের স্লাইডারগুলো ততক্ষণ টানুন যতক্ষণ না এটা স্বাভাবিক মনে হয়। Interaction শূন্যে রাখুন, তারপর দুইটা main effect যত বড়ই করুন, রেখা দুইটা সমান্তরালই থাকবে। এটাই মূল কথা।", "21": "Main effect বনাম interaction &mdash; সমান্তরাল না ছড়ানো", "22": "দুইটা দল: <span style=\"color:var(--signal);font-weight:600\">হালকা ত্বক</span> আর <span style=\"color:var(--accent);font-weight:600\">গাঢ় ত্বক</span>। <strong>Interaction শূন্যে রেখে bitrate effect সর্বোচ্চে নিন।</strong> দুইটা রেখাই খাড়াভাবে ওঠে, দুইটা main effect-ই বিশাল, অথচ তাদের মধ্যেকার উল্লম্ব ফারাক কখনো বদলায় না। এই ফলাফল আপনি প্রকাশ করতে পারবেন না। এবার interaction বাড়ান আর দেখুন bitrate কমার সাথে ফারাকটা চওড়া হচ্ছে।", "23": "এটা শোনার চেয়ে বেশি গুরুত্বপূর্ণ কেন", "24": "পরীক্ষা চালিয়ে, bitrate কমার সাথে দুইটা রেখাই উঠতে দেখে ভাবা সহজ যে আপনি কিছু পেয়েছেন। পাননি। আপনি আগে থেকেই জানা দুইটা জিনিস পেয়েছেন।", "25": "আপনাকে যে সংখ্যাটা বের করতে, জানাতে আর রক্ষা করতে হবে সেটা হলো <strong>ছড়ানোর পরিমাণ</strong>: কম bitrate-এ ফারাকটা বেশি bitrate-এর তুলনায় কতটা বড়। ওই একটা রাশিই আপনার অবদান।", "26": "মডেলটা, এক লাইনে", "27": "পরিসংখ্যানবিদরা এই একই ধারণা সমীকরণ দিয়ে লেখেন। দেখতে যত ভয়ংকর, আসলে তত না, আর abstract-এ আপনার এটা লাগবে।", "28": "শেষ পদটা দুই factor-এর গুণফল, যেটাই আসলে \"অন্যটার মাত্রার উপর নির্ভর করে\" কথাটার গাণিতিক রূপ। <span class=\"m\">β₃</span> শূন্য হলে রেখা সমান্তরাল। শূন্য না হলে ছড়িয়ে যায়।", "29": "তাহলে আপনার poster-এর প্রধান ফলাফল তিনটা সংখ্যায় নেমে আসে:", "30": "<strong>β₃-এর মান</strong> &mdash; ছড়ানোটা কত বড়।", "31": "<strong>β₃-এর উপর একটা confidence interval</strong> &mdash; আপনি কতটা নিশ্চিত।", "32": "<strong>ওই interval-এ শূন্য আছে কিনা</strong> &mdash; থাকলে আপনি দাবি করতে পারবেন না যে প্রভাবটা আছে।", "33": "Python-এ এটা কয়েক লাইনের কাজ। <span class=\"m\">statsmodels</span> মডেলটা fit করে তিনটাই আপনাকে দিয়ে দেবে, আর এর formula লেখার ধরন সমীকরণটার প্রায় হুবহু নকল।", "34": "একটা <strong>confidence interval</strong> হলো সেই পরিসর যার ভেতরে আপনার আসল মানটা সম্ভবত আছে। \"ফারাক বেড়েছে ৪.১ BPM, 95% CI [1.8, 6.4]\" মানে: সবচেয়ে ভালো অনুমান ৪.১, আর ১.৮ থেকে ৬.৪ পর্যন্ত সব মানই সম্ভব। যেহেতু ওই পরিসরে শূন্য নেই, আপনি বলতে পারেন প্রভাবটা আছে। যদি লেখা থাকত [-0.9, 6.2], তাহলে শূন্যও সম্ভব, আর আপনি বলতে পারতেন না।", "35": "নকশা করা", "36": "প্রতিটা ঘর <em>পূরণ</em> হতে হবে", "37": "Interaction তখনই মাপা যায় যখন আপনি প্রতিটা সমন্বয় পর্যবেক্ষণ করেন। একটা ঘর বাদ পড়লে পদটা আর হিসাব করা যায় না, যার সহজ মানে হলো বিশ্লেষণটা চলবেই না।", "38": "আপনার গ্রিডের তিনটা মাত্রা:", "39": "অর্থাৎ ২ × ৬ × ৫ = <strong>৬০টা ঘর</strong>, প্রতিটাতে কয়েকজন করে অংশগ্রহণকারী লাগবে। নিচে ঘেঁটে দেখুন চাহিদাটা কত দ্রুত বাড়ে।", "40": "পরীক্ষার গ্রিড &mdash; আসলে আপনাকে যা চালাতে হবে", "41": "প্রতিটা ঘরে ডেটা থাকতে হবে। সুখবর হলো harness একবার তৈরি হয়ে গেলে এটা <strong>পুরোপুরি স্বয়ংক্রিয়</strong>: একই অংশগ্রহণকারীরা প্রতিটা bitrate-এর ভেতর দিয়ে যান, তাই আপনি একবার রেকর্ড করে বহুবার re-encode করেন। খরচের অক্ষটা অংশগ্রহণকারী, চালানো না।", "42": "বিভিন্ন bitrate-এ বিভিন্ন মানুষ রেকর্ড করবেন না। <em>একই</em> রেকর্ডিং প্রতিটা compression স্তরের ভেতর দিয়ে পাঠান, যাতে প্রতিটা মানুষ নিজেই নিজের control হয়। এতে তুলনা থেকে ব্যক্তিভেদে পার্থক্য পুরোপুরি সরে যায় আর অনেক ছোট নমুনাই যথেষ্ট হয়। একে বলে within-subject design, আর এখানে এটাই আপনার সবচেয়ে বড় সুবিধা।", "43": "আপনার উৎস ভিডিও <em>পরিষ্কার</em> হতে হবে", "44": "পুরো গবেষণাটা ব্যর্থ হওয়ার সবচেয়ে সম্ভাব্য উপায় এটাই, তাই এর জন্য আলাদা অংশ।", "45": "আপনার উৎস ভিডিও যদি <strong>আগে থেকেই compress করা</strong> হয়, তাহলে আপনার \"উচ্চ bitrate\" অবস্থাটা পরিষ্কার baseline না। সেটা আগে থেকেই ক্ষতিগ্রস্ত। সেটাকে আবার encode করলে প্রথম ক্ষতির উপর দ্বিতীয় দফা ক্ষতি বসে, আর পরে এই দুইটাকে আলাদা করা যায় না।", "46": "এটা এখনই গুরুত্বপূর্ণ, কারণ <strong>গায়ের রঙের জন্য সবচেয়ে সুস্পষ্ট dataset MMPD ৩২০&times;২৪০-তে compress করা অবস্থায় আসে</strong>। এটা আপনার প্রধান উৎস হতে পারে না।", "47": "Confound &mdash; আগে থেকে compress করা উৎস আপনার রেখার কী করে", "48": "ছেঁড়া রেখাগুলো সত্য; নিরেট রেখাগুলো আপনি যা মাপবেন। উৎস যত বেশি আগে থেকে compress করা, রেখাগুলো তত <strong>চ্যাপ্টা হয়ে একে অপরের দিকে চেপে আসে</strong>, কারণ ক্ষতিটা আপনার পরীক্ষা শুরুর আগেই হয়ে গেছে। আপনি বাস্তবের চেয়ে ছোট ছড়ানো মাপবেন, আর প্রভাব থাকা সত্ত্বেও উপসংহার টানতে পারেন যে কোনো প্রভাব নেই।", "49": "তাহলে কী ব্যবহার করবেন", "50": "<strong>VitalVideo</strong> &mdash; ছয়টা Fitzpatrick ধরন জুড়ে ৮৯৩ জন অংশগ্রহণকারী। আগে access-এর শর্ত আর উৎসের মান নিশ্চিত করুন; পরিষ্কার হলে এটাই সবচেয়ে শক্তিশালী বিকল্প।", "51": "<strong>নিজেদের রেকর্ডিং</strong> &mdash; ঢাকায় Fitzpatrick IV থেকে V অংশগ্রহণকারী জোগাড় করা আপনার জন্য বেশিরভাগ ল্যাবের চেয়ে সত্যিই সহজ, আর একটা pulse oximeter-এর দাম খুবই কম। সম্মতি আর একটা ethics statement লাগবে।", "52": "<strong>UBFC-rPPG</strong> &mdash; uncompressed আর বিনামূল্যে, কিন্তু গাঢ় ত্বকের অংশগ্রহণকারী মোটামুটি ৫ শতাংশ, তাই গায়ের রঙের অক্ষটা এটা একা বইতে পারবে না। পরিষ্কার control হিসেবে কাজে লাগে।", "53": "আপনি যাই বাছুন, <strong>poster-এ উৎসের codec আর bitrate লিখে দিন।</strong> এই ক্ষেত্র চেনেন এমন reviewer এটা খুঁজবেন, আর না থাকলে সেটা অসাবধানতা মনে হবে।", "54": "ফলাফলে বিশ্বাস করা", "55": "Interaction-এর জন্য main effect-এর চেয়ে <em>বেশি</em> ডেটা লাগে", "56": "এখানে একটা অস্বস্তিকর নিয়ম আছে যা অনেক প্রথম গবেষণাকে ধরে ফেলে:", "57": "একটা interaction নির্ভরযোগ্যভাবে ধরতে একই মাপের main effect ধরার চেয়ে মোটামুটি <strong>চার গুণ</strong> বেশি অংশগ্রহণকারী লাগে।", "58": "কারণটা একবার দেখলেই বোঝা যায়। Main effect হলো দুইটা গড়ের পার্থক্য। Interaction হলো <em>দুইটা পার্থক্যের মধ্যেকার পার্থক্য</em>, তাই এটা দুইটার বদলে চারটা দল থেকে অনিশ্চয়তা জমা করে। ভেতরে বেশি অনিশ্চয়তা ঢুকলে সেটা ভেদ করে দেখতে বেশি ডেটা লাগে।", "59": "এই কারণেই আপনাকে নমুনার আকার ঠিক করতে হবে ডেটা সংগ্রহের <strong>আগে</strong>, পরে না। কম-ক্ষমতার গবেষণা চালিয়ে কিছু না পাওয়া আপনাকে কিছুই বলে না: \"কোনো প্রভাব নেই\" আর \"আমার গবেষণা এত ছোট ছিল যে দেখতে পাইনি\" এই দুইটা আপনি আলাদা করতে পারবেন না।", "60": "কতজন অংশগ্রহণকারী &mdash; আর কতবার আপনি প্রভাবটা খুঁজে পেতেন", "61": "<strong>Power</strong> হলো প্রভাবটা সত্যিই থাকলে আপনার গবেষণা সেটা খুঁজে পাওয়ার সম্ভাবনা। প্রচলিত মান ০.৮০। এর নিচে আপনি সত্যিকারের কিছু মিস করার সম্ভাবনাই বেশি। খেয়াল করুন প্রভাব ছোট হলে চাহিদাটা কত খাড়াভাবে বাড়ে &mdash; এই কারণেই নমুনার আকার আন্দাজে ঠিক করা বিপজ্জনক।", "62": "ওই ছড়ানোটা কি <em>আসল</em>, নাকি noise?", "63": "আপনি আপনার প্লট পাবেন। দুইটা রেখা কিছুটা আলাদা হবে। প্রশ্ন হলো আপনি কি একটা আবিষ্কার দেখছেন নাকি এলোমেলোতা, আর চোখ এই ব্যাপারে অনির্ভরযোগ্য বিচারক।", "64": "সৎভাবে দেখানোর উপায় হলো প্রতিটা রেখার চারপাশে <strong>confidence band</strong> দেওয়া। Band-গুলো যদি সব জায়গায় একে অপরকে ছুঁয়ে থাকে, তাহলে আপনি যে পার্থক্য দেখছেন বলে ভাবছেন সেটার সমর্থন নেই। কম bitrate-এ যদি তারা আলাদা হয়ে যায়, তাহলে আপনার হাতে কিছু আছে।", "65": "নিচে অনুকরণ করা ডেটা। নমুনার আকার বদলান আর দেখুন একই অন্তর্নিহিত সত্যের চারপাশে band-গুলো কেমন সরু হয়ে আসে।", "66": "Confidence band &mdash; একই সত্য, ভিন্ন পরিমাণ প্রমাণ", "67": "প্রতি দলে ৪ জন রেখে বারবার <strong>New sample</strong> চাপুন। অনুমানটা এলোমেলোভাবে লাফায় আর interval কখনো শূন্য ধরে, কখনো ধরে না &mdash; একই অন্তর্নিহিত সত্যের উপরে। এবার ৪০-এ নিয়ে আবার চাপুন। <strong>ওই স্থিরতাটাই নমুনার আকার আপনাকে কিনে দেয়</strong>, আর এই কারণেই সংখ্যাটা সংগ্রহের পরে না, আগে ঠিক করতে হয়।", "68": "প্রভাব সত্যিই শূন্য হলেও ছোট নমুনা মাঝে মাঝে এমন interval দেবে যাতে শূন্য নেই, আর দেখতে আবিষ্কারের মতোই লাগবে। এটাকে বলে false positive, আর এই কারণেই আপনি আগে থেকে একটা বিশ্লেষণে অঙ্গীকার করবেন, কয়েকটা চেষ্টা করে যেটা কাজে লেগেছে সেটা জানাবেন না। ডেটা দেখার পরে বিশ্লেষণ ঠিক করাটাই সৎ মানুষদের ভুল ফলাফল তৈরির সবচেয়ে প্রচলিত উপায়।", "69": "নেতিবাচক ফলাফলও একটা <em>ফলাফল</em>", "70": "রেখাগুলো সমান্তরালও আসতে পারে। Compression হয়তো সব গায়ের রঙের সমান ক্ষতি করে। এখনই এর জন্য প্রস্তুত থাকুন, কারণ আপনি এতে কীভাবে সাড়া দেন সেটাই ঠিক করবে আপনার poster থাকবে নাকি কিছুই থাকবে না।", "71": "এখানে একটা পরিষ্কার নেতিবাচক ফলাফল সত্যিই জানানোর মতো, তিনটা কারণে:", "72": "এটা <strong>একটা যুক্তিসঙ্গত প্রত্যাশাকে ভুল প্রমাণ করে</strong>। কার্যপ্রণালী বলছে বাড়ার কথা; না বাড়াটা দেখানো তথ্যপূর্ণ।", "73": "এর <strong>ব্যবহারিক ফলাফল আছে</strong>। এর মানে হবে telehealth-এ bandwidth নীতি কোনো সমতার প্রশ্ন না, যেটা কেউ উল্টোটা ধরে নেওয়ার আগে জানা দরকার।", "74": "কেউ কোনো দিক থেকেই এটা মাপেনি, তাই <strong>যেকোনো উত্তরই নতুন।</strong>", "75": "রক্ষাকবচ হলো abstract এমনভাবে লেখা যাতে দুইটা ফলাফলই জানানো যায়। অবদানটা <em>\"আমরা মাপি যে...\"</em> ভাষায় লিখুন, <em>\"আমরা দেখাই যে...\"</em> ভাষায় না। তাহলে নিজের ডেটাই আপনাকে বেকায়দায় ফেলতে পারবে না।", "76": "যে গবেষণা এমনভাবে সাজানো যে শুধু একটা ফলাফলই প্রকাশযোগ্য, সেই গবেষণা ওই ফলাফলটা পাওয়ার চাপে থাকে। <strong>দুইটা উত্তরের জন্যই নকশা করুন, তাহলে আপনার ফলাফল এমনভাবে বিশ্বাসযোগ্য হবে যা শুধু-ইতিবাচক নকশায় কখনো হয় না।</strong>", "77": "Tier 6-এর শব্দগুলো, সহজ ভাষায়", "79": "একটা factor একা কী করে, অন্যটার উপর গড় করে। আপনার দুইটাই ইতিমধ্যে প্রকাশিত।", "81": "যখন একটা factor-এর প্রভাব অন্যটার মাত্রার উপর নির্ভর করে। সমান্তরাল রেখা মানে নেই; ছড়ানো রেখা মানে আছে।", "83": "আপনি ইচ্ছা করে যে input বদলান। আপনারগুলো হলো bitrate, গায়ের রঙের দল, আর পদ্ধতি।", "85": "একটা factor-এর একটা নির্দিষ্ট মান। ৫০০ kbps হলো bitrate factor-এর একটা level।", "87": "সব factor জুড়ে মাত্রাগুলোর একটা সমন্বয়। প্রতিটা ঘরে ডেটা লাগবে, নইলে interaction হিসাব করা যায় না।", "89": "সেই পরিষ্কার, অক্ষত baseline যার সাথে আপনি সবকিছু তুলনা করেন। এখানে, lossless উৎস ভিডিও।", "91": "এমন কিছু যা আপনার factor-এর সাথে সাথে বদলায় আর ফলাফলটা এর কারণেও হতে পারত। আগে থেকে compress করা উৎস আপনারটা।", "93": "একই মানুষ প্রতিটা মাত্রায় থাকেন, নিজেই নিজের control হিসেবে। ব্যক্তিভেদে পার্থক্য সরিয়ে দেয় আর দরকারি নমুনা ছোট করে।", "95": "একটা পার্থক্য তার চারপাশের noise-এর তুলনায় কত বড়। বড় প্রভাবে কম অংশগ্রহণকারী লাগে।", "97": "সত্যিকারের প্রভাব আপনার গবেষণার খুঁজে পাওয়ার সম্ভাবনা। প্রচলিত মান ০.৮০। এর নিচে, প্রমাণ না পাওয়ার মানে খুব সামান্যই।", "99": "আপনি যে প্রভাব খুঁজছেন সেটা ধরার পক্ষে খুব ছোট। তখন কিছু না পাওয়া আপনাকে কিছুই বলে না।", "101": "আসল মানের সম্ভাব্য পরিসর। এতে শূন্য থাকলে আপনি দাবি করতে পারবেন না যে প্রভাবটা আছে।", "103": "Interaction-এর সহগ। ছড়ানোর পরিমাণ। আপনার পুরো অবদান এই একটা সংখ্যা আর এর interval-এ নেমে আসে।", "105": "দুইটা factor আর তাদের interaction-এর জন্য প্রমিত পরীক্ষা। statsmodels দিয়ে কয়েক লাইনে fit করুন।", "107": "প্রভাব না থাকা সত্ত্বেও আছে বলে উপসংহার টানা। ছোট নমুনা আর ডেটা দেখার পরে বাছা বিশ্লেষণ, দুইটাই এর সম্ভাবনা বাড়ায়।", "109": "যে পেপারের অবদান নতুন পদ্ধতি না, বরং একটা যত্নবান পরিমাপ। Poster-এর জন্য ঠিক মাপের।", "110": "নিজেকে যাচাই করুন", "111": "Bitrate কমার সাথে আপনার প্লটে দুইটা রেখাই খাড়াভাবে উঠছে। আপনি কি আপনার প্রভাবটা পেয়েছেন?", "112": "এখনো না। দুইটা রেখা ওঠা মানে compression-এর <em>main effect</em>, যা ইতিমধ্যে প্রকাশিত, আর একটা রেখা যদি পুরোটা জুড়ে অন্যটার উপরে থাকে তাহলে সাথে গায়ের রঙের main effect।", "113": "আপনার আবিষ্কারের জন্য দরকার রেখা দুইটার মধ্যেকার উল্লম্ব ফারাক <strong>বেশি bitrate-এর তুলনায় কম bitrate-এ বড় হওয়া</strong>। ওই পার্থক্যটা মাপুন, তার উপর একটা confidence interval দিন, আর দেখুন interval-টা শূন্য বাদ দেয় কিনা। শুধু রেখা ওঠা কোনো ফলাফল না।", "114": "MMPD-কে প্রধান dataset হিসেবে কেন ব্যবহার করা যাবে না?", "115": "কারণ এর ভিডিওগুলো আগে থেকেই ৩২০&times;২৪০-তে compress করা অবস্থায় আসে। আপনার উচ্চ-bitrate অবস্থাটা পরিষ্কার baseline হতো না, তাই আপনি compression-এর উপর compression মাপতেন আর পরে দুইটাকে আলাদা করার কোনো উপায় থাকত না।", "116": "Figure 3 ফলটা দেখায়: মাপা ছড়ানোটা আসলটার চেয়ে ছোট আসে, তাই প্রভাব থাকা সত্ত্বেও আপনি বলতে পারেন নেই। উৎস পরিষ্কার হলে VitalVideo ব্যবহার করুন, নয়তো নিজেরা রেকর্ড করুন।", "117": "আপনার প্রতি দলে ৬ জন আছে আর আপনি কিছুই পাননি। আপনি কী উপসংহার টানতে পারেন?", "118": "প্রায় কিছুই না, আর এটাই গুরুত্বপূর্ণ অংশ। ওই আকারে একটা মাঝারি interaction ধরার আপনার power ০.৫০-এর অনেক নিচে, তাই সত্যিকারের প্রভাব খুঁজে পাওয়ার চেয়ে মিস করার সম্ভাবনাই বেশি ছিল।", "119": "ওই ডেটা থেকে \"আমরা কোনো প্রভাব পাইনি\" আর \"আমাদের গবেষণা দেখার পক্ষে খুব ছোট ছিল\" আলাদা করা যায় না। সংগ্রহের <em>আগে</em> দরকারি নমুনার আকার হিসাব করুন, আর সেখানে পৌঁছাতে না পারলে আপনার যতটুকু power ছিল সেটা জানিয়ে দিন যাতে পাঠক নিজে বিচার করতে পারেন।", "120": "আপনার interval এসেছে [-0.4, 7.8]। অনুমান ৩.৭। আপনি কি প্রভাবটা দাবি করতে পারেন?", "121": "না। Interval-এ শূন্য আছে, তাই আপনার ডেটা অনুযায়ী কোনো প্রভাব না থাকাও সম্ভব, ৩.৭ যতই আশাব্যঞ্জক দেখাক।", "122": "আপনি সৎভাবে যা লিখতে পারেন তা হলো, আপনার অনুমান বৃদ্ধির দিকে ইঙ্গিত করে কিন্তু গবেষণাটা সেটা নিষ্পত্তি করতে পারেনি, আর interval-টা খোলাখুলি জানান। এটা একটা বৈধ poster। Interval চুপচাপ বাদ দিয়ে শুধু ৩.৭ জানানো বৈধ না।", "123": "এরপর কী হবে", "124": "এখন আপনার হাতে পুরো ছবিটা আছে। Tier 0 থেকে 4 আপনাকে সেই pipeline দেয় যা একটা হার্ট রেট তৈরি করে। Tier 5 দেয় সেই পরিসংখ্যান যা প্রমাণ করে সেটা ঠিক। এই tier দেয় সেই পরীক্ষামূলক নকশা যা ওগুলোকে এমন একটা দাবিতে বদলে দেয় যা আগে কেউ করেনি।", "125": "তাৎক্ষণিক কাজগুলো, ক্রম অনুসারে: native ACM আর IEEE search দিয়ে ফাঁকটা নিশ্চিত করুন, VitalVideo-র access আর উৎসের মান নিশ্চিত করুন, তারপর ঠিক মূল পরিকল্পনামতোই pipeline বানান। Signal processing-এর কিছুই বদলায়নি। শুধু আপনি সেটা কোন দিকে তাক করছেন, আর উত্তরের কাছে কী চাইছেন।", "126": "<strong>Effect size</strong> মানে ডেটা কতটা noisy তার তুলনায় পার্থক্যটা কত বড়। পরিষ্কার ডেটায় বড় প্রভাব অল্প অংশগ্রহণকারী দিয়েই দেখা যায়। Noisy ডেটায় ছোট প্রভাবের জন্য অনেক লাগে। Section 03-এর আপনার within-subject নকশা noise অনেকটা কমিয়ে দেয়, আর ঠিক এই কারণেই কম মানুষ নিয়েও আপনি কাজ চালাতে পারেন।"};
+  var EN = {};
+  var nodes = document.querySelectorAll("[data-t]");
+  nodes.forEach(function(el){ EN[el.getAttribute("data-t")] = el.innerHTML; });
+  var btn = document.getElementById("langbtn");
+  function apply(l){
+    document.documentElement.setAttribute("data-lang", l);
+    nodes.forEach(function(el){
+      var k = el.getAttribute("data-t");
+      var v = (l === "bn" && BN[k]) ? BN[k] : EN[k];
+      if (el.innerHTML !== v) el.innerHTML = v;
+    });
+    btn.textContent = (l === "bn") ? "English" : "বাংলা";
+    try { localStorage.setItem("lessonLang", l); } catch(e){}
+    if (typeof redrawAll === "function") { try { redrawAll(); } catch(e){} }
+  }
+  var saved = "en";
+  try { saved = localStorage.getItem("lessonLang") || "en"; } catch(e){}
+  apply(saved);
+  btn.addEventListener("click", function(){
+    apply(document.documentElement.getAttribute("data-lang") === "bn" ? "en" : "bn");
+  });
+  window.addEventListener("resize", function(){
+    if (typeof redrawAll === "function") { try { redrawAll(); } catch(e){} }
+  });
+})();
+</script>
+
