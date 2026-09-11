@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TRACE-rPPG poster</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;600;700&family=Archivo:wght@400;500;600;700&display=swap">
+<style>
+@page { size: 594mm 841mm; margin: 0; }
+:root {
+  --paper: #FAF7F8; --paper-2: #F2EDEF; --ink: #1F1720; --ink-2: #5A4E58; --ink-3: #8C7F88;
+  --rule: #E0D6DB; --pulse: #B01B3F; --pulse-soft: #F7DEE5; --good: #10796B; --good-soft: #DBEFEA;
+  --warn: #9C5A12; --warn-soft: #F7E8D4;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); }
+body { width: 594mm; height: 841mm; padding: 18mm 22mm 14mm; font: 15pt/1.42 "Archivo", "Segoe UI", sans-serif;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact; display: flex; flex-direction: column; gap: 6.5mm; overflow: hidden; }
+.compact p { margin-bottom: 2mm; }
+h1, h2, h3 { font-family: "Spectral", Georgia, serif; margin: 0; line-height: 1.1; }
+p { margin: 0 0 3mm; }
+header { display: grid; grid-template-columns: 1fr auto; gap: 12mm; align-items: end; border-bottom: 1.2mm solid var(--ink); padding-bottom: 7mm; }
+header h1 { font-size: 56pt; font-weight: 700; letter-spacing: -0.02em; max-width: 19ch; }
+header .who { font-size: 17pt; color: var(--ink-2); margin-top: 5mm; }
+header .venue { text-align: right; font-size: 15pt; color: var(--ink-2); }
+header .venue b { display: block; font-family: "Spectral", serif; font-size: 34pt; color: var(--pulse); }
+.finding { font-family: "Spectral", Georgia, serif; font-size: 26pt; line-height: 1.25; font-weight: 600; max-width: 40ch; }
+.banner { background: var(--warn-soft); border-left: 2.5mm solid var(--warn); padding: 4mm 6mm; font-size: 16pt; }
+.banner b { color: var(--warn); }
+.row { display: grid; gap: 10mm; }
+.r3 { grid-template-columns: 1fr 1fr 1fr; }
+.r2 { grid-template-columns: 1.35fr 1fr; }
+.r2b { grid-template-columns: 1fr 1fr; }
+section h2 { font-size: 27pt; margin-bottom: 3.5mm; }
+section h2 small { font-family: "Archivo", sans-serif; font-size: 14pt; font-weight: 500; color: var(--ink-3); margin-left: 3mm; }
+.big { font-family: "Spectral", serif; font-size: 22pt; line-height: 1.35; }
+figure { margin: 0; }
+figure img { width: 100%; display: block; border: 0.4mm solid var(--rule); border-radius: 2mm; background: #FCFCFB; }
+figcaption { font-size: 12.5pt; color: var(--ink-2); margin-top: 2mm; }
+.verdict { background: var(--pulse-soft); border-radius: 2mm; padding: 5mm 6mm; font-size: 16.5pt; margin-top: 4mm; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; margin: 3mm 0 4mm; }
+.stats div { border-top: 0.8mm solid var(--ink); padding-top: 2mm; }
+.stats b { display: block; font-family: "Spectral", serif; font-size: 27pt; line-height: 1; }
+.stats span { font-size: 12.5pt; color: var(--ink-2); }
+.pipe { display: flex; flex-wrap: wrap; gap: 2.5mm; margin-top: 2mm; }
+.pipe div { flex: 1 1 30mm; border: 0.4mm solid var(--rule); border-radius: 1.5mm; padding: 2.5mm 3mm; font-size: 12.5pt; background: var(--paper-2); }
+.pipe div i { display: block; font-style: normal; font-size: 10.5pt; color: var(--ink-3); margin-top: 1mm; }
+.pipe .conv { background: var(--good-soft); border-color: var(--good); }
+.pipe .ft { background: var(--pulse-soft); border-color: var(--pulse); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5pt; font-variant-numeric: tabular-nums; }
+th, td { padding: 1.6mm 2.5mm; border-bottom: 0.3mm solid var(--rule); text-align: right; }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--ink-2); font-weight: 600; }
+ul { margin: 0; padding-left: 6mm; }
+li { margin-bottom: 1.8mm; }
+footer { margin-top: auto; display: grid; grid-template-columns: 1fr auto; gap: 10mm; font-size: 11pt; color: var(--ink-2); border-top: 0.4mm solid var(--rule); padding-top: 4mm; }
+.qr { width: 34mm; height: 34mm; border: 0.5mm dashed var(--ink-3); display: grid; place-items: center; text-align: center; font-size: 10pt; color: var(--ink-3); }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Does video compression widen the skin-tone gap in camera heart-rate sensing?</h1>
+    <div class="who">[Author names] &nbsp;|&nbsp; [Department, University, Dhaka, Bangladesh] &nbsp;|&nbsp; github.com/ahammadshawki8/TRACE-rPPG</div>
+  </div>
+  <div class="venue"><b>NSysS 2026</b>Poster track</div>
+</header>
+
+<div class="finding">{{HEADLINE}}</div>
+<div class="banner"><b>Simulated pilot.</b> {{SOURCE_NOTE}} The same code runs unchanged on recorded participants; that collection is the next step.</div>
+
+<div class="row r3">
+  <section>
+    <h2>The question</h2>
+    <p class="big">Remote photoplethysmography (rPPG) reads the pulse from the tiny colour change that each heartbeat causes in the face. It is known to be less accurate on darker skin, and separately known to degrade under video compression.</p>
+    <p class="big"><b>Nobody has measured the interaction.</b></p>
+  </section>
+  <section>
+    <h2>Why a systems venue</h2>
+    <p>Bitrate is a network decision. If a weaker pulse (more melanin) crosses the codec's noise floor at a higher bitrate, the populations already disadvantaged by the physics are also those hit hardest by constrained connections, and the two effects compound.</p>
+    <p>In Bangladesh the dominant skin tones sit in the affected range, and low-bandwidth telehealth is routine.</p>
+  </section>
+  <section>
+    <h2>The gap</h2>
+    <p>An OpenAlex search found 2,023 rPPG papers: 51 on compression, 121 on skin tone, 3 mentioning both, and none measuring their interaction.</p>
+    <p style="color:var(--ink-2)">"Several major phenomena affecting rPPG signals have been studied (e.g. video compression, distance from person to camera, skin tone, head motions)." Rarely Considered Factors, CVPRW 2020.</p>
+  </section>
+</div>
+
+<div class="row r2">
+  <section>
+    <h2>Result <small>MAE vs H.264 bitrate, {{N_PER_GROUP}} volunteers per group</small></h2>
+    <figure><img src="figures/fan_h264.png" alt="MAE against bitrate for each method, lighter and darker skin"></figure>
+    <div class="verdict">{{VERDICT_POS}}</div>
+  </section>
+  <section>
+    <h2>Why the curves meet</h2>
+    <p>Mean error cannot widen once one group is already failing. The share of windows within 5 BPM shows it: for POS, {{W5_POS_LL_LIGHT}} lighter vs {{W5_POS_LL_DARK}} darker on lossless video, {{W5_POS_100_LIGHT}} vs {{W5_POS_100_DARK}} at 100 kbps.</p>
+    <figure><img src="figures/success_h264_compact.png" alt="Share of windows within 5 BPM by group and bitrate, POS and TRACE"></figure>
+    <h2 style="margin-top:5mm">Mechanism</h2>
+    <p>Codecs keep colour at a quarter of the resolution, quantise small changes away, and freeze regions that barely change. The pulse is a change of well under one pixel level. Pulse fidelity is the correlation of the decoded skin trace with the true pulse on a still face (1 intact, 0 gone):</p>
+    <div class="stats">
+      <div><b>{{FID_LL_II}} / {{FID_LL_VI}}</b><span>lossless, lighter / darker</span></div>
+      <div><b>{{FID_1600_II}} / {{FID_1600_VI}}</b><span>H.264 1600 kbps</span></div>
+      <div><b>{{FID_100_II}} / {{FID_100_VI}}</b><span>H.264 100 kbps</span></div>
+    </div>
+  </section>
+</div>
+
+<div class="row r2b">
+  <section>
+    <h2>Mitigation: TRACE</h2>
+    <p>Green, CHROM and POS run in parallel. Each is scored from its own spectrum, and a pulse-blind artifact reference (brightness with the pulse direction removed) masks motion and lighting frequencies before the spectra are fused.</p>
+    <figure><img src="figures/gap.png" alt="Dark minus light gap against bitrate for each method"></figure>
+    <p style="margin-top:3mm">{{MITIGATION}}</p>
+    <p style="color:var(--ink-2)">The first TRACE design (spectral score only) lost to POS on held-out data and was replaced; both stay in the ablation.</p>
+  </section>
+  <section>
+    <h2>Classical vs learned</h2>
+    <table>
+      <thead><tr><th>MAE, BPM</th><th>Lossless, I-III</th><th>Lossless, IV-VI</th><th>100 kbps, I-III</th><th>100 kbps, IV-VI</th></tr></thead>
+      <tbody>
+        <tr><td>POS</td><td>{{POS_LL_LIGHT}}</td><td>{{POS_LL_DARK}}</td><td>{{POS_100_LIGHT}}</td><td>{{POS_100_DARK}}</td></tr>
+        <tr><td>TRACE</td><td>{{TRACE_LL_LIGHT}}</td><td>{{TRACE_LL_DARK}}</td><td>{{TRACE_100_LIGHT}}</td><td>{{TRACE_100_DARK}}</td></tr>
+        <tr><td>PhysNet</td><td>{{PHYSNET_LL_LIGHT}}</td><td>{{PHYSNET_LL_DARK}}</td><td>{{PHYSNET_100_LIGHT}}</td><td>{{PHYSNET_100_DARK}}</td></tr>
+        <tr><td>FactorizePhys</td><td>{{FACTORIZEPHYS_LL_LIGHT}}</td><td>{{FACTORIZEPHYS_LL_DARK}}</td><td>{{FACTORIZEPHYS_100_LIGHT}}</td><td>{{FACTORIZEPHYS_100_DARK}}</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:3mm;font-size:13pt;color:var(--ink-2)">Neural models: pretrained rPPG-Toolbox checkpoints (trained on PURE, never evaluated on it), used only as baselines. Nothing in the TRACE estimation path is learned.</p>
+    <h2 style="margin-top:6mm">How it works</h2>
+    <div class="pipe">
+      <div>Face and skin<i>Haar, phase correlation</i></div>
+      <div class="conv">Detrend<i>convolution</i></div>
+      <div>CHROM, POS<i>fixed projections</i></div>
+      <div class="conv">Bandpass 0.7 to 4 Hz<i>convolution</i></div>
+      <div class="ft">Spectrum, score, fuse<i>Fourier transform</i></div>
+      <div class="ft">Harmonic check<i>Fourier series</i></div>
+    </div>
+  </section>
+</div>
+
+<div class="row r3">
+  <section>
+    <h2>Design</h2>
+    <ul>
+      <li>{{N_SUBJECTS}} simulated volunteers, Fitzpatrick I to VI, 60 s each, known beat times.</li>
+      <li>Lossless source, then {{CODECS}} at {{BITRATES}} kbps, plus lossless RGB, YUV 4:4:4 and 4:2:0 controls.</li>
+      <li>Model: error ~ log2(bitrate) x dark + (1 | subject); the interaction term is the claim.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Limits</h2>
+    <ul>
+      <li>Skin-tone physics is modelled, not measured: a simulated fan is evidence about the mechanism, not about people.</li>
+      <li>One base face, fixed lighting and camera.</li>
+      <li>TRACE's artifact reference leaks pulse on light skin at low motion.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Next</h2>
+    <ul>
+      <li>Record Fitzpatrick III to VI volunteers in Dhaka, lossless, with a pulse oximeter.</li>
+      <li>Power analysis: {{POWER_N}} per group detect a {{POWER_EFFECT}} BPM-per-doubling interaction at 80 percent power.</li>
+      <li>Wellness indicator only, never a diagnosis.</li>
+    </ul>
+  </section>
+</div>
+
+<footer>
+  <div>Verkruysse 2008; Poh 2010; de Haan and Jeanne 2013 (CHROM); Wang et al. 2017 (POS); McDuff et al. 2017; Nowara and McDuff 2019; Nowara, McDuff and Veeraraghavan 2020; Dasari et al. 2021; Liu et al. 2023 (rPPG-Toolbox); Bland and Altman 1986. Code, data generator and every figure: github.com/ahammadshawki8/TRACE-rPPG.</div>
+  <div class="qr">QR code<br>to the repository</div>
+</footer>
+</body>
+</html>

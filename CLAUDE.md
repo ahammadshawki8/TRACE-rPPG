@@ -62,23 +62,36 @@ This file is the persistent memory of the project. Every session starts by readi
 | T2 | Video to RGB traces | **Done.** 6/6 checks (`step3_video.py`) |
 | T3 | Extraction methods (green, CHROM, POS) | **Done.** 7/7 checks (`step4_methods.py`), plus ICA baseline |
 | T4 | TRACE fusion | **Done (v2), 8/8** (`step5_fusion.py`). v1 failed held-out; v2 beats the best single method on unseen data, but the artifact mask alone does better still (Section 8.4) |
-| T5 | Compression harness | Code done (`compress.py`); `step6_compression.py` not yet run |
+| T5 | Compression harness | **Done.** 8/8 (`step6_compression.py`) plus the pulse-fidelity mechanism table |
 | T6 | Neural baselines | **Done.** 9/9 (`step8_neural.py`): PhysNet and FactorizePhys, PURE checkpoints, separate `.venv-nn` |
-| T7 | Full grid and statistics | Not started |
+| T7 | Full grid and statistics | **Done (simulated pilot).** 36 subjects x 23 conditions x 11 methods, 63,072 rows; no widening found (Section 13, T7) |
 | T8 | Own data collection (conditional) | Materials ready (`deliverables/data_collection_protocol.md`); recording needs participants and approval |
 | T9 | HRV / LF-HF layer | **Done.** 11/11 (`step7_hrv.py`); excellent on clean video, fragile with motion (reported) |
-| T10 | Live demo app | Not started |
-| T11 | Write-up (abstract, poster, report) | Not started |
+| T10 | Live demo app | **Done.** Verified in a browser on both replay volunteers, EN/BN, light/dark; webcam untested unattended |
+| T11 | Write-up (abstract, poster, report) | **Done (drafts from simulated results).** Poster A1, extended abstract (IEEE .tex + PDF), course report PDF; author names are placeholders |
 
 Also done: seven bilingual theory lessons (`Lesson/`), pitch deck and Bangla presentation script (`Idea/`), generated `pipeline-viz.html`.
 
-### 2.2 Next task
+### 2.1b Headline results so far (all simulated, 2026-09-11)
 
-**T1: download UBFC-rPPG, write the loader, and derive ground-truth HR from the reference PPG using the existing spectral code.** See Section 13, T1.
+- **Interaction (the poster claim):** compression did **not** widen the skin-tone gap in MAE. POS H.264: gap 8.8 BPM lossless, 4.4 at 100 kbps, interaction +0.40 BPM per doubling (95% CI -0.57 to 1.37, p = 0.42). CHROM H.264: +1.49 (p < 0.001) and VP9 +2.27: the gap **narrows** as bitrate falls.
+- **Why:** darker skin is already near its failure plateau (about 22 to 25 BPM MAE) at every bitrate; compression drags lighter skin down to meet it. Within 5 BPM, POS: 79 vs 56 percent lossless, 18 vs 15 percent at 100 kbps.
+- **Mechanism does favour the hypothesis at the signal level:** pulse fidelity (correlation with the true pulse, still face) lossless 0.92 light / 0.84 dark; H.264 1600 kbps 0.61 / 0.37; 100 kbps 0.46 / -0.11. MAE cannot show it because the dark group is at floor from motion and screen light first.
+- **TRACE v2 is the best method on the held-out grid:** mean MAE lossless 9.0 (POS 12.2, POS + mask 9.1, FactorizePhys 15.0), 400 kbps 15.3 (POS 17.7, FactorizePhys 18.2), 100 kbps 19.5 (FactorizePhys 18.7 is best there). TRACE halves the lossless gap (4.3 vs 8.8 BPM for POS). The artifact mask carries most of the gain.
+- **Demo finding:** the darker-skin replay read 73 BPM vs true 90 marked high confidence: the confidence gate is not reliable on dark skin.
+- **Power:** pilot subject SD 12.2 BPM, residual 5.4; detecting 1 BPM per doubling at 80 percent power needs more than 40 per group. Real data must reduce between-subject variance (fixed lighting, no screen light) or recruit more.
+
+### 2.2 Next tasks (need people, data, or decisions)
+
+1. **Real data.** Download UBFC-rPPG DATASET_2 into `data/ubfc/` (blocked on this network, U5) and run `step2` to `step4` (their real-data sections run automatically), then `run_grid.py --dataset data/ubfc --tag ubfc` and `analyze_grid.py --tag ubfc`. Resolve U2 (VitalVideo codec) and T8 (own recordings with approval).
+2. **Fill placeholders** in `deliverables/*/template_*` (author names, department, emails), then `build_deliverables.py --pdf`. Add the repository QR code to the poster.
+3. **Supervisor checks** (U1): native ACM DL and IEEE Xplore search for the interaction.
+4. **Demo:** test with a real webcam; record a backup screen video of the full flow.
+5. **Future work candidates:** adaptive pulse direction for TRACE's artifact reference; success-rate (within 5 BPM) as a co-primary outcome so floor effects cannot hide an interaction.
 
 ### 2.3 Schedule check
 
-2026-09-11 is the start of week 3 of 12 (week 1 began 2026-08-28). The plan expects T1 to T4 complete by 2026-09-17. T1 to T3 have not started, so the project is roughly one week behind. Week 12 is buffer and can absorb it, but not more than that.
+2026-09-11 (week 3 of 12): every tier that does not need people or external data is done, far ahead of the plan (which had T5 to T7 in weeks 4 to 8). Remaining time goes to real data (weeks 4 to 9) and revising the write-up with it (weeks 10 to 11).
 
 ### 2.4 Open decisions and unknowns (ask the user when relevant)
 
@@ -579,13 +592,12 @@ Track tags: **[P]** poster, **[C]** course, **[B]** both.
 - [ ] `scripts/step5_fusion.py`
 - Exit gate: ablation table produced; TRACE result reported whether it wins or not.
 
-### T5: Compression harness [P]
+### T5: Compression harness [P] (done, 8/8)
 
-- [ ] `src/tracerppg/compress.py` + `scripts/encode_grid.py`: ffmpeg wrapper, codecs, bitrates, `yuv420p` and `yuv444p` (Section 9)
-- [ ] Lossless FFV1 control with bit-identical verification
-- [ ] Record achieved bitrate per encode
-- [ ] `scripts/step6_compression.py`
-- Exit gate: lossless round trip is bit-identical; achieved bitrates within tolerance of targets.
+- [x] `src/tracerppg/compress.py`: `Condition`, `grid_conditions()` (3 lossless controls + H.264/H.265/VP9 x 100, 200, 400, 800, 1600 kbps + H.264 4:4:4 ablation = 23), real-time settings (x264 veryfast zerolatency, x265 veryfast, libvpx realtime cpu-used 8), `encode()` records achieved bitrate
+- [x] `scripts/step6_compression.py` 8/8 on realistic sources: FFV1 control bit-identical (max diff 0); 4:4:4 round trip max 2 levels; 4:2:0 adds error (mean 1.76 vs 0.39); frame counts intact over 56 encodes; bitrates within 0.89x to 1.09x of target; PSNR rises with bitrate for all four codecs
+- [x] Mechanism (reported, still face, no screen light), pulse fidelity = correlation of decoded green with the true pulse, type II / VI: lossless 0.92 / 0.84; H.264 1600k 0.61 / 0.37, 400k 0.50 / 0.00, 100k 0.46 / -0.11; H.265 and VP8 preserve far better (H.265 1600k 0.90 / 0.82). Dark-skin values from one 20 s clip are noisy.
+- Lessons: an amplitude ratio is the wrong mechanism metric (noise over a tiny number gave -112 to 509 percent); rate control misbehaves on perfectly static content (VP9 would not go below about 150 kbps), so harness checks use realistic sources; on a still face zero-latency H.264 freezes near-static regions and removes the pulse outright.
 
 ### T6: Neural baselines [P] (done)
 
@@ -596,13 +608,15 @@ Track tags: **[P]** poster, **[C]** course, **[B]** both.
 - [x] `scripts/step8_neural.py` 9/9: core venv has no torch; both run; one prediction per frame; clean light-skin simulated video MAE PhysNet 0.75, FactorizePhys 0.85 BPM. Reported (simulated, 30 s): type VI lossless PhysNet 14.0, FactorizePhys 5.4; H.264 100 kbps type II PhysNet 14.6, FactorizePhys 6.4.
 - Grid runs the neural baselines on lossless plus the H.264 ladder only (memory and time budget).
 
-### T7: Full grid and statistics [P]
+### T7: Full grid and statistics [P] (done on the simulated pilot)
 
-- [ ] Grid runner over subject x codec x bitrate x method; results stored as one tidy table (CSV or Parquet under `results/`, small summaries committed, raw outputs gitignored if large)
-- [ ] Metrics with CIs; Bland-Altman per group
-- [ ] Mixed-effects interaction model with CI on bitrate x tone (Section 10)
-- [ ] Headline fan figure, mitigation figure, classical vs learned figure
-- Exit gate: interaction coefficient and CI reported; figures generated from committed code.
+- [x] `src/tracerppg/grid.py`: `process_subject` (encode, decode, traces, crops for NN conditions; deletes videos as it goes) and `evaluate_subject` (tidy rows for green, ICA, CHROM, POS, POS + mask, POS + Wiener, TRACE v1, v2 (= `trace`), PhysNet, FactorizePhys)
+- [x] `scripts/run_grid.py`: stages 1 (parallel, resumable), nn (sequential in `.venv-nn`), 2 (evaluate); `--max-subjects` trims in interleaved type order (never change `--n-per-type`: heart rates come from one sequential random stream, so it changes every subject's config); `--dataset` for real data
+- [x] `src/tracerppg/stats.py`: per-subject per-condition MAE, subject-bootstrap cell CIs, mixed model `err ~ log2(kbps) * dark + (1|subject)` with Wald and bootstrap CIs and a log-error check, simulation-based power
+- [x] `scripts/analyze_grid.py`: cells, interaction, power, summary; figures `fan_h264/h265/vp9`, `gap`, `success_h264` (+ compact), `mechanism`, `chroma_steps_pos`, `ablation_lossless`, `ablation_h264_200k`, `bland_altman`. Palette validated with the dataviz checker (blue #2a78d6 vs crimson #B01B3F, CVD delta E 23.4) plus marker shape and direct labels.
+- [x] Run (2026-09-11): 36 subjects (first 36 of the interleaved n=8 cohort, seeds 3000+, 6 per type, 60 s), 23 conditions, `results/grid_sim.csv` 63,072 rows. Results in Section 2.1b.
+- Memory rule learned: this machine has 15 GB and about 4 GB free with normal apps open; 12 workers or two concurrent pools were killed. Use 4 grid workers alone, 2 neural processes, and never run two heavy jobs together. `_common.py` caps BLAS threads at 2.
+- Exit gate: passed for the pilot. Real-data run pending (Section 2.2).
 
 ### T8: Own data collection [P] (materials ready; recording needs people)
 
@@ -625,24 +639,28 @@ Track tags: **[P]** poster, **[C]** course, **[B]** both.
 
 ### T10: Live demo app [C, poster QR optional]
 
-- [ ] Resolve D2 (recommended Option A)
-- [ ] Linear flow, steps 1 to 7 (Section 6.3), stepper, keyboard navigation
-- [ ] Setup checks (face, light, stillness) with plain-language fixes
-- [ ] Live BPM with confidence ring, raw trace, spectrum
-- [ ] Method duel with live fusion weights
-- [ ] Compression lab from pre-recorded clips and real grid results
-- [ ] HRV session with caveat
-- [ ] Replay mode from a video file
-- [ ] Light/dark, EN/BN, reduced motion, phone width, contrast check
-- Exit gate: full flow runs end to end on webcam and in replay mode; a backup screen recording of the whole demo exists.
+- [x] D2 decided: Option A. `app/server.py` (FastAPI, WebSocket state at 4 Hz, MJPEG preview at up to 15 fps, `/api/lab`), `app/engine.py` (one thread: source, tracker, skin mean, analysis every 0.5 s over a 20 s window with uniform resampling, TRACE v2 with the frozen parameters, setup checks, HRV session), `app/static/{index.html, styles.css, app.js}`
+- [x] Seven-step linear flow with a numbered stepper, one primary action bottom right, Back, keyboard (arrows), EN / বাংলা, light / dark, reduced motion, phone width
+- [x] Setup checks (face, light, stillness) with plain-language fixes; Continue unlocks after 1.5 s of all checks passing
+- [x] Live BPM with confidence meter (threshold at the middle), "Hold still" instead of a number when not confident, simulator truth shown for simulated volunteers, raw trace, filtered pulse, spectrum with the peak
+- [x] Method duel: green, CHROM, POS, TRACE live, weight bars, "move more / sit still" for simulated volunteers
+- [x] Compression lab from `app/static/lab/lab.json` (built by `scripts/build_app_assets.py` from grid results) with face thumbnails at each bitrate and pulse retained
+- [x] HRV session: progress ring, finish after 30 s (LF/HF only after 2 min), tachogram, second spectrum with LF and HF bands, indicator with disclaimer
+- [x] Summary and export to JSON
+- [x] Sources: webcam (DirectShow), pre-rendered simulated volunteers (`data/replay/type{2,5}_{calm,restless}.mkv`, near-lossless H.264 4:4:4 with beat times), any video file; live rendering only as a fallback (too slow under load)
+- [x] Verified in a browser end to end on the replays (screenshots in `app/screenshots/`): light-skin volunteer 77 BPM vs true 78 (high confidence); method duel green 45 (flagged) vs CHROM, POS, TRACE 77; lab slider, thumbnails and fidelity note; HRV at 40 s gives HR 79, SDNN, RMSSD and correctly refuses LF/HF; summary; Bangla and dark theme
+- [x] Fixes from the test: `Cache-Control: no-store` on `/` plus `?v=` on assets; `--on-pulse` token so text on the accent passes contrast in dark mode; stepper collapses labels below 1180 px without a scrollbar; tachogram plots cleaned RR; CSS tick instead of a check-mark character
+- [ ] Webcam path (DirectShow) untested unattended; backup screen recording (needs a person)
+- Findings: the darker-skin replay read 73 BPM vs true 90 marked high confidence (confidence gate unreliable on dark skin); earlier, before replays existed, TRACE v2 read 153 vs 74 on light skin with a short buffer (Section 8.4 leakage); live rendering runs at about 0.1x real time under load, hence pre-rendered replays (`data/replay/`, about 580 MB each, pulse fidelity preserved by storage, e.g. 0.323 lossless vs 0.297 stored)
 
-### T11: Write-up [B]
+### T11: Write-up [B] (drafts done from simulated results)
 
-- [ ] Extended abstract for NSysS poster track (both outcomes pre-framed)
-- [ ] Poster (headline fan figure dominant, one claim)
-- [ ] Course report in paper structure: abstract, introduction, related work, method, setup, results, discussion and limitations, future work, references
-- [ ] Limitations table (Section 17) and ethics statement
-- Exit gate: submitted before 2026-11-20.
+- [x] `scripts/build_deliverables.py` fills every number from results files and composes outcome-dependent sentences (`HEADLINE`, `VERDICT_*` including the failure-plateau explanation when the gap narrows, `MITIGATION` naming whichever method actually ranks best). LaTeX special characters escaped for the `.tex`. PDFs printed by headless Chrome. Edit `deliverables/*/template_*`, never the generated files.
+- [x] Poster `deliverables/poster/poster.{html,pdf}`: A1 portrait, headline finding, simulated-pilot banner, fan figure, success-rate figure, mechanism numbers, TRACE mitigation, classical vs learned table, course-topic pipeline, design, limits, next steps
+- [x] Extended abstract `deliverables/abstract/abstract.tex` (IEEEtran, Overleaf-ready) and `abstract.{html,pdf}`
+- [x] Course report `deliverables/report/report.{html,pdf}`: paper structure, course-topic table, T0 to T9 measured results, 8 figures, limitations table, ethics, future work, 11 references
+- [ ] Fill author names, department, emails; add the QR code; revise with real data
+- Exit gate: submitted before 2026-11-20 (needs the team).
 
 ### Housekeeping (any time)
 
@@ -701,7 +719,9 @@ Idea/                  source planning documents (see 15.4)
 data/                  datasets, gitignored
 ```
 
-Planned additions: `src/tracerppg/{datasets,roi,methods,fusion,compress,hrv,stats}.py`, `scripts/stepN_*.py`, `app/` (demo), `results/`, `requirements.txt`.
+Added since: `src/tracerppg/{datasets,simulate,video,roi,methods,metrics,fusion,compress,hrv,stats,grid}.py`; `scripts/step2` to `step8`, `_common.py`, `run_grid.py`, `nn_infer.py` (runs in `.venv-nn`), `analyze_grid.py`, `build_app_assets.py`, `build_deliverables.py`; `app/` (server, engine, static, screenshots); `deliverables/` (poster, abstract, report, data protocol); `results/` (frozen fusion params, tables, figures; `results/raw/` gitignored); `data/` (cache, replay, work; gitignored); `.venv-nn/` and `third_party/` (gitignored).
+
+Full rebuild order: `run_grid.py --max-subjects 36` (stage 1, nn, 2), `step6_compression.py`, `step7_hrv.py`, `analyze_grid.py`, `build_app_assets.py`, `build_deliverables.py --pdf`.
 
 ### 15.2 Commands
 
@@ -793,5 +813,6 @@ Where the Idea documents disagree, the Novelty document (newer) wins, and this f
 
 Newest first. One entry per session: date, what was done, what was verified, where it stopped.
 
+- **2026-09-11 (overnight into the next day):** Completed T1 to T7 and T9 to T11 on the simulated pilot, T8 materials. Key events: phase-correlation tracking replaced box re-detection (dark-skin error 25 to 0.1 BPM on still video); simulator gained screen light, calibrated to published UBFC numbers; TRACE v1 failed held-out, v2 (artifact mask) tuned on 48 subjects and tested on fresh cohorts; Wiener mask rejected; grid of 36 subjects found no widening but a floor effect, with the mechanism favouring the hypothesis at the signal level; HRV two-stage timing (41 to 5.8 ms) and POS as HRV waveform; demo verified on replays; poster, abstract and report generated from results. Two runs were killed for low memory; see the T7 memory rule. Commits: T0 to T8 as ahammadshawki8, T9 onward as S-M-Abu-Fayeem (user instruction).
 - **2026-09-11:** Read all `Idea/` documents and the existing code. Created this `CLAUDE.md` as the project memory. Re-verified T0: `step1_synthetic.py` 12/12 passing on Python 3.14.0, numpy 2.5.2, scipy 1.18.1. Stopped before T1. Next: resolve U1 / U2, then download UBFC-rPPG and build the loader.
 - **2026-08-28:** Initial commit (`752a222`): T0 pipeline, lessons 0 to 6, Idea documents, Pipeline Bench visualisation.

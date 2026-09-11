@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TRACE-rPPG course report</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Archivo:wght@400;600&display=swap">
+<style>
+@page { size: A4; margin: 20mm 20mm 22mm; }
+body { font: 11pt/1.55 "Spectral", Georgia, serif; color: #1F1720; margin: 0; }
+h1 { font-size: 22pt; line-height: 1.2; margin: 0 0 3mm; }
+h2 { font-size: 14pt; margin: 8mm 0 2mm; break-after: avoid; }
+h3 { font-size: 11.5pt; margin: 5mm 0 1.5mm; break-after: avoid; }
+.meta { font-family: "Archivo", sans-serif; font-size: 9.5pt; color: #5A4E58; margin-bottom: 6mm; }
+.abstract { border-left: 1mm solid #B01B3F; padding: 2mm 4mm; background: #FAF3F5; }
+p { margin: 0 0 2.5mm; text-align: justify; hyphens: auto; }
+table { border-collapse: collapse; width: 100%; font: 9.5pt/1.35 "Archivo", sans-serif; margin: 2mm 0 4mm; break-inside: avoid; }
+th, td { border-bottom: 0.3mm solid #E0D6DB; padding: 1.2mm 2mm; text-align: left; vertical-align: top; }
+th { color: #5A4E58; }
+td.n { text-align: right; font-variant-numeric: tabular-nums; }
+figure { margin: 3mm 0 5mm; break-inside: avoid; }
+figure img { width: 100%; }
+figcaption { font: 9pt/1.4 "Archivo", sans-serif; color: #5A4E58; margin-top: 1.5mm; }
+.sim { font: 9.5pt/1.4 "Archivo", sans-serif; border: 0.3mm solid #9C5A12; background: #FBF3E8; padding: 2mm 3mm; margin: 3mm 0; }
+code { font-size: 9.5pt; }
+ol.refs { font-size: 9.5pt; }
+.conv { color: #10796B; font-weight: 600; } .ft { color: #B01B3F; font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>TRACE-rPPG: contactless heart rate from face video with Fourier series, the Fourier transform and convolution, and a measurement of how video compression interacts with skin tone</h1>
+<div class="meta">Signals and Systems course project &nbsp;|&nbsp; [Author names] &nbsp;|&nbsp; [Department, University] &nbsp;|&nbsp; github.com/ahammadshawki8/TRACE-rPPG</div>
+
+<div class="abstract"><p><b>Abstract.</b> We build a remote photoplethysmography (rPPG) system in which every physiological number comes out of a convolution or a Fourier transform, with no trained model in the estimation path. The pipeline detrends by convolution with a moving average, band-limits with a hand-built windowed-sinc filter, locates the heart rate as the peak of a windowed FFT refined by parabolic interpolation, guards against harmonic lock-on using Fourier-series reasoning, and computes heart-rate variability with a second Fourier transform of the beat intervals. On top of green, CHROM and POS we build TRACE, a signal-quality-adaptive fusion with a pulse-blind artifact reference. We then ask a research question the literature has not answered: does video compression widen the known skin-tone accuracy gap? A simulated pilot of {{N_SUBJECTS}} volunteers across {{CODECS}} gives the following answer. {{VERDICT_POS}}</p></div>
+
+<div class="sim">{{SOURCE_NOTE}}</div>
+
+<h2>1. Introduction</h2>
+<p>Every heartbeat pushes blood into the capillaries of the face. Haemoglobin absorbs green light strongly, so the skin darkens very slightly with each beat: a change of well under one percent, invisible to the eye but within reach of an ordinary webcam [1]. Measuring it contactlessly matters wherever contact sensors fail: telehealth consultations, neonatal care, and driver monitoring. The difficulty is that the pulse is buried under lighting drift, motion and sensor noise that are all larger than it.</p>
+<p>This project uses exactly the three tools of the course. <span class="conv">Convolution</span> removes drift and restricts the signal to plausible heart rates. The <span class="ft">Fourier transform</span> finds the rhythm, and a second Fourier transform of the beat intervals yields heart-rate variability. <span class="ft">Fourier series</span> explains why the spectrum has harmonics and why naive peak-picking can report twice the true rate.</p>
+
+<h2>2. Background and related work</h2>
+<p>Verkruysse et al. showed ambient light suffices [1]; Poh et al. used independent component analysis [2]; CHROM combines chrominance signals that cancel specular reflection under a standard skin colour [3]; POS projects onto the plane orthogonal to skin tone and weights its two axes adaptively [4]. Accuracy is known to fall on darker skin [5, 6] and under compression [7, 8]. The two are named as separately studied factors, and a search of 2,023 rPPG papers found none measuring their interaction. Deep models dominate recent work; we include two pretrained ones (PhysNet, FactorizePhys, via rPPG-Toolbox [9]) as baselines only.</p>
+
+<h2>3. Method</h2>
+<h3>3.1 Where the course topics appear</h3>
+<table>
+<thead><tr><th>Stage</th><th>Course topic</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td>Face tracking</td><td class="ft">Fourier transform</td><td>Phase correlation: a translation multiplies the spectrum by a linear phase, so the inverse FFT of the normalised cross-power spectrum peaks at the shift.</td></tr>
+<tr><td>Detrending</td><td class="conv">Convolution</td><td>Moving-average kernel (61 samples at 30 fps, first null 0.49 Hz); subtracting a low-pass leaves a high-pass.</td></tr>
+<tr><td>Temporal normalisation</td><td class="conv">Convolution</td><td>Each channel divided by its running mean, turning skin colour into relative change.</td></tr>
+<tr><td>Bandpass 0.7 to 4 Hz</td><td class="conv">Convolution</td><td>Hand-built windowed-sinc FIR (301 taps), zero phase; the convolution theorem is verified numerically.</td></tr>
+<tr><td>Heart rate</td><td class="ft">Fourier transform</td><td>Hann-windowed FFT, zero-padded, parabolic interpolation between bins.</td></tr>
+<tr><td>Harmonic check</td><td class="ft">Fourier series</td><td>A sharp pulse shape implies harmonics; before accepting a peak at f, test f/2.</td></tr>
+<tr><td>Quality and fusion</td><td class="ft">Fourier transform (Parseval)</td><td>Fraction of in-band power at the peak and harmonic; artifact spectrum as a mask.</td></tr>
+<tr><td>HRV, LF/HF</td><td class="ft">Fourier transform, again</td><td>Welch PSD of the RR series resampled to 4 Hz; LF 0.04 to 0.15 Hz, HF 0.15 to 0.40 Hz.</td></tr>
+<tr><td>CHROM, POS</td><td>Linear algebra</td><td>Fixed projections from a skin reflectance model, not learned.</td></tr>
+</tbody></table>
+
+<h3>3.2 Verified on signals with known answers</h3>
+<p>Before any video, the mathematics was checked on synthetic pulses (12 of 12 checks pass). A 72 BPM pulse under lighting drift four times its size and noise of equal power was recovered as 72.07 BPM. Direct convolution and the FFT route agree to 4.3e-16. Without zero padding the FFT computes circular convolution and corrupts the first len(h)-1 samples at 82 percent of scale. Parabolic interpolation cut the error on off-grid rates from 0.420 to 0.022 BPM. A pulse with a suppressed fundamental made naive peak-picking report 144 BPM; the sub-harmonic check recovered 71.99 with no false halvings from 86 to 140 BPM. The pulse was still recovered at -6 dB SNR.</p>
+
+<h3>3.3 From video to traces</h3>
+<p>Haar detection initialises the face box from the median of five detections; phase correlation then tracks it with a measured error of at most 0.13 px against the simulator's known motion. Re-running the detector every few frames made the box wobble by 1 to 2 px, which alone raised the green-channel error on dark simulated skin from 0.04 to 25 BPM, so the detector only corrects gross drift. The forehead and both cheeks are averaged with a per-frame adaptive chroma mask, so no fixed colour threshold favours one skin tone.</p>
+
+<h3>3.4 Extraction methods and TRACE</h3>
+<p>Green, ICA, CHROM and POS share one interface. After temporal normalisation a pure brightness change is the vector (1, 1, 1), which both CHROM and POS map to zero: measured output 2e-16 and 3e-15 against 1.8e-2 for green. TRACE v1 weighted methods by spectral quality alone and lost to POS on held-out data, because a periodic motion artifact is also a concentrated peak (for green the quality score was inversely related to correctness). TRACE v2 adds a pulse-blind artifact reference whose spectrum masks each method's spectrum (k = {{MASK_K}}) and penalises peaks shared with the artifact; weights are q^gamma with gamma = {{GAMMA}}, and below quality {{CONF}} the reading is flagged low confidence. Parameters were tuned on one simulated cohort and frozen before testing on others.</p>
+
+<h3>3.5 Heart-rate variability</h3>
+<p>Beats are found on the POS pulse after a narrow band around the heart rate, then re-timed on the wideband waveform, because the narrow-band peak sits at the fundamental's phase rather than the systolic peak (that alone cost 41 ms RMS; re-timing brought it to 5.8 ms, under a fifth of a frame). Intervals are cleaned with the 20 percent rule and summarised as SDNN, RMSSD and pNN50. The RR series is resampled to a uniform 4 Hz grid before its Welch PSD, because the DFT requires uniform sampling. Checks: the integrated PSD equals the variance (Parseval), a two-tone RR series returns (A_lf/A_hf)^2 and matches scipy.signal.welch, and captures under two minutes are refused for LF/HF because the LF band's period is 25 s. Choosing the waveform by spectral quality picked the motion-fooled green channel on half the subjects, so HRV uses POS. On clean simulated video the SDNN error was {{HRV_CLEAN_SDNN}} ms and the RMSSD error {{HRV_CLEAN_RMSSD}} ms; with natural motion and screen light they rose to {{HRV_SDNN_MAE}} and {{HRV_RMSSD_MAE}} ms, because a single missed or extra beat moves RMSSD by tens of milliseconds. Heart rate is robust; beat-to-beat variability from video is not, in this simulation.</p>
+
+<h2>4. Experimental setup</h2>
+<p><b>Simulator.</b> A public-domain portrait is rendered with a two-layer reflectance model: melanin attenuates light more at short wavelengths, surface reflection is channel neutral, and the pulse modulates the dermal term along a standard blood-volume direction. Motion, lighting drift, chromatic light from a watched screen, sensor noise and a heartbeat with LF and HF rhythms complete it. The screen-light level was calibrated so uncompressed light-skin accuracy sits near published UBFC-rPPG figures.</p>
+<p><b>Harness and grid.</b> {{N_SUBJECTS}} simulated volunteers ({{N_PER_GROUP}} per skin-tone group), 60 s each, encoded with {{CODECS}} at {{BITRATES}} kbps with real-time settings, plus lossless RGB, YUV 4:4:4 and YUV 4:2:0 controls and a 4:4:4 H.264 ablation. The lossless control decodes bit-identically. Error is evaluated in 20 s windows with a 5 s hop against the reference PPG.</p>
+<p><b>Statistics.</b> Per-subject, per-condition MAE is modelled as err ~ log2(kbps) x dark + (1 | subject). The interaction coefficient is the claim; it is reported with Wald and subject-bootstrap intervals and a log-error robustness check.</p>
+
+<h2>5. Results</h2>
+<figure><img src="figures/fan_h264.png" alt=""><figcaption>Figure 1. MAE against H.264 bitrate by skin-tone group; lossless at the right; 95 percent subject-bootstrap bands. Simulated pilot.</figcaption></figure>
+<p><b>Headline.</b> {{VERDICT_POS}}</p>
+<p><b>CHROM.</b> {{VERDICT_CHROM}}</p>
+<table>
+<thead><tr><th>MAE (BPM)</th><th>Lossless I-III</th><th>Lossless IV-VI</th><th>100 kbps I-III</th><th>100 kbps IV-VI</th></tr></thead>
+<tbody>
+<tr><td>POS</td><td class="n">{{POS_LL_LIGHT}}</td><td class="n">{{POS_LL_DARK}}</td><td class="n">{{POS_100_LIGHT}}</td><td class="n">{{POS_100_DARK}}</td></tr>
+<tr><td>TRACE</td><td class="n">{{TRACE_LL_LIGHT}}</td><td class="n">{{TRACE_LL_DARK}}</td><td class="n">{{TRACE_100_LIGHT}}</td><td class="n">{{TRACE_100_DARK}}</td></tr>
+<tr><td>PhysNet</td><td class="n">{{PHYSNET_LL_LIGHT}}</td><td class="n">{{PHYSNET_LL_DARK}}</td><td class="n">{{PHYSNET_100_LIGHT}}</td><td class="n">{{PHYSNET_100_DARK}}</td></tr>
+<tr><td>FactorizePhys</td><td class="n">{{FACTORIZEPHYS_LL_LIGHT}}</td><td class="n">{{FACTORIZEPHYS_LL_DARK}}</td><td class="n">{{FACTORIZEPHYS_100_LIGHT}}</td><td class="n">{{FACTORIZEPHYS_100_DARK}}</td></tr>
+</tbody></table>
+<figure><img src="figures/mechanism.png" alt=""><figcaption>Figure 2. Pulse fidelity (correlation of the decoded green trace with the true pulse, still face, no screen light) after each codec and bitrate, lighter (II) and darker (VI) simulated skin. Lossless: {{FID_LL_II}} and {{FID_LL_VI}}; 4:2:0 subsampling alone: {{FID_420_II}} and {{FID_420_VI}}; H.264 at 1600 kbps: {{FID_1600_II}} and {{FID_1600_VI}}; at 100 kbps: {{FID_100_II}} and {{FID_100_VI}}. On a still face the codec also freezes regions that barely change, which removes the pulse outright.</figcaption></figure>
+<figure><img src="figures/success_h264.png" alt=""><figcaption>Figure 3. Share of windows within 5 BPM by group and bitrate. For POS: {{W5_POS_LL_LIGHT}} lighter vs {{W5_POS_LL_DARK}} darker on lossless video, {{W5_POS_100_LIGHT}} vs {{W5_POS_100_DARK}} at 100 kbps.</figcaption></figure>
+<figure><img src="figures/chroma_steps_pos.png" alt=""><figcaption>Figure 4. Which codec step does the damage, for POS: conversion, subsampling, quantisation, with a 4:4:4 control.</figcaption></figure>
+<figure><img src="figures/gap.png" alt=""><figcaption>Figure 5. Dark-minus-light MAE gap against bitrate for each codec and method.</figcaption></figure>
+<p><b>Mitigation.</b> {{MITIGATION}} {{VERDICT_TRACE}} On a held-out uncompressed cohort, POS scored {{FUSION_POS}} BPM, POS with the artifact mask alone {{FUSION_MASK}}, TRACE v1 {{FUSION_V1}} and TRACE v2 {{FUSION_V2}}. Readings TRACE marked confident ({{FUSION_COVERAGE}} percent of windows) had {{FUSION_CONF_MAE}} BPM error against {{FUSION_FLAG_MAE}} for flagged ones.</p>
+<figure><img src="figures/ablation_lossless.png" alt=""><figcaption>Figure 6. Ablation on lossless video, by skin-tone group.</figcaption></figure>
+<figure><img src="figures/ablation_h264_200k.png" alt=""><figcaption>Figure 7. Ablation at 200 kbps H.264.</figcaption></figure>
+<figure><img src="figures/bland_altman.png" alt=""><figcaption>Figure 8. Bland-Altman plots by group, lossless and 100 kbps.</figcaption></figure>
+<p><b>Learned baselines.</b> PhysNet: {{VERDICT_PHYSNET}} FactorizePhys: {{VERDICT_FACTORIZEPHYS}}</p>
+
+<h2>6. Discussion and limitations</h2>
+<table>
+<thead><tr><th>Condition</th><th>Behaviour</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Low light</td><td>Fails</td><td>Needs reflected visible light.</td></tr>
+<tr><td>Darker skin</td><td>Less accurate</td><td>Melanin lowers pulse amplitude in pixel levels; the subject of this study.</td></tr>
+<tr><td>Heavy motion or talking</td><td>Green fails first; all degrade</td><td>Motion changes brightness and specular reflection in the heart-rate band.</td></tr>
+<tr><td>Screen light</td><td>Sets an accuracy floor</td><td>Chromatic changes are not cancelled by CHROM or POS.</td></tr>
+<tr><td>Low bitrate</td><td>Pulse attenuated</td><td>Chroma subsampling and quantisation of sub-level changes.</td></tr>
+<tr><td>TRACE on light skin, low motion</td><td>Can lock on a harmonic</td><td>The artifact reference leaks pulse and the mask removes the fundamental.</td></tr>
+</tbody></table>
+<p>The central limitation is that skin-tone physics is modelled: a simulated fan (or its absence) is evidence about the mechanism, not about people. The next step is recording volunteers across Fitzpatrick III to VI in Dhaka; the power analysis indicates {{POWER_N}} per group for 80 percent power at an interaction of {{POWER_EFFECT}} BPM per doubling of bitrate.</p>
+
+<h2>7. Ethics</h2>
+<p>The system never uploads video. Any recording of people requires informed consent, coded storage and deletion after the study (protocol in <code>deliverables/data_collection_protocol.md</code>). Heart-rate variability is a wellness indicator and never a diagnosis. Skin-tone and lighting limitations are reported rather than omitted.</p>
+
+<h2>8. Future work</h2>
+<p>Estimate the pulse direction per window from the data so the artifact reference cannot leak pulse; validate on real lossless recordings; extend to camera-only ballistocardiography, whose failure modes are nearly orthogonal to rPPG's.</p>
+
+<h2>References</h2>
+<ol class="refs">
+<li>W. Verkruysse, L. O. Svaasand, J. S. Nelson, "Remote plethysmographic imaging using ambient light," Opt. Express, 2008.</li>
+<li>M.-Z. Poh, D. McDuff, R. Picard, "Non-contact, automated cardiac pulse measurements using video imaging and blind source separation," Opt. Express, 2010.</li>
+<li>G. de Haan, V. Jeanne, "Robust pulse rate from chrominance-based rPPG," IEEE TBME 60(10), 2013.</li>
+<li>W. Wang, A. C. den Brinker, S. Stuijk, G. de Haan, "Algorithmic principles of remote PPG," IEEE TBME 64(7), 2017.</li>
+<li>A. Dasari et al., "Evaluation of biases in remote photoplethysmography methods," npj Digit. Med. 4:91, 2021.</li>
+<li>E. M. Nowara, D. McDuff, A. Veeraraghavan, "A meta-analysis of the impact of skin tone and gender on non-contact photoplethysmography measurements," CVPRW, 2020.</li>
+<li>D. McDuff, E. B. Blackford, J. R. Estepp, "The impact of video compression on remote cardiac pulse measurement using imaging photoplethysmography," IEEE FG, 2017.</li>
+<li>E. M. Nowara, D. McDuff, "Combating the impact of video compression on non-contact vital sign measurement using supervised learning," ICCVW, 2019.</li>
+<li>X. Liu et al., "rPPG-Toolbox: Deep remote PPG toolbox," NeurIPS Datasets and Benchmarks, 2023.</li>
+<li>Task Force of ESC/NASPE, "Heart rate variability: standards of measurement, physiological interpretation and clinical use," Circulation, 1996.</li>
+<li>J. M. Bland, D. G. Altman, "Statistical methods for assessing agreement between two methods of clinical measurement," Lancet, 1986.</li>
+</ol>
+</body>
+</html>
