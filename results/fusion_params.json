@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "gamma": 1.0,
+  "mask_k": 4.0,
+  "confidence": 0.23955152037773392,
+  "pbv_nominal": [
+    0.27,
+    0.8,
+    0.54
+  ],
+  "v1_gamma": 4.0,
+  "tuned_on": "simulated cohorts seeds 1000+ and 2000+ (48 subjects x 40 s)",
+  "tuning_mae_v2": 6.670706793430416,
+  "tuning_mae_v1": 16.118629278090637,
+  "logistic": [
+    -3.3853845568634613,
+    14.132177293324036
+  ]
+}

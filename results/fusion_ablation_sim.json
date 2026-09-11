@@ -1,0 +1,25 @@
+{
+  "green": 23.941071330253397,
+  "ica": 10.95231372843375,
+  "chrom": 17.44918871584619,
+  "pos": 11.805153539755535,
+  "POS + artifact mask (no fusion)": 7.259699103315474,
+  "TRACE v1 (gamma 4.0)": 19.776906794482773,
+  "TRACE v2 equal weights": 11.156711078251972,
+  "TRACE v2 (gamma 1.0, k 4.0)": 9.74551082061302,
+  "TRACE v2, simulator's own PBV": 8.629931884688892,
+  "confident_mae": 8.720468348550805,
+  "flagged_mae": 22.778193679689764,
+  "coverage": 0.9270833333333334,
+  "history": {
+    "v1_tuned1000_tested2000": {
+      "trace_v1": 15.86,
+      "pos": 10.24
+    },
+    "v2_tuned1000_tested4000": {
+      "trace_v2": 13.37,
+      "pos": 13.27,
+      "ica": 11.84
+    }
+  }
+}

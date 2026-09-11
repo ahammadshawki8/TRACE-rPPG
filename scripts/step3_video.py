@@ -16,7 +16,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
 
-from _common import ROOT, check, finish, rule, sim_folder
+from _common import ROOT, WORKERS, check, finish, rule, sim_folder
 from tracerppg.datasets import load_dataset, load_recording, reference_hr, sliding_windows, windowed_bpm
 from tracerppg.roi import Traces, extract_traces
 from tracerppg.simulate import SimConfig, _motion_track, render
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     # Still clips isolate the extraction path: no motion, no screen relighting.
     cfgs += [SimConfig(fitzpatrick=f, duration_s=40.0, motion=0.0, screen_light=0.0, seed=200 + f)
              for f in (2, 5)]
-    with ProcessPoolExecutor(max_workers=8) as ex:
+    with ProcessPoolExecutor(max_workers=WORKERS) as ex:
         rows = list(ex.map(green_eval, cfgs))
     moving = [r for r in rows if r["motion"] > 0]
     still = [r for r in rows if r["motion"] == 0]

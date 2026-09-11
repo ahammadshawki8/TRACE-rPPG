@@ -20,3 +20,8 @@ data/
 *.mp4
 *.avi
 *.mkv
+
+# Neural baselines (T6): separate env and third-party code, never committed
+.venv-nn/
+third_party/
+results/raw/

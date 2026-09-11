@@ -7,3 +7,7 @@ scikit-image>=0.24                # public-domain base face for the simulator
 pandas>=2.2
 statsmodels>=0.14
 matplotlib>=3.9
+
+# Live demo app (T10)
+fastapi>=0.110
+uvicorn[standard]>=0.29

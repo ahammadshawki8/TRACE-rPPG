@@ -15,7 +15,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
 
-from _common import ROOT, check, cohort, finish, rule, sim_traces
+from _common import ROOT, WORKERS, check, cohort, finish, rule, sim_traces
 from tracerppg.datasets import load_dataset, reference_hr, sliding_windows, windowed_bpm
 from tracerppg.methods import METHODS, POS_PROJECTION, chrom, green, ica, pos
 from tracerppg.metrics import summary
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     # -----------------------------------------------------------------------
     rule("4. Simulated cohort, uncompressed: 6 types x 4 subjects x 40 s")
     cfgs = cohort(n_per_type=4, duration_s=40.0)
-    with ProcessPoolExecutor(max_workers=12) as ex:
+    with ProcessPoolExecutor(max_workers=WORKERS) as ex:
         rows = list(ex.map(evaluate, cfgs))
     groups = {"I to III": [r for r in rows if r["fz"] <= 3], "IV to VI": [r for r in rows if r["fz"] >= 4]}
     table = {}

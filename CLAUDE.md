@@ -58,9 +58,9 @@ This file is the persistent memory of the project. Every session starts by readi
 | T1 | Dataset access and ground truth | **Done (code).** 8/8 checks (`step2_ground_truth.py`); real UBFC check skipped until data is downloaded |
 | T2 | Video to RGB traces | **Done.** 6/6 checks (`step3_video.py`) |
 | T3 | Extraction methods (green, CHROM, POS) | **Done.** 7/7 checks (`step4_methods.py`), plus ICA baseline |
-| T4 | TRACE fusion | Partial: quality metric (`spectral_snr`) and Welch done; fusion not started |
-| T5 | Compression harness | Not started |
-| T6 | Neural baselines | Not started |
+| T4 | TRACE fusion | **Done (v2), 8/8** (`step5_fusion.py`). v1 failed held-out; v2 beats the best single method on unseen data, but the artifact mask alone does better still (Section 8.4) |
+| T5 | Compression harness | Code done (`compress.py`); `step6_compression.py` not yet run |
+| T6 | Neural baselines | **Done.** 9/9 (`step8_neural.py`): PhysNet and FactorizePhys, PURE checkpoints, separate `.venv-nn` |
 | T7 | Full grid and statistics | Not started |
 | T8 | Own data collection (conditional) | Not started |
 | T9 | HRV / LF-HF layer | Not started (theory covered in Lesson Tier 4) |
@@ -387,15 +387,18 @@ All operate on RGB traces over a sliding window, each channel normalised by its 
 - Optional for comparison tables: PBV, ICA baseline (Poh 2010).
 - Sanity check our numbers against pyVHR on the same UBFC clips.
 
-### 8.4 To implement: TRACE fusion (T4)
+### 8.4 TRACE fusion (T4), as built and as measured
 
-- Per method `i`, per analysis window: quality `q_i = spectral_snr(...)`, computed from a Welch spectrum (calmer estimator); the BPM readout uses the full-length FFT.
-- Weights: initial rule `w_i = q_i^2 / sum_j q_j^2` (as in the pitch deck). The exponent is a hyperparameter: tune on UBFC only, freeze it before any test data, and report a cross-dataset check.
-- Fused spectrum: `P = sum_i w_i * P_i / max(P_i)` (each method's power spectrum normalised to unit peak), then peak, sub-harmonic check, BPM.
-- Fused quality: `spectral_snr` of the fused spectrum. Below a threshold (to be set from UBFC data), report low confidence instead of a number.
-- Live mode: rolling window (start with 10 to 20 s, 1 s hop) so weights update continuously; offline evaluation uses the same windows as the ground-truth comparison.
-- Optional extra quality signals (Lesson Tier 3): motion magnitude, illumination stability. Only if the spectral metric alone proves insufficient.
-- Ablation: each method alone, TRACE, TRACE plus each optional signal.
+`src/tracerppg/fusion.py`. Fused methods: green, CHROM, POS. Fused spectrum `P = sum_i w_i P_i / max(P_i)`, then peak, sub-harmonic check, BPM; fused quality = `spectral_snr` of `P`; below the frozen threshold the read-out is "low confidence".
+
+- **TRACE v1** (spectral concentration only, weights `q^gamma`): **failed**. Tuned on seeds 1000+, tested on 2000+: 15.86 vs POS 10.24 BPM. Diagnosis: a periodic motion artifact is also a concentrated peak; for green the quality score was inversely related to correctness (AUC 0.26), and the max-quality pick was right only 51 percent of the time.
+- **TRACE v2**: adds a pulse-blind **artifact reference** (normalised RGB along the brightness direction with the component along a nominal pulse direction `PBV_NOMINAL = (0.27, 0.80, 0.54)` removed; deliberately not the simulator's own vector). Each method's spectrum is multiplied by `(1 - A(f)/max A)^k`, and its score by `(1 - a)^2` where `a` is the artifact power fraction at its chosen peak. AUCs rose (CHROM 0.63 to 0.89, green 0.26 to 0.67, POS 0.75 to 0.86).
+  - First v2 tuning (seeds 1000+ only, 24 subjects) overfit: tuning 4.64, held-out (4000+) 13.37 vs POS 13.27, ICA 11.84; its confidence rule degenerated.
+  - **Frozen v2** (`results/fusion_params.json`): tuned on seeds 1000+ and 2000+ (48 subjects), gamma 1, mask k 4, confidence 0.240 from a logistic fit of P(correct within 5 BPM | quality) = 0.5.
+  - **Held-out (seeds 5000+, never used) MAE, all / I-III / IV-VI:** POS 11.81 / 6.18 / 17.43; ICA 10.95; **POS + artifact mask alone 7.26 / 6.49 / 8.03**; TRACE v1 19.78; TRACE v2 equal weights 11.16; **TRACE v2 9.75 / 10.98 / 8.51**. Confidence gate: 8.72 BPM on 93 percent of windows vs 22.78 flagged. Sensitivity to the nominal pulse direction: 9.75 vs 8.63 with the simulator's own vector.
+  - Honest reading: v2 beats the best single method and nearly removes the dark-skin penalty, but **the artifact mask is the valuable part** (masked POS beats full TRACE), and v2 is worse than POS on light skin.
+  - **Known failure (found live in the demo, 2026-09-11):** normalising the artifact spectrum to its own maximum means that with little motion the reference is dominated by pulse leakage, so the mask deletes the fundamental and the harmonic wins (demo read 153 BPM vs true 74, marked confident). Candidate fix under test: a Wiener-style mask `P_m / (P_m + P_a)` that compares artifact power to the method's own power.
+- Invariant 9 applies to v1 only; v2 scores on the masked full-length spectrum because the mask lives on that grid.
 
 ### 8.5 To implement: HRV layer (T9)
 
@@ -579,12 +582,14 @@ Track tags: **[P]** poster, **[C]** course, **[B]** both.
 - [ ] `scripts/step6_compression.py`
 - Exit gate: lossless round trip is bit-identical; achieved bitrates within tolerance of targets.
 
-### T6: Neural baselines [P]
+### T6: Neural baselines [P] (done)
 
-- [ ] Install rPPG-Toolbox in a separate environment (keep the core venv classical)
-- [ ] Choose two pretrained checkpoints (decision D3); record their training sets
-- [ ] Run on the same clips and windows as the classical grid; export per-window BPM in the shared results format
-- Exit gate: both models produce results on the lossless control; no train/test overlap.
+- [x] `.venv-nn` (torch 2.14 CPU, neurokit2) and `third_party/rPPG-Toolbox` (shallow clone, gitignored; its licence is non-standard, so none of its code is copied into this repo)
+- [x] D3 decided: **PhysNet** (`PURE_PhysNet_DiffNormalized.pth`, established) and **FactorizePhys** (`PURE_FactorizePhys_FSAM_Res.pth`, NeurIPS 2024). Both trained on PURE, which we never evaluate on.
+- [x] `scripts/nn_infer.py`: toolbox-faithful preprocessing (PhysNet: whole-clip DiffNormalized, 128-frame chunks, integrate the predicted derivative; FactorizePhys: raw frames, 160-frame chunks plus one repeated frame). Our own `clean_pulse` and FFT then apply, like every method.
+- [x] FactorizePhys must be built with FSAM on (the checkpoint holds FSAM conv weights). `rppg_head.bias1` is legitimately absent: `nn.Parameter(1.0).to(device)` on a GPU returns an unregistered tensor, so it was never trained or saved and stays 1.0.
+- [x] `scripts/step8_neural.py` 9/9: core venv has no torch; both run; one prediction per frame; clean light-skin simulated video MAE PhysNet 0.75, FactorizePhys 0.85 BPM. Reported (simulated, 30 s): type VI lossless PhysNet 14.0, FactorizePhys 5.4; H.264 100 kbps type II PhysNet 14.6, FactorizePhys 6.4.
+- Grid runs the neural baselines on lossless plus the H.264 ladder only (memory and time budget).
 
 ### T7: Full grid and statistics [P]
 

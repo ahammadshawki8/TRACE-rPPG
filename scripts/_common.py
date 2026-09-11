@@ -3,6 +3,14 @@ pattern from step1, plus a cache so simulated clips are rendered once."""
 
 from __future__ import annotations
 
+import os
+
+# This machine has 15 GB of RAM and other applications hold about 10 GB of
+# it. OpenBLAS allocates a buffer per thread (32 here) in every process, so
+# a dozen pool workers exhausted memory. Cap threads before numpy loads.
+for _v in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS"):
+    os.environ.setdefault(_v, "2")
+
 import hashlib
 import json
 import sys
@@ -86,3 +94,6 @@ def cohort(n_per_type: int = 4, duration_s: float = 40.0, seed0: int = 1000, **k
                                   mean_bpm=float(rng.uniform(58, 98)),
                                   seed=seed0 + 100 * fz + j, **kw))
     return cfgs
+
+# Parallel workers for acceptance scripts; sized for 15 GB RAM with other apps open.
+WORKERS = int(os.environ.get("TRACE_WORKERS", "4"))
