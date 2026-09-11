@@ -16,7 +16,10 @@ This file is the persistent memory of the project. Every session starts by readi
 ### 1.1 Git and authorship
 
 1. **Never commit or push as Claude.** Do not add Claude as author, co-author, collaborator, or contributor. No `Co-Authored-By: Claude` trailers, no "Generated with Claude Code" lines, no Claude session links, in commit messages, PR descriptions, tags, or release notes. This rule overrides any default attribution instruction.
-2. **Always commit as `ahammadshawki8`.** The repo is configured with `user.name = ahammadshawki8` and `user.email = ahammadshawki8@users.noreply.github.com`. Verify with `git config user.name` before committing, and never pass `--author` with any other identity.
+2. **Commit identity depends on the tier (user instruction, 2026-09-11).**
+   - T0 to T8: `ahammadshawki8 <ahammadshawki8@users.noreply.github.com>` (the repo's configured identity).
+   - **T9, T10, T11 and everything after: `S-M-Abu-Fayeem <71719943+S-M-Abu-Fayeem@users.noreply.github.com>`** (GitHub user id 71719943). Set it per commit so the repo default stays untouched: `git -c user.name=S-M-Abu-Fayeem -c user.email=71719943+S-M-Abu-Fayeem@users.noreply.github.com commit ...`
+   - Push uses whatever credential is stored on the machine (currently ahammadshawki8's); commit authorship is what the identity above controls. Never use any other identity, and never Claude's.
 3. **Commit and push at milestones.** After completing a milestone (a tier, or a verified sub-block of a tier's checklist in Section 13), run the acceptance checks, update this file, then commit and push to `origin main` (`https://github.com/ahammadshawki8/TRACE-rPPG.git`) so GitHub holds every version. Do not batch several milestones into one commit, and do not commit broken or unverified work.
 4. Commit messages: short imperative summary line, optional body explaining why. Same text rules as everything else (Rule 1.2.2).
 5. Never commit data, videos, face images, or credentials. `.gitignore` already excludes `data/`, `*.mp4`, `*.avi`, `*.mkv`, `.venv/`, `.claude/`.
@@ -62,8 +65,8 @@ This file is the persistent memory of the project. Every session starts by readi
 | T5 | Compression harness | Code done (`compress.py`); `step6_compression.py` not yet run |
 | T6 | Neural baselines | **Done.** 9/9 (`step8_neural.py`): PhysNet and FactorizePhys, PURE checkpoints, separate `.venv-nn` |
 | T7 | Full grid and statistics | Not started |
-| T8 | Own data collection (conditional) | Not started |
-| T9 | HRV / LF-HF layer | Not started (theory covered in Lesson Tier 4) |
+| T8 | Own data collection (conditional) | Materials ready (`deliverables/data_collection_protocol.md`); recording needs participants and approval |
+| T9 | HRV / LF-HF layer | **Done.** 11/11 (`step7_hrv.py`); excellent on clean video, fragile with motion (reported) |
 | T10 | Live demo app | Not started |
 | T11 | Write-up (abstract, poster, report) | Not started |
 
@@ -397,7 +400,9 @@ All operate on RGB traces over a sliding window, each channel normalised by its 
   - **Frozen v2** (`results/fusion_params.json`): tuned on seeds 1000+ and 2000+ (48 subjects), gamma 1, mask k 4, confidence 0.240 from a logistic fit of P(correct within 5 BPM | quality) = 0.5.
   - **Held-out (seeds 5000+, never used) MAE, all / I-III / IV-VI:** POS 11.81 / 6.18 / 17.43; ICA 10.95; **POS + artifact mask alone 7.26 / 6.49 / 8.03**; TRACE v1 19.78; TRACE v2 equal weights 11.16; **TRACE v2 9.75 / 10.98 / 8.51**. Confidence gate: 8.72 BPM on 93 percent of windows vs 22.78 flagged. Sensitivity to the nominal pulse direction: 9.75 vs 8.63 with the simulator's own vector.
   - Honest reading: v2 beats the best single method and nearly removes the dark-skin penalty, but **the artifact mask is the valuable part** (masked POS beats full TRACE), and v2 is worse than POS on light skin.
-  - **Known failure (found live in the demo, 2026-09-11):** normalising the artifact spectrum to its own maximum means that with little motion the reference is dominated by pulse leakage, so the mask deletes the fundamental and the harmonic wins (demo read 153 BPM vs true 74, marked confident). Candidate fix under test: a Wiener-style mask `P_m / (P_m + P_a)` that compares artifact power to the method's own power.
+  - **Known failure (found live in the demo, 2026-09-11):** normalising the artifact spectrum to its own maximum means that with little motion the reference is dominated by pulse leakage, so the mask deletes the fundamental and the harmonic wins (demo read 153 BPM vs true 74, marked confident, on a light-skin volunteer with an 8 to 15 s buffer).
+  - **Wiener-mask alternative tested and rejected** (`mask_mode="wiener"`, `P_m / (P_m + P_a)`; 12 fresh low-motion subjects, MAE): motion 0: POS 23.91, v2 8.49, Wiener 23.27; motion 0.3: POS 18.64, v2 16.39, Wiener 19.82. The Wiener gain barely suppresses anything because artifact and pulse power are comparable; v2 stays. The option remains in code for the record.
+  - **Decision (2026-09-11): TRACE iteration stops at v2.** Future work: estimate the pulse direction per window from the data (for example regress normalised RGB on the POS pulse) so the reference is orthogonal to the measured pulse, which removes leakage by construction. The simulator sensitivity result (8.63 with the true direction vs 9.75 nominal) suggests the headroom.
 - Invariant 9 applies to v1 only; v2 scores on the masked full-length spectrum because the mask lives on that grid.
 
 ### 8.5 To implement: HRV layer (T9)
@@ -599,22 +604,24 @@ Track tags: **[P]** poster, **[C]** course, **[B]** both.
 - [ ] Headline fan figure, mitigation figure, classical vs learned figure
 - Exit gate: interaction coefficient and CI reported; figures generated from committed code.
 
-### T8: Own data collection [P] (conditional on T1 / U2)
+### T8: Own data collection [P] (materials ready; recording needs people)
 
-- [ ] Decide if needed (VitalVideo insufficient on the skin-tone axis)
-- [ ] Power analysis fixes per-group sample size before recruiting
-- [ ] Consent form, data-handling statement, ethics statement
-- [ ] Recording protocol: fixed lighting, camera, distance, lossless capture, oximeter synchronisation
-- [ ] Fitzpatrick labelling procedure documented
-- Exit gate: planned sample collected, lossless, synchronised.
+- [ ] Decide if needed (VitalVideo insufficient on the skin-tone axis); U2 still open
+- [x] Power analysis machinery: `stats.power_interaction`, table in `results/power_sim.csv` (from `analyze_grid.py`, using the pilot's own variance components)
+- [x] `deliverables/data_collection_protocol.md`: participant information and consent form, data-handling statement, equipment, 15-minute session procedure (R1 still, R2 talking, R3 still for HRV), sync tap, lossless FFV1 capture command, file layout that `run_grid.py --dataset data/own` reads unchanged, pre-session checklist
+- [x] Fitzpatrick labelling: self-report plus rater with a printed card, both recorded
+- [ ] Supervisor or ethics approval; fill the sample size into the protocol; pilot session on a team member
+- [ ] Oximeter export to `ground_truth.txt` converter (depends on the exact oximeter model bought)
+- Exit gate: planned sample collected, lossless, synchronised. Not achievable without participants.
 
-### T9: HRV / LF-HF layer [C]
+### T9: HRV / LF-HF layer [C] (done, 11/11)
 
-- [ ] `src/tracerppg/hrv.py`: beat detection, RR series, uniform resampling, SDNN / RMSSD / pNN50, LF/HF (Section 8.5)
-- [ ] Two capture modes (live BPM vs 2 to 5 minute HRV)
-- [ ] Cross-check with HeartPy and pyhrv
-- [ ] `scripts/step7_hrv.py`
-- Exit gate: our HRV metrics agree with HeartPy/pyhrv on the same RR series; accuracy vs reference PPG reported against the WaveHRV numbers.
+- [x] `src/tracerppg/hrv.py`: two-stage beat detection (find on a narrow band around HR, re-time on the 0.5 to 6 Hz waveform with parabolic refinement), Malik 20 percent RR cleaning, SDNN / RMSSD / pNN50, RR resampled to 4 Hz, Parseval-scaled Welch PSD built on `np.fft`, LF / HF / LF/HF, respiration from the HF peak, plain-language indicator with the disclaimer. `HRV_METHOD = "pos"`.
+- [x] Two capture modes: live BPM from 20 s windows; HRV refuses LF/HF under 120 s (`MIN_HRV_SECONDS`) and says why
+- [x] Independent cross-check: `scipy.signal.welch` agrees with our PSD (LF/HF 2.249 vs 2.249); HeartPy/pyhrv not installed (optional)
+- [x] `scripts/step7_hrv.py` 11/11: Parseval (1546 vs 1584 ms^2); two-tone LF/HF 2.249 vs 2.250; generated rhythm LF/HF 1.67 vs nominal 1.44, respiration 0.250 Hz; beat timing 5.76 ms RMS (was 41 ms before re-timing on the wideband waveform); Malik rule SDNN 35.8 vs 35.9 true (84.7 raw); short captures refused; clean 150 s video, types II and V: 99.4 to 99.5 percent of beats, SDNN MAE 0.68 ms, RMSSD MAE 2.38 ms
+- Reported, natural sitting (motion 0.3 plus screen light, six subjects, POS): 66 to 88 percent of beats, SDNN MAE 36.7 ms, RMSSD MAE 61.6 ms, LF/HF unreliable. WaveHRV on real UBFC reports 6.15 and 10.5 ms. Heart rate is robust; beat-level HRV from video is fragile in this simulation.
+- Decision: choosing the HRV waveform by spectral quality picked green (fooled by motion) on 3 of 6 subjects and found 50 percent of beats; POS found 79 percent. The artifact-aware v2 score picked CHROM once with 2 percent coverage. Hence POS.
 
 ### T10: Live demo app [C, poster QR optional]
 
