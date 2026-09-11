@@ -110,11 +110,19 @@ def fuse(
     confidence: float = DEFAULT_CONFIDENCE,
     artifact: np.ndarray | None = None,
     mask_k: float = DEFAULT_MASK_K,
+    mask_mode: str = "power",
 ) -> FusionResult:
     """Fuse one analysis window of several methods' band-limited pulses.
 
     With `artifact` (the band-limited pulse-blind reference for the same
-    window) this is TRACE v2; without it, TRACE v1.
+    window) this is TRACE v2 (`mask_mode="power"`) or v3 (`"wiener"`);
+    without it, TRACE v1.
+
+    The v3 mask is a Wiener gain, P_m / (P_m + P_a): each frequency is kept
+    in proportion to how much of the method's own power exceeds the artifact
+    power there. Unlike v2 it compares the artifact with the pulse rather
+    than with itself, so a weak reference dominated by pulse leakage cannot
+    delete the fundamental.
     """
     if artifact is None:
         per, freqs = {}, None
@@ -135,7 +143,7 @@ def fuse(
         per, masked = {}, {}
         for name, seg in segments.items():
             _, power = spectrum(seg, fs, pad_factor=4)
-            pm = power * keep
+            pm = power * (power / (power + a_pow + 1e-30) if mask_mode == "wiener" else keep)
             pk = peak_frequency(freqs, pm)
             pk, _ = correct_harmonic_lock(freqs, pm, pk)
             a_frac = float(np.sum(a_norm[mask & (np.abs(freqs - pk) <= 0.12)])) / a_total
@@ -215,6 +223,7 @@ def fuse_windows(
     confidence: float = DEFAULT_CONFIDENCE,
     artifact: np.ndarray | None = None,
     mask_k: float = DEFAULT_MASK_K,
+    mask_mode: str = "power",
 ) -> list[FusionResult]:
     """TRACE over every window. `pulses` (and `artifact`) must already be
     band-limited over the whole recording; each window is then cut."""
@@ -224,5 +233,5 @@ def fuse_windows(
     for a, b in windows:
         sl = window_slice(t, a, b)
         art = artifact[sl] if artifact is not None else None
-        out.append(fuse({n: p[sl] for n, p in pulses.items()}, fs, gamma, confidence, art, mask_k))
+        out.append(fuse({n: p[sl] for n, p in pulses.items()}, fs, gamma, confidence, art, mask_k, mask_mode))
     return out
