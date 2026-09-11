@@ -134,6 +134,42 @@ def bandpass_butter(
     return filtfilt(b, a, x)
 
 
+def default_detrend_window(fs: float) -> int:
+    """About two seconds of samples, odd. At 30 fps this is 61, whose first
+    null (fs/k = 0.49 Hz) sits safely below the 0.7 Hz edge of the band."""
+    k = int(round(2.0 * fs))
+    return k + 1 if k % 2 == 0 else k
+
+
+def default_numtaps(fs: float) -> int:
+    """About ten seconds of FIR, odd. At 30 fps this is 301. Scaling taps
+    with the sampling rate keeps the transition band the same width in Hz."""
+    n = int(round(10.0 * fs))
+    return n + 1 if n % 2 == 0 else n
+
+
+def clean_pulse(
+    x: np.ndarray,
+    fs: float,
+    low_hz: float = 0.7,
+    high_hz: float = 4.0,
+) -> np.ndarray:
+    """Detrend then bandpass with the defaults above: the standard route
+    from any raw pulse-bearing trace to a band-limited pulse signal.
+
+    Filter the whole recording once and cut analysis windows afterwards;
+    filtering each short window separately wastes most of it on edges.
+    """
+    x = np.asarray(x, dtype=float)
+    k = default_detrend_window(fs)
+    if len(x) > k:
+        x = detrend(x, k)
+    else:
+        x = x - np.mean(x)
+    taps = min(default_numtaps(fs), 2 * (len(x) // 2) - 1)
+    return bandpass_fir(x, fs, low_hz, high_hz, numtaps=max(taps, 31))
+
+
 def fft_convolve(x: np.ndarray, kernel: np.ndarray) -> np.ndarray:
     """Linear convolution performed through the FFT, correctly zero-padded.
 

@@ -1,0 +1,9 @@
+# Core classical pipeline (.venv). No deep-learning packages here: the
+# neural baselines live in a separate environment (.venv-nn), see CLAUDE.md T6.
+numpy>=2.0
+scipy>=1.13
+opencv-python-headless>=4.10,<5   # 4.x ships the Haar cascade files; 5.0 does not
+scikit-image>=0.24                # public-domain base face for the simulator
+pandas>=2.2
+statsmodels>=0.14
+matplotlib>=3.9

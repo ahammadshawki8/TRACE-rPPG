@@ -8,6 +8,8 @@ face tracking, lighting, or the camera.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 
 # Relative harmonic amplitudes of a realistic pulse waveform. A heartbeat is a
@@ -100,6 +102,90 @@ def pulse_signal(
         p_noise = p_signal / (10 ** (snr_db / 10.0))
         x = x + rng.normal(0.0, np.sqrt(p_noise), size=x.shape)
     return t, x
+
+
+@dataclass
+class Rhythm:
+    """A heartbeat sequence with known timing, for HRV ground truth.
+
+    `beat_times` are systolic peak times in seconds. `rr` holds the intervals
+    between them. `lf_hf_nominal` is the ratio of the squared LF and HF
+    modulation depths used to generate the rhythm, a first-order analytic
+    value that a long recording should reproduce.
+    """
+
+    beat_times: np.ndarray
+    rr: np.ndarray
+    mean_bpm: float
+    lf_hf_nominal: float
+
+
+def heart_rhythm(
+    duration_s: float,
+    mean_bpm: float = 72.0,
+    lf_bpm: float = 3.0,
+    hf_bpm: float = 2.5,
+    lf_hz: float = 0.10,
+    resp_hz: float = 0.25,
+    wander_bpm: float = 2.0,
+    seed: int = 0,
+) -> Rhythm:
+    """Beat times from an instantaneous heart rate with LF and HF rhythms.
+
+    The instantaneous rate is a mean, plus a slow baroreflex-like oscillation
+    in the LF band (default 0.10 Hz), plus respiratory sinus arrhythmia at
+    the breathing rate in the HF band (default 0.25 Hz, 15 breaths/min), plus
+    a slow random wander. Beats fall wherever the integrated phase crosses a
+    whole number, so the rhythm is continuous rather than a jittered grid.
+    """
+    rng = np.random.default_rng(seed)
+    fs = 200.0
+    t = np.arange(0.0, duration_s + 3.0, 1.0 / fs)
+
+    # Slow wander: white noise smoothed by a 20 s moving average, rescaled.
+    k = int(20 * fs)
+    raw = rng.normal(size=len(t) + k)
+    wander = np.convolve(raw, np.ones(k) / k, mode="valid")[: len(t)]
+    wander = wander / (np.std(wander) + 1e-12) * wander_bpm
+
+    hr = (
+        mean_bpm
+        + lf_bpm * np.sin(2 * np.pi * lf_hz * t + rng.uniform(0, 2 * np.pi))
+        + hf_bpm * np.sin(2 * np.pi * resp_hz * t + rng.uniform(0, 2 * np.pi))
+        + wander
+    )
+    phase = np.cumsum(hr / 60.0) / fs + rng.uniform(0, 1)
+    whole = np.floor(phase)
+    idx = np.flatnonzero(np.diff(whole) > 0)
+    # Linear interpolation of the exact crossing time between samples.
+    frac = (whole[idx + 1] - phase[idx]) / (phase[idx + 1] - phase[idx])
+    beats = t[idx] + frac / fs
+    beats = beats[beats <= duration_s]
+
+    return Rhythm(
+        beat_times=beats,
+        rr=np.diff(beats),
+        mean_bpm=float(60.0 / np.mean(np.diff(beats))),
+        lf_hf_nominal=float((lf_bpm / hf_bpm) ** 2),
+    )
+
+
+def ppg_from_beats(
+    t: np.ndarray,
+    beat_times: np.ndarray,
+    dicrotic: float = 0.35,
+) -> np.ndarray:
+    """A PPG-shaped waveform with a systolic peak exactly at each beat time.
+
+    Each beat is a narrow systolic Gaussian followed by a smaller, wider
+    dicrotic wave. The result is zero-mean with unit peak-to-peak amplitude,
+    so callers scale it to a physical modulation depth.
+    """
+    d = t[:, None] - beat_times[None, :]
+    wave = np.exp(-0.5 * (d / 0.09) ** 2) + dicrotic * np.exp(-0.5 * ((d - 0.32) / 0.12) ** 2)
+    x = wave.sum(axis=1)
+    x = x - np.mean(x)
+    return x / (np.ptp(x) + 1e-12)
 
 
 def two_subject_signal(

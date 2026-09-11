@@ -55,7 +55,7 @@ This file is the persistent memory of the project. Every session starts by readi
 | Tier | Name | State |
 |---|---|---|
 | T0 | Synthetic foundation | **Done.** 12/12 checks pass (re-verified 2026-09-11) |
-| T1 | Dataset access and ground truth | Not started |
+| T1 | Dataset access and ground truth | **Done (code).** 8/8 checks (`step2_ground_truth.py`); real UBFC check skipped until data is downloaded |
 | T2 | Video to RGB traces | Not started |
 | T3 | Extraction methods (green, CHROM, POS) | Not started |
 | T4 | TRACE fusion | Partial: quality metric (`spectral_snr`) and Welch done; fusion not started |
@@ -85,7 +85,8 @@ Also done: seven bilingual theory lessons (`Lesson/`), pitch deck and Bangla pre
 | D2 | Demo app architecture: local Python server vs fully in-browser | Local Python server first (Section 7.3) |
 | D3 | Which two neural baselines | One established (PhysNet or TS-CAN) plus one recent (e.g. PhysFormer or FactorizePhys), chosen by checkpoint availability in rPPG-Toolbox |
 | U1 | Did the week-1 verification happen? (supervisor's native ACM DL / IEEE Xplore search, forward citation chase from Nowara 2020, full read of the 2026 systematic review) | Not recorded anywhere in the repo. Ask. |
-| U2 | Is VitalVideo access confirmed, and what is its source video quality? | Not recorded. This is the first blocking risk. Ask. |
+| U2 | Is VitalVideo access confirmed, and what is its source video quality? | Still unconfirmed. Found 2026-09-11: the paper (arXiv 2306.11891, CC BY-SA 4.0, vitalvideos.org) says "two 30 second uncompressed videos" per participant, but the Health-HCI-Group loader lists `.mp4` files. Run `ffprobe` on the distributed files before use; if they are lossy, VitalVideo has the same confound as MMPD. The paper also says skin tone is imbalanced. |
+| U5 | UBFC-rPPG download | `sites.google.com` is intercepted on this network (certificate for another domain), so the dataset page could not be reached from this machine. Download DATASET_2 manually into `data/ubfc/subjectN/` and rerun `step2_ground_truth.py`. |
 | U3 | Course project deadline and deliverable format | Unknown. Ask. |
 | U4 | Team members and role split | Unknown. Ask. |
 
@@ -447,6 +448,18 @@ All operate on RGB traces over a sliding window, each channel normalised by its 
 | **MMPD** | Via GitHub | Skin-tone reference only, not primary | Already compressed to 320x240: no clean high-bitrate control |
 | **UBFC-Phys, MAHNOB-HCI** | Free | Optional extensions | MAHNOB has ECG ground truth and natural head motion |
 
+### 11.1 Simulated pilot data (`src/tracerppg/simulate.py`)
+
+Used until real skin-tone-diverse lossless data is in hand, and permanently as the harness and statistics validator. **Every result from it is labelled "simulated" wherever it appears.**
+
+- Base face: NASA astronaut portrait (public domain, `skimage.data.astronaut()`), face-centred crop at 640x480, 30 fps, Haar-detected, adaptive chroma skin mask.
+- Model: `pixel_c = L(t) S(t) [ s(t) + D_c r_c(m) (1 + a_c p(t)) ]`. Melanin per Fitzpatrick type `{1: 0.05, 2: 0.10, 3: 0.20, 4: 0.34, 5: 0.52, 6: 0.75}`, base photo treated as type II, `r_c = exp(-2 K (m - m0) mu_c)` with K = 0.7 and mu = (1.00, 1.44, 2.56) for R, G, B. Surface reflection 14 levels, channel neutral. Pulse direction (0.33, 0.77, 0.53), green depth 1.0 percent peak to peak of the dermal term.
+- Resulting cheek RGB: type I (214, 183, 168), II (201, 167, 143), III (177, 139, 104), IV (149, 109, 69), V (119, 80, 43), VI (91, 56, 27).
+- Motion: slow sway plus a broadband component reaching into the HR band, rotation, shading and specular changes coupled to motion. Illumination drift 2 percent. Sensor noise `sqrt(1 + 0.015 I)` levels.
+- Heart: `heart_rhythm` gives beat times with LF (0.10 Hz) and HF (respiratory, 0.25 Hz) modulation plus wander; ground truth written as PPG at 60 Hz, instantaneous HR, and exact beat times in `meta.json`.
+- Output: FFV1 `bgr0` `vid.mkv` (bit-exact lossless, about 12 MB per second of video), `ground_truth.txt`, `meta.json`. Renders at about real time per process.
+- What it can and cannot show: codecs, detector and pipeline are real; only the melanin-to-pulse-amplitude physics is modelled. A simulated fan is evidence about the mechanism, not about real people.
+
 Storage: everything under `data/` (gitignored). Never commit, never redistribute; follow each dataset's licence. Faces of our own participants are deleted after the project unless consent says otherwise; state this in the report.
 
 ---
@@ -517,16 +530,18 @@ Track tags: **[P]** poster, **[C]** course, **[B]** both.
 - [x] `scripts/build_viz.py` + `viz/template.html` generating `pipeline-viz.html`
 - Exit gate: passed.
 
-### T1: Dataset access and ground truth [B] (next)
+### T1: Dataset access and ground truth [B] (done, real-data check pending)
 
 - [ ] Resolve U1 and U2 with the user (verification status, VitalVideo access)
-- [ ] Download UBFC-rPPG into `data/ubfc/`
-- [ ] `src/tracerppg/datasets.py`: UBFC loader returning frames (lazy), fps, frame timestamps, reference PPG, reference HR
-- [ ] Ground-truth HR per analysis window from the reference PPG using our own `estimate_bpm`; compare against the dataset's provided HR
-- [ ] Shared windowing utility (window length, hop) used by every later evaluation
-- [ ] Add `requirements.txt` (numpy, scipy, opencv-python as needed)
-- [ ] `scripts/step2_ground_truth.py` with checks
-- Exit gate: ground-truth HR from PPG agrees with provided HR within one resolution bin on all UBFC subjects (report any exceptions).
+- [ ] Download UBFC-rPPG into `data/ubfc/` (blocked on this network, U5)
+- [x] `src/tracerppg/datasets.py`: `Recording`, UBFC DATASET_1 and DATASET_2 readers, `load_dataset`, cubic `resample_uniform`, `sliding_windows` (20 s, 5 s hop), `windowed_bpm`, `reference_hr`, `provided_hr`
+- [x] Ground-truth HR per window from the reference PPG with our own `estimate_bpm`
+- [x] `src/tracerppg/simulate.py`: face-video simulator writing the UBFC layout (Section 11.1)
+- [x] `synth.heart_rhythm` and `synth.ppg_from_beats`: beat times with LF and HF rhythms, for HRV ground truth
+- [x] `preprocess.clean_pulse` with `default_detrend_window(fs)` (about 2 s) and `default_numtaps(fs)` (about 10 s)
+- [x] `requirements.txt`
+- [x] `scripts/step2_ground_truth.py`: 8/8. Reference HR within 1.26 BPM of the true rate from 48 to 124 BPM (bin 3.0 BPM); cubic resampling error 0.002 vs 0.082 for linear across dropped frames
+- Exit gate: passed on simulated ground truth. The real-UBFC check runs automatically once `data/ubfc/` exists.
 
 ### T2: Video to RGB traces [B]
 
