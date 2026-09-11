@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TRACE live</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M2 18h7l3-9 5 16 4-11 2 4h7' fill='none' stroke='%23B01B3F' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;600;700&family=Archivo:wght@400;500;600&family=Hind+Siliguri:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/static/styles.css?v=2">
+</head>
+<body>
+<header class="top">
+  <div class="wordmark">TRACE <small data-i18n="tagline">contactless pulse</small></div>
+  <ol class="stepper" id="stepper" aria-label="Progress"></ol>
+  <div class="toggles">
+    <button class="toggle" id="lang" type="button" aria-label="Switch language">বাংলা</button>
+    <button class="toggle" id="theme" type="button" aria-label="Switch light or dark theme" data-i18n="theme">Theme</button>
+  </div>
+</header>
+
+<main>
+  <!-- 1 -->
+  <section class="screen" data-step="0" aria-labelledby="h-welcome">
+    <h1 id="h-welcome" data-i18n="welcome.title">See your heartbeat in a video of your face</h1>
+    <p class="lede" data-i18n="welcome.lede">Each heartbeat pushes blood into your face and changes its colour by less than one percent. A camera can see it. The Fourier transform can find the rhythm in it.</p>
+    <div class="choice" role="radiogroup" aria-label="Video source">
+      <label><input type="radio" name="source" value="webcam" checked>
+        <div><strong data-i18n="welcome.cam">Use my camera</strong><span data-i18n="welcome.camsub">Sit facing a window or lamp.</span></div></label>
+      <label><input type="radio" name="source" value="sim2">
+        <div><strong data-i18n="welcome.sim2">Simulated volunteer, lighter skin</strong><span data-i18n="welcome.simsub">Fitzpatrick type II. The true heart rate is known.</span></div></label>
+      <label><input type="radio" name="source" value="sim5">
+        <div><strong data-i18n="welcome.sim5">Simulated volunteer, darker skin</strong><span data-i18n="welcome.simsub5">Fitzpatrick type V. The true heart rate is known.</span></div></label>
+    </div>
+    <ul class="promises">
+      <li data-i18n="welcome.p1">The video stays on this computer. This page receives only numbers and a small preview.</li>
+      <li data-i18n="welcome.p2">No trained model is used. Every number comes from a convolution or a Fourier transform.</li>
+      <li data-i18n="welcome.p3">This is a research and wellness tool, not a medical device. It does not diagnose anything.</li>
+    </ul>
+  </section>
+
+  <!-- 2 -->
+  <section class="screen" data-step="1" aria-labelledby="h-setup">
+    <h1 id="h-setup" data-i18n="setup.title">Let us check the picture</h1>
+    <div class="split">
+      <div class="camera"><img class="feed" alt="Camera preview with the tracked face and skin regions marked"><div class="empty" data-i18n="setup.waiting">Starting the video</div></div>
+      <div>
+        <ul class="checks" id="checks">
+          <li data-check="face"><span class="mark" aria-hidden="true"></span><div><strong data-i18n="check.face">Face in view</strong><span class="fix" data-i18n="fix.face">Move so your whole face fits inside the frame.</span></div></li>
+          <li data-check="light"><span class="mark" aria-hidden="true"></span><div><strong data-i18n="check.light">Enough light on your face</strong><span class="fix" data-i18n="fix.light">Face a window or lamp. Avoid a bright light behind you.</span></div></li>
+          <li data-check="still"><span class="mark" aria-hidden="true"></span><div><strong data-i18n="check.still">Holding fairly still</strong><span class="fix" data-i18n="fix.still">Rest your head. Small movements are fine.</span></div></li>
+        </ul>
+        <p class="note" data-i18n="setup.note">The red box follows your face. The green boxes are the forehead and cheeks, where the pulse is strongest.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="screen" data-step="2" aria-labelledby="h-live">
+    <h1 id="h-live" data-i18n="live.title">Your pulse, from colour alone</h1>
+    <div class="split">
+      <div>
+        <div class="camera"><img class="feed" alt="Camera preview"><div class="empty" data-i18n="setup.waiting">Starting the video</div></div>
+        <details class="how"><summary data-i18n="how.summary">How this works</summary>
+          <p data-i18n="how.p1">The average colour of your forehead and cheeks is measured thirty times a second. Slow lighting drift is removed by convolution with a moving average, and a bandpass filter keeps only 42 to 240 beats per minute.</p>
+          <p data-i18n="how.p2">The Fourier transform then winds the signal around a circle at every candidate rate. Noise cancels itself out; the real rhythm piles up. The tallest peak in the spectrum is your heart rate.</p>
+        </details>
+      </div>
+      <div class="readout" aria-live="polite">
+        <div class="bpm-line"><span class="bpm" id="bpm">--</span><span class="unit" data-i18n="unit">beats per minute</span></div>
+        <div class="confidence"><span data-i18n="confidence">Confidence</span><span class="meter" id="meter"><i></i></span><span id="conf-text"></span></div>
+        <p class="truth" id="truth"></p>
+        <div class="chart-block"><h3 data-i18n="chart.raw">Skin colour over the last 10 seconds</h3><canvas class="chart" id="c-raw" height="90"></canvas></div>
+        <div class="chart-block"><h3 data-i18n="chart.pulse">After filtering: the pulse</h3><canvas class="chart" id="c-pulse" height="90"></canvas></div>
+        <div class="chart-block"><h3 data-i18n="chart.spec">Its spectrum. The peak is your heart rate.</h3><canvas class="chart" id="c-spec" height="130"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="screen" data-step="3" aria-labelledby="h-duel">
+    <h1 id="h-duel" data-i18n="duel.title">Four ways to read the same face</h1>
+    <p class="lede" data-i18n="duel.lede">Now turn your head slowly or talk. Motion changes brightness; blood changes colour balance. The green channel cannot tell them apart. TRACE watches how much to trust each method and shifts its weight.</p>
+    <div class="duel">
+      <div><div class="name" data-i18n="m.green">Green only</div><div class="what" data-i18n="m.greenw">One colour channel, 2008</div><div class="value" id="v-green">--</div></div>
+      <div><div class="name">CHROM</div><div class="what" data-i18n="m.chromw">Colour difference, 2013</div><div class="value" id="v-chrom">--</div></div>
+      <div><div class="name">POS</div><div class="what" data-i18n="m.posw">Plane orthogonal to skin, 2017</div><div class="value" id="v-pos">--</div></div>
+      <div class="trace-col"><div class="name">TRACE</div><div class="what" data-i18n="m.tracew">All three, weighted by trust</div><div class="value" id="v-trace">--</div></div>
+    </div>
+    <div class="weights" id="weights" aria-label="How much TRACE trusts each method right now"></div>
+    <div class="inline-actions" id="sim-motion" hidden>
+      <button class="btn" type="button" id="more-motion" data-i18n="duel.motion">Make the volunteer move more</button>
+      <button class="btn quiet" type="button" id="less-motion" data-i18n="duel.still">Make the volunteer sit still</button>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="screen" data-step="4" aria-labelledby="h-lab">
+    <h1 id="h-lab"><span data-i18n="lab.title">What a video call does to the pulse</span><span class="sim-flag" data-i18n="simulated">simulated</span></h1>
+    <p class="lede" data-i18n="lab.lede">Video calls compress colour hardest, and colour is where the pulse lives. Slide the bitrate down and watch the error on lighter and darker skin.</p>
+    <div id="lab-missing" class="caveat" hidden></div>
+    <div id="lab-body">
+      <div class="lab-controls">
+        <label for="rate" id="rate-label"></label>
+        <input type="range" id="rate" min="0" max="5" step="1" value="0">
+        <div class="ticks" id="rate-ticks"></div>
+      </div>
+      <div class="lab-row">
+        <div class="thumbs" id="thumbs"></div>
+        <div>
+          <table class="lab" id="lab-table"></table>
+          <p class="note" id="lab-note"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section class="screen" data-step="5" aria-labelledby="h-hrv">
+    <h1 id="h-hrv" data-i18n="hrv.title">The rhythm between beats</h1>
+    <p class="lede" data-i18n="hrv.lede">A healthy heart is not a metronome. Taking a second Fourier transform of the gaps between beats shows two rhythms: one tied to blood pressure control, and one that is your breathing.</p>
+    <div class="split">
+      <div>
+        <svg class="ring" viewBox="0 0 120 120" role="img" aria-labelledby="ring-label">
+          <circle class="bg" cx="60" cy="60" r="52"></circle>
+          <circle class="fg" id="ring-fg" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"></circle>
+          <text x="60" y="60" id="ring-label">0:00</text>
+        </svg>
+        <p class="note" data-i18n="hrv.need">Needs at least two minutes of steady video. Five is the clinical standard.</p>
+        <div class="inline-actions">
+          <button class="btn" type="button" id="hrv-go" data-i18n="hrv.start">Start the reading</button>
+          <button class="btn" type="button" id="hrv-done" disabled data-i18n="hrv.finish">Finish and analyse</button>
+        </div>
+      </div>
+      <div id="hrv-out">
+        <p class="note" data-i18n="hrv.empty">Results appear here when the reading is finished.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section class="screen" data-step="6" aria-labelledby="h-sum">
+    <h1 id="h-sum" data-i18n="sum.title">What we measured</h1>
+    <div class="summary-list" id="summary"></div>
+    <p class="caveat" data-i18n="sum.caveat">These are research and wellness indicators, not a medical diagnosis. Accuracy is lower on darker skin and on compressed video, which is exactly what this project measures.</p>
+    <div class="inline-actions">
+      <button class="btn" type="button" id="export" data-i18n="sum.export">Save results as a file</button>
+    </div>
+  </section>
+</main>
+
+<footer class="actions">
+  <button class="btn quiet" type="button" id="back" data-i18n="back">Back</button>
+  <p class="status" id="status" aria-live="polite"></p>
+  <button class="btn primary" type="button" id="next">Start</button>
+</footer>
+
+<script src="/static/app.js?v=2"></script>
+</body>
+</html>
