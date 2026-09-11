@@ -38,10 +38,51 @@ def finish() -> None:
     sys.exit(0 if passed == len(results) else 1)
 
 
-def sim_folder(cfg: SimConfig) -> Path:
-    """Render a simulated subject once, keyed by its full configuration."""
-    key = hashlib.sha1(json.dumps(asdict(cfg), sort_keys=True).encode()).hexdigest()[:12]
-    folder = CACHE / f"sim_{key}"
-    if not (folder / "meta.json").exists():
+def sim_key(cfg: SimConfig) -> str:
+    return hashlib.sha1(json.dumps(asdict(cfg), sort_keys=True).encode()).hexdigest()[:12]
+
+
+def sim_folder(cfg: SimConfig, need_video: bool = True) -> Path:
+    """Render a simulated subject once, keyed by its full configuration.
+
+    Lossless noisy video costs about 12 MB per second, so cohort videos are
+    deleted once their traces are cached; they re-render on demand
+    (deterministically, from the same seed) if a later step needs pixels.
+    """
+    folder = CACHE / f"sim_{sim_key(cfg)}"
+    if not (folder / "meta.json").exists() or (need_video and not (folder / "vid.mkv").exists()):
         simulate_recording(folder, cfg)
     return folder
+
+
+def sim_traces(cfg: SimConfig, keep_video: bool = False):
+    """(recording, traces) for a simulated subject; traces cached, video dropped."""
+    from tracerppg.datasets import load_recording
+    from tracerppg.roi import Traces, extract_traces
+
+    folder = CACHE / f"sim_{sim_key(cfg)}"
+    cache = folder / "traces.npz"
+    if cache.exists() and (folder / "meta.json").exists():
+        return load_recording(folder), Traces.load(cache)
+    folder = sim_folder(cfg)
+    rec = load_recording(folder)
+    tr = extract_traces(rec.video_path)
+    tr.save(cache)
+    if not keep_video:
+        rec.video_path.unlink(missing_ok=True)
+    return rec, tr
+
+
+def cohort(n_per_type: int = 4, duration_s: float = 40.0, seed0: int = 1000, **kw) -> list[SimConfig]:
+    """A balanced simulated cohort: n subjects of each Fitzpatrick type, with
+    heart rates and motion drawn from the same distribution for every type."""
+    import numpy as np
+
+    rng = np.random.default_rng(seed0)
+    cfgs = []
+    for fz in range(1, 7):
+        for j in range(n_per_type):
+            cfgs.append(SimConfig(fitzpatrick=fz, duration_s=duration_s,
+                                  mean_bpm=float(rng.uniform(58, 98)),
+                                  seed=seed0 + 100 * fz + j, **kw))
+    return cfgs

@@ -67,8 +67,12 @@ class SimConfig:
     fps: float = 30.0
     mean_bpm: float = 72.0
     pulse_depth: float = 0.010   # green peak-to-peak modulation of the dermal term
-    motion: float = 1.0          # 0 still, 1 natural sitting, 3 heavy motion
+    motion: float = 0.5          # 0 still, 0.5 natural sitting, 1+ restless, 3 heavy
     illum_drift: float = 0.02    # relative amplitude of slow lighting change
+    # Chromatic relighting from the screen being watched. 0.002 was chosen in
+    # T3 so that uncompressed type II accuracy lands near published UBFC-rPPG
+    # figures (POS 3.2 vs about 4, CHROM 6.3 vs about 4, GREEN 16 vs about 20).
+    screen_light: float = 0.002
     read_noise: float = 1.0      # sensor noise floor, 8-bit levels
     shot_noise: float = 0.015    # signal-dependent noise variance per level
     lf_bpm: float = 3.0
@@ -147,6 +151,29 @@ def _motion_track(n: int, fps: float, level: float, rng: np.random.Generator) ->
     return {"dx": dx, "dy": dy, "rot": rot, "shade": shade, "spec": spec}
 
 
+def _screen_light(n: int, fps: float, level: float, rng: np.random.Generator) -> np.ndarray:
+    """Per-channel illumination gain from a screen whose content changes.
+
+    A telehealth patient is lit partly by the display they are watching.
+    Its colour changes with the content, broadband and in the heart-rate
+    band, and in no fixed direction in RGB. Unlike a brightness change this
+    does not project to zero under CHROM or POS, so it sets a realistic floor
+    on accuracy even for uncompressed video.
+    """
+    if level <= 0:
+        return np.ones((n, 3), dtype=np.float32)
+    k = max(3, int(fps / 3.0))
+    out = np.zeros((n, 3))
+    for _ in range(2):
+        z = rng.normal(size=n + k)
+        s = np.convolve(z, np.ones(k) / k, mode="valid")[:n]
+        s /= np.std(s) + 1e-12
+        u = rng.normal(size=3)
+        u /= np.linalg.norm(u)
+        out += np.outer(s, u)
+    return (1.0 + level * out).astype(np.float32)
+
+
 def render(cfg: SimConfig):
     """Yield (frame_rgb_uint8, t) for every frame, plus return ground truth.
 
@@ -166,6 +193,7 @@ def render(cfg: SimConfig):
 
     mv = _motion_track(n, cfg.fps, cfg.motion, rng)
     drift = 1.0 + cfg.illum_drift * np.sin(2 * np.pi * rng.uniform(0.02, 0.05) * t + rng.uniform(0, 6.28))
+    screen = _screen_light(n, cfg.fps, cfg.screen_light, rng)
 
     img, mask, dermal = base["img"], base["mask"], base["dermal"]
     skin_dermal = dermal * ratio
@@ -177,7 +205,7 @@ def render(cfg: SimConfig):
             surface = SURFACE_LEVEL * (1.0 + mv["spec"][i])
             skin = surface + skin_dermal * (1.0 + a * p[i])
             frame = img * (1.0 - mask) + skin * mask
-            frame *= drift[i] * (1.0 + mv["shade"][i])
+            frame *= drift[i] * (1.0 + mv["shade"][i]) * screen[i]
             M = cv2.getRotationMatrix2D(centre, float(mv["rot"][i]), 1.0)
             M[0, 2] += mv["dx"][i]
             M[1, 2] += mv["dy"][i]

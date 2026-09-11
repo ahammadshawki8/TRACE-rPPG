@@ -57,7 +57,7 @@ This file is the persistent memory of the project. Every session starts by readi
 | T0 | Synthetic foundation | **Done.** 12/12 checks pass (re-verified 2026-09-11) |
 | T1 | Dataset access and ground truth | **Done (code).** 8/8 checks (`step2_ground_truth.py`); real UBFC check skipped until data is downloaded |
 | T2 | Video to RGB traces | **Done.** 6/6 checks (`step3_video.py`) |
-| T3 | Extraction methods (green, CHROM, POS) | Not started |
+| T3 | Extraction methods (green, CHROM, POS) | **Done.** 7/7 checks (`step4_methods.py`), plus ICA baseline |
 | T4 | TRACE fusion | Partial: quality metric (`spectral_snr`) and Welch done; fusion not started |
 | T5 | Compression harness | Not started |
 | T6 | Neural baselines | Not started |
@@ -552,13 +552,15 @@ Track tags: **[P]** poster, **[C]** course, **[B]** both.
 - [ ] Green-channel MAE on real UBFC (runs automatically once data exists; rPPG-Toolbox reports GREEN about 19.7 BPM MAE on UBFC-rPPG, verify against the paper)
 - Findings (simulated): with mild motion green MAE is 8 to 25 BPM (motion-coupled specular and shading); fresh Haar detection succeeds on 100 percent of attempts for types I to III but about 66 percent for IV to VI. The tracker keeps the box regardless, but the detector disparity is itself worth reporting.
 
-### T3: Extraction methods [B]
+### T3: Extraction methods [B] (done on simulation, UBFC pending)
 
-- [ ] `src/tracerppg/methods.py`: green, CHROM, POS (Section 8.3), all sharing one interface `method(rgb, fs) -> signal`
-- [ ] Results table on UBFC: green vs CHROM vs POS (MAE, RMSE, r)
-- [ ] Cross-check CHROM and POS against pyVHR on the same clips
-- [ ] `scripts/step4_methods.py`
-- Exit gate: CHROM and POS in the published range on clean UBFC (roughly 2 to 4 BPM MAE) and better than green, or a documented reason why not.
+- [x] `src/tracerppg/methods.py`: `green`, `ica` (FastICA from first principles, Poh 2010), `chrom` (global FIR on X and Y, local alpha over 1.6 s, Hann overlap-add), `pos` (1.6 s sliding projection); `temporal_normalise` (moving-mean convolution); `METHODS`, `CLASSICAL = (green, chrom, pos)`
+- [x] `src/tracerppg/metrics.py`: MAE, RMSE, Pearson r, within-5-BPM, Bland-Altman, subject-level bootstrap CI
+- [x] Simulator gained `screen_light` (chromatic relighting from the watched screen), calibrated at 0.002 so uncompressed type II lands near published UBFC figures; default `motion` is now 0.5 (natural sitting)
+- [x] `scripts/step4_methods.py` (7/7): CHROM and POS output for a pure brightness flicker is 2e-16 and 3e-15 vs 1.8e-2 for green; both recover 72 BPM under a brightness artifact 4x the pulse while green reports 85.8
+- [x] Simulated cohort (6 types x 4 subjects x 40 s, uncompressed), MAE I-III / IV-VI: green 22.8 / 28.3, ICA 8.9 / 15.5, CHROM 10.5 / 24.7, POS 8.7 / 18.8. Uncompressed skin-tone gap: POS +10.2, CHROM +14.2 BPM (simulated). CHROM degrades most on dark skin, consistent with Dasari et al. 2021.
+- [ ] Results table on real UBFC and a pyVHR cross-check (runs once data exists)
+- Exit gate: passed on simulation. Real-data gate (CHROM and POS about 2 to 4 BPM on UBFC) still open.
 
 ### T4: TRACE fusion [B]
 

@@ -61,7 +61,9 @@ if __name__ == "__main__":
     # -----------------------------------------------------------------------
     rule("2. Tracking across skin types (simulated, mild motion)")
     cfgs = [SimConfig(fitzpatrick=f, duration_s=40.0, motion=0.5, seed=100 + f) for f in range(1, 7)]
-    cfgs += [SimConfig(fitzpatrick=f, duration_s=40.0, motion=0.0, seed=200 + f) for f in (2, 5)]
+    # Still clips isolate the extraction path: no motion, no screen relighting.
+    cfgs += [SimConfig(fitzpatrick=f, duration_s=40.0, motion=0.0, screen_light=0.0, seed=200 + f)
+             for f in (2, 5)]
     with ProcessPoolExecutor(max_workers=8) as ex:
         rows = list(ex.map(green_eval, cfgs))
     moving = [r for r in rows if r["motion"] > 0]
