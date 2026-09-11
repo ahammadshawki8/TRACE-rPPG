@@ -1,0 +1,202 @@
+{
+ "clean": [
+  {
+   "fz": 2,
+   "method": "pos",
+   "coverage": 0.9941176470588236,
+   "timing_rms_ms": 4.068190138859375,
+   "sdnn": [
+    45.07652500664718,
+    44.441343531100145
+   ],
+   "rmssd": [
+    33.955422884209675,
+    32.11929357322255
+   ],
+   "lf_hf": [
+    1.5698549945137568,
+    1.7142629332123873
+   ],
+   "resp": [
+    0.25,
+    0.25,
+    0.25
+   ],
+   "indicator": "Heart rate 68 BPM. LF/HF 1.57 (balanced). Research and wellness indicator only, not a medical diagnosis."
+  },
+  {
+   "fz": 5,
+   "method": "pos",
+   "coverage": 0.9947643979057592,
+   "timing_rms_ms": 5.776356640833796,
+   "sdnn": [
+    35.140809058604724,
+    34.41765666798378
+   ],
+   "rmssd": [
+    26.10758147153012,
+    23.184366334409205
+   ],
+   "lf_hf": [
+    1.5243743424606608,
+    1.6102573526900215
+   ],
+   "resp": [
+    0.25,
+    0.25,
+    0.25
+   ],
+   "indicator": "Heart rate 76 BPM. LF/HF 1.52 (balanced). Research and wellness indicator only, not a medical diagnosis."
+  }
+ ],
+ "natural": [
+  {
+   "fz": 2,
+   "method": "pos",
+   "coverage": 0.7926829268292683,
+   "timing_rms_ms": 34.27940610696346,
+   "sdnn": [
+    77.17619930604029,
+    46.360773026467015
+   ],
+   "rmssd": [
+    102.35183810312125,
+    36.57635358203424
+   ],
+   "lf_hf": [
+    0.6447531874655112,
+    1.5206844588145143
+   ],
+   "resp": [
+    0.25,
+    0.25,
+    0.25
+   ],
+   "indicator": "Heart rate 65 BPM. LF/HF 0.64 (balanced). Research and wellness indicator only, not a medical diagnosis."
+  },
+  {
+   "fz": 2,
+   "method": "pos",
+   "coverage": 0.841025641025641,
+   "timing_rms_ms": 21.40536332252972,
+   "sdnn": [
+    41.506815328670534,
+    32.765346115248306
+   ],
+   "rmssd": [
+    53.78643515762103,
+    21.474202308044696
+   ],
+   "lf_hf": [
+    0.5465232728339761,
+    1.662944016929126
+   ],
+   "resp": [
+    0.25,
+    0.25,
+    0.25
+   ],
+   "indicator": "Heart rate 78 BPM. LF/HF 0.55 (balanced). Research and wellness indicator only, not a medical diagnosis."
+  },
+  {
+   "fz": 3,
+   "method": "pos",
+   "coverage": 0.6906077348066298,
+   "timing_rms_ms": 34.18374247036179,
+   "sdnn": [
+    109.2225429686153,
+    38.24773034490143
+   ],
+   "rmssd": [
+    113.01095278616378,
+    26.584842753828596
+   ],
+   "lf_hf": [
+    3.0843019276877026,
+    1.878597224802471
+   ],
+   "resp": [
+    0.15625,
+    0.25,
+    0.25
+   ],
+   "indicator": "Heart rate 74 BPM. LF/HF 3.08 (elevated, consistent with an alert or stressed state). Research and wellness indicator only, not a medical diagnosis."
+  },
+  {
+   "fz": 5,
+   "method": "pos",
+   "coverage": 0.8757062146892656,
+   "timing_rms_ms": 25.119537587433463,
+   "sdnn": [
+    55.117366894943345,
+    39.90668343558412
+   ],
+   "rmssd": [
+    71.4390026987966,
+    28.908581128397817
+   ],
+   "lf_hf": [
+    0.7190641696831541,
+    1.8993561395983005
+   ],
+   "resp": [
+    0.15625,
+    0.25,
+    0.25
+   ],
+   "indicator": "Heart rate 70 BPM. LF/HF 0.72 (balanced). Research and wellness indicator only, not a medical diagnosis."
+  },
+  {
+   "fz": 5,
+   "method": "pos",
+   "coverage": 0.8627450980392157,
+   "timing_rms_ms": 32.16942738199206,
+   "sdnn": [
+    55.08715380924746,
+    30.187974718620552
+   ],
+   "rmssd": [
+    82.57067208800508,
+    18.939335160893346
+   ],
+   "lf_hf": [
+    0.668389231793219,
+    1.672424174614891
+   ],
+   "resp": [
+    0.328125,
+    0.25,
+    0.25
+   ],
+   "indicator": "Heart rate 82 BPM. LF/HF 0.67 (balanced). Research and wellness indicator only, not a medical diagnosis."
+  },
+  {
+   "fz": 6,
+   "method": "pos",
+   "coverage": 0.6648351648351648,
+   "timing_rms_ms": 51.851439848111575,
+   "sdnn": [
+    106.98007706353457,
+    37.57804072585957
+   ],
+   "rmssd": [
+    105.00288208217553,
+    26.237344748363252
+   ],
+   "lf_hf": [
+    2.9772956264287918,
+    2.000906037452672
+   ],
+   "resp": [
+    0.203125,
+    0.25,
+    0.25
+   ],
+   "indicator": "Heart rate 74 BPM. LF/HF 2.98 (elevated, consistent with an alert or stressed state). Research and wellness indicator only, not a medical diagnosis."
+  }
+ ],
+ "clean_sdnn_mae": 0.6791669330839909,
+ "clean_rmssd_mae": 2.379672224054021,
+ "natural_sdnn_mae": 36.673934500728414,
+ "natural_rmssd_mae": 61.57352053905356
+}
