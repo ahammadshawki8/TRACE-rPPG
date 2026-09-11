@@ -63,5 +63,9 @@ def frames(path: Path, info: VideoInfo | None = None) -> Iterator[np.ndarray]:
                 break
             yield np.frombuffer(buf, np.uint8).reshape(info.height, info.width, 3)
     finally:
+        # A caller that stops early (a thumbnail, a closed demo) would leave
+        # ffmpeg writing into a closed pipe; end it quietly instead.
+        if proc.poll() is None:
+            proc.kill()
         proc.stdout.close()
         proc.wait()
