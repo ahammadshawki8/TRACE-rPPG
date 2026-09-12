@@ -74,8 +74,11 @@ python -m venv .venv
 .venv/Scripts/python.exe scripts/build_app_assets.py
 .venv/Scripts/python.exe scripts/build_deliverables.py --pdf
 
-# on real recordings in the UBFC layout
-.venv/Scripts/python.exe scripts/run_grid.py --dataset data/own --tag own
+# on real recordings in the UBFC layout, which may live on another drive
+set TRACE_UBFC_DIR=D:/datasets/ubfc                    # the acceptance scripts read this
+.venv/Scripts/python.exe scripts/make_labels_template.py D:/datasets/ubfc   # then rate each subject
+.venv/Scripts/python.exe scripts/run_grid.py --dataset D:/datasets/ubfc --tag ubfc --work-root D:/trace-scratch
+.venv/Scripts/python.exe scripts/analyze_grid.py --tag ubfc
 
 # live demo (camera or simulated volunteers), then open http://127.0.0.1:8000
 .venv/Scripts/python.exe app/server.py
@@ -91,6 +94,12 @@ git clone --depth 1 https://github.com/ubicomplab/rPPG-Toolbox third_party/rPPG-
 ```
 
 Requirements: Python 3.14, ffmpeg with libx264, libx265 and libvpx on the path.
+
+Subject folders are found recursively, so a download keeps its own nesting.
+Public datasets ship no skin-type labels, so a skin-tone comparison needs a
+`fitzpatrick.csv` (subject, type) beside the data; `make_labels_template.py`
+writes the blank file. Keep `--work-root` on the same drive as a large dataset:
+each subject's encodes are transient but large.
 
 ## Layout
 

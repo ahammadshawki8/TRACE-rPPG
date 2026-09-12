@@ -149,7 +149,7 @@ data["stages"] = [
         "id": "detrended",
         "n": 3,
         "title": "After detrending",
-        "sub": "step 4 — convolution with a moving-average kernel, then subtract",
+        "sub": "step 4, convolution with a moving-average kernel, then subtract",
         "series": [
             {"name": "detrended", "y": f(detrended), "colour": "accent"},
         ],
@@ -168,7 +168,7 @@ data["stages"] = [
         "id": "filtered",
         "n": 4,
         "title": "After bandpass filtering",
-        "sub": "step 6 — convolution with a windowed-sinc FIR, 0.7 to 4 Hz",
+        "sub": "step 6, convolution with a windowed-sinc FIR, 0.7 to 4 Hz",
         "series": [
             {"name": "filtered", "y": f(filtered), "colour": "accent"},
             {"name": "true pulse", "y": f(clean_pulse * 0.35), "colour": "signal"},
