@@ -83,7 +83,20 @@ Also done: seven bilingual theory lessons (`Lesson/`), pitch deck and Bangla pre
 
 ### 2.2 Next tasks (need people, data, or decisions)
 
-1. **Real data.** Download UBFC-rPPG DATASET_2 into `data/ubfc/` (blocked on this network, U5) and run `step2` to `step4` (their real-data sections run automatically), then `run_grid.py --dataset data/ubfc --tag ubfc` and `analyze_grid.py --tag ubfc`. Resolve U2 (VitalVideo codec) and T8 (own recordings with approval).
+1. **Real data (the dataset may live on another drive).** Download UBFC-rPPG DATASET_2 (Kaggle mirror, U6) to D, then:
+
+   ```
+   set TRACE_UBFC_DIR=D:\datasets\ubfc
+   .venv\Scripts\python.exe scripts\step2_ground_truth.py      # ground truth parses, HR agrees
+   .venv\Scripts\python.exe scripts\step3_video.py             # tracking and green MAE on real faces
+   .venv\Scripts\python.exe scripts\step4_methods.py           # CHROM and POS vs published numbers
+   .venv\Scripts\python.exe scripts\make_labels_template.py D:\datasets\ubfc   # then rate each subject
+   .venv\Scripts\python.exe scripts\run_grid.py --dataset D:\datasets\ubfc --tag ubfc --work-root D:\trace-scratch --workers 4
+   .venv\Scripts\python.exe scripts\analyze_grid.py --tag ubfc
+   .venv\Scripts\python.exe scripts\build_deliverables.py --tag ubfc --pdf
+   ```
+
+   Notes: subject folders are found recursively, so any nesting works; `fitzpatrick.csv` (subject, type) is required for the skin-tone comparison because UBFC ships no labels; keep `--work-root` on the same drive as the data (each subject's encodes are transient but large); start with 8 to 10 subjects to check the pipeline before committing the full download. Resolve U2 (VitalVideo codec) and T8 (own recordings; supervisor approved on 2026-09-12).
 2. **Fill placeholders** in `deliverables/*/template_*` (author names, department, emails), then `build_deliverables.py --pdf`. Add the repository QR code to the poster.
 3. **Supervisor checks** (U1): native ACM DL and IEEE Xplore search for the interaction.
 4. **Demo:** test with a real webcam; record a backup screen video of the full flow.
@@ -100,11 +113,12 @@ Also done: seven bilingual theory lessons (`Lesson/`), pitch deck and Bangla pre
 | D1 | Final project name (Section 3.2) | Keep TRACE-rPPG |
 | D2 | Demo app architecture: local Python server vs fully in-browser | Local Python server first (Section 7.3) |
 | D3 | Which two neural baselines | One established (PhysNet or TS-CAN) plus one recent (e.g. PhysFormer or FactorizePhys), chosen by checkpoint availability in rPPG-Toolbox |
-| U1 | Did the week-1 verification happen? (supervisor's native ACM DL / IEEE Xplore search, forward citation chase from Nowara 2020, full read of the 2026 systematic review) | Not recorded anywhere in the repo. Ask. |
+| U1 | Did the week-1 verification happen? (supervisor's native ACM DL / IEEE Xplore search, forward citation chase from Nowara 2020, full read of the 2026 systematic review) | Supervisor gave full approval on 2026-09-12. Confirm whether that included the native database search; if not, it is still cheap insurance. |
 | U2 | Is VitalVideo access confirmed, and what is its source video quality? | Still unconfirmed. Found 2026-09-11: the paper (arXiv 2306.11891, CC BY-SA 4.0, vitalvideos.org) says "two 30 second uncompressed videos" per participant, but the Health-HCI-Group loader lists `.mp4` files. Run `ffprobe` on the distributed files before use; if they are lossy, VitalVideo has the same confound as MMPD. The paper also says skin tone is imbalanced. |
 | U5 | UBFC-rPPG download | `sites.google.com` is intercepted on this network (certificate for another domain), so the dataset page could not be reached from this machine. Download DATASET_2 manually into `data/ubfc/subjectN/` and rerun `step2_ground_truth.py`. |
 | U3 | Course project deadline and deliverable format | Unknown. Ask. |
-| U4 | Team members and role split | Unknown. Ask. |
+| U4 | Team members and role split | **Authors: Ahammad Shawki and S. M. Abu Fayeem** (2026-09-12). Department, university and emails still placeholders in `deliverables/*/template_*`. |
+| U6 | Where does UBFC-rPPG live? | Kaggle mirror `malekdinarito/ubfc-rppg-dataset`, 73.37 GB, too large for the C drive. Plan: download to D (for example `D:\datasets\ubfc`), set `TRACE_UBFC_DIR`, and pass `--work-root D:\trace-scratch` so encodes are written there too. Cite Bobbia et al. 2017 and follow UBFC's research-only terms; the Kaggle copy is a third-party mirror, so check a few subjects against `step2_ground_truth.py` before trusting it. |
 
 ---
 
@@ -624,7 +638,8 @@ Track tags: **[P]** poster, **[C]** course, **[B]** both.
 - [x] Power analysis machinery: `stats.power_interaction`, table in `results/power_sim.csv` (from `analyze_grid.py`, using the pilot's own variance components)
 - [x] `deliverables/data_collection_protocol.md`: participant information and consent form, data-handling statement, equipment, 15-minute session procedure (R1 still, R2 talking, R3 still for HRV), sync tap, lossless FFV1 capture command, file layout that `run_grid.py --dataset data/own` reads unchanged, pre-session checklist
 - [x] Fitzpatrick labelling: self-report plus rater with a printed card, both recorded
-- [ ] Supervisor or ethics approval; fill the sample size into the protocol; pilot session on a team member
+- [x] **Supervisor approval: given in full on 2026-09-12.** Confirm whether the institution also needs a separate ethics review before recording.
+- [ ] Fill the chosen sample size into the protocol; pilot session on a team member
 - [ ] Oximeter export to `ground_truth.txt` converter (depends on the exact oximeter model bought)
 - Exit gate: planned sample collected, lossless, synchronised. Not achievable without participants.
 
@@ -809,10 +824,15 @@ Where the Idea documents disagree, the Novelty document (newer) wins, and this f
 
 ---
 
+## 17.4 Using data on another drive
+
+`TRACE_UBFC_DIR` points the acceptance scripts at a dataset anywhere (default `data/ubfc`). `run_grid.py --dataset <path> --work-root <path>` keeps both the data and the transient encodes off the C drive. `datasets.load_dataset` searches recursively and reads an optional `fitzpatrick.csv` (subject, type) beside the data, which is what makes a skin-tone comparison possible on datasets that ship no labels. Verified on 2026-09-12 with a nested fake dataset and a separate scratch root.
+
 ## 18. Session Log
 
 Newest first. One entry per session: date, what was done, what was verified, where it stopped.
 
+- **2026-09-12:** Authors set to Ahammad Shawki and S. M. Abu Fayeem in all three deliverables (department, university and emails still placeholders). Supervisor gave full approval. Added drive-independent data handling: `TRACE_UBFC_DIR`, `run_grid.py --work-root`, recursive subject discovery, `fitzpatrick.csv` labels and `scripts/make_labels_template.py`; verified end to end on a nested fake dataset. UBFC will come from the Kaggle mirror (73.37 GB) onto the D drive.
 - **2026-09-11 (overnight into the next day):** Completed T1 to T7 and T9 to T11 on the simulated pilot, T8 materials. Key events: phase-correlation tracking replaced box re-detection (dark-skin error 25 to 0.1 BPM on still video); simulator gained screen light, calibrated to published UBFC numbers; TRACE v1 failed held-out, v2 (artifact mask) tuned on 48 subjects and tested on fresh cohorts; Wiener mask rejected; grid of 36 subjects found no widening but a floor effect, with the mechanism favouring the hypothesis at the signal level; HRV two-stage timing (41 to 5.8 ms) and POS as HRV waveform; demo verified on replays; poster, abstract and report generated from results. Two runs were killed for low memory; see the T7 memory rule. Commits: T0 to T8 as ahammadshawki8, T9 onward as S-M-Abu-Fayeem (user instruction).
 - **2026-09-11:** Read all `Idea/` documents and the existing code. Created this `CLAUDE.md` as the project memory. Re-verified T0: `step1_synthetic.py` 12/12 passing on Python 3.14.0, numpy 2.5.2, scipy 1.18.1. Stopped before T1. Next: resolve U1 / U2, then download UBFC-rPPG and build the loader.
 - **2026-08-28:** Initial commit (`752a222`): T0 pipeline, lessons 0 to 6, Idea documents, Pipeline Bench visualisation.

@@ -15,7 +15,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
 
-from _common import ROOT, WORKERS, check, cohort, finish, rule, sim_traces
+from _common import ROOT, UBFC_DIR, WORKERS, check, cohort, finish, rule, sim_traces
 from tracerppg.datasets import load_dataset, reference_hr, sliding_windows, windowed_bpm
 from tracerppg.methods import METHODS, POS_PROJECTION, chrom, green, ica, pos
 from tracerppg.metrics import summary
@@ -102,7 +102,7 @@ if __name__ == "__main__":
 
     # -----------------------------------------------------------------------
     rule("5. Real UBFC-rPPG (only if downloaded to data/ubfc/)")
-    ubfc = ROOT / "data" / "ubfc"
+    ubfc = UBFC_DIR
     if ubfc.exists() and any(ubfc.iterdir()):
         est = {n: [] for n in METHODS}
         refs = []
@@ -116,6 +116,6 @@ if __name__ == "__main__":
             s = summary(np.concatenate(est[n]), np.concatenate(refs))
             print(f"  UBFC {n:6s} MAE {s['mae']:6.2f}  RMSE {s['rmse']:6.2f}  r {s['r']:.2f}")
     else:
-        print("  SKIPPED: data/ubfc/ not present.")
+        print("  SKIPPED: no UBFC data (set TRACE_UBFC_DIR or use data/ubfc/).")
 
     finish()

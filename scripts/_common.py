@@ -23,6 +23,9 @@ sys.path.insert(0, str(ROOT / "src"))
 from tracerppg.simulate import SimConfig, simulate_recording  # noqa: E402
 
 CACHE = ROOT / "data" / "cache"
+# Real datasets can be large (UBFC-rPPG is about 70 GB), so they may live on
+# another drive: set TRACE_UBFC_DIR, for example D:/datasets/ubfc.
+UBFC_DIR = Path(os.environ.get("TRACE_UBFC_DIR", str(ROOT / "data" / "ubfc")))
 results: list[tuple[str, bool, str]] = []
 
 

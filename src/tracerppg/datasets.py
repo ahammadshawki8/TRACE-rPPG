@@ -114,20 +114,49 @@ def load_recording(folder: Path) -> Recording:
     )
 
 
+def read_labels(root: Path) -> dict[str, int]:
+    """Optional `fitzpatrick.csv` (columns: subject, fitzpatrick) beside the data.
+
+    Public datasets do not ship skin-type labels, and the interaction analysis
+    cannot run without them. Write the file once (a rater with a printed
+    Fitzpatrick card, per the collection protocol) and every later step picks
+    it up. `scripts/make_labels_template.py` writes the blank file.
+    """
+    out: dict[str, int] = {}
+    for name in ("fitzpatrick.csv", "labels.csv"):
+        path = Path(root) / name
+        if not path.exists():
+            continue
+        for line in path.read_text().splitlines():
+            parts = [p.strip() for p in line.replace("\t", ",").split(",")]
+            if len(parts) < 2 or not parts[1].isdigit():
+                continue  # header or unfilled row
+            out[parts[0]] = int(parts[1])
+        break
+    return out
+
+
 def load_dataset(root: Path) -> list[Recording]:
-    """Every subject folder under `root`, in natural subject order."""
+    """Every subject folder under `root`, at any depth, in natural order.
+
+    Searching recursively means a download can keep its own nesting (for
+    example `UBFC/DATASET_2/subject1/`) and can live on another drive.
+    """
     root = Path(root)
+    seen = {p.parent for n in ("ground_truth.txt", "gtdump.xmp") for p in root.rglob(n)}
 
     def key(p: Path):
         digits = "".join(c for c in p.name if c.isdigit())
         return (int(digits) if digits else 0, p.name)
 
-    folders = sorted(
-        (p for p in root.iterdir() if p.is_dir()
-         and ((p / "ground_truth.txt").exists() or (p / "gtdump.xmp").exists())),
-        key=key,
-    )
-    return [load_recording(p) for p in folders]
+    labels = read_labels(root)
+    recs = []
+    for folder in sorted(seen, key=key):
+        rec = load_recording(folder)
+        if rec.subject in labels:
+            rec.meta["fitzpatrick"] = labels[rec.subject]
+        recs.append(rec)
+    return recs
 
 
 def resample_uniform(t: np.ndarray, x: np.ndarray, fs: float) -> tuple[np.ndarray, np.ndarray]:

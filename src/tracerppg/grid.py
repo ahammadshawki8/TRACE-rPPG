@@ -44,6 +44,7 @@ def process_subject(
     delete_source: bool = False,
     crop_conditions: set[str] | None = None,
     crops_root: Path | None = None,
+    extra_meta: dict | None = None,
 ) -> Path:
     """Encode, decode and extract traces for every condition of one subject.
 
@@ -59,7 +60,7 @@ def process_subject(
     work.mkdir(parents=True, exist_ok=True)
     crops_dir = Path(crops_root or work_root) / subject
     crops_dir.mkdir(parents=True, exist_ok=True)
-    (out / "meta.json").write_text(json.dumps({**rec.meta, "subject": subject}))
+    (out / "meta.json").write_text(json.dumps({**rec.meta, **(extra_meta or {}), "subject": subject}))
     shutil.copy(source_folder / "ground_truth.txt", out / "ground_truth.txt")
 
     log = []

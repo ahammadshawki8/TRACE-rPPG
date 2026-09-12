@@ -28,7 +28,7 @@ ol.refs { font-size: 9.5pt; }
 </head>
 <body>
 <h1>TRACE-rPPG: contactless heart rate from face video with Fourier series, the Fourier transform and convolution, and a measurement of how video compression interacts with skin tone</h1>
-<div class="meta">Signals and Systems course project &nbsp;|&nbsp; [Author names] &nbsp;|&nbsp; [Department, University] &nbsp;|&nbsp; github.com/ahammadshawki8/TRACE-rPPG</div>
+<div class="meta">Signals and Systems course project &nbsp;|&nbsp; Ahammad Shawki and S. M. Abu Fayeem &nbsp;|&nbsp; [Department, University] &nbsp;|&nbsp; github.com/ahammadshawki8/TRACE-rPPG</div>
 
 <div class="abstract"><p><b>Abstract.</b> We build a remote photoplethysmography (rPPG) system in which every physiological number comes out of a convolution or a Fourier transform, with no trained model in the estimation path. The pipeline detrends by convolution with a moving average, band-limits with a hand-built windowed-sinc filter, locates the heart rate as the peak of a windowed FFT refined by parabolic interpolation, guards against harmonic lock-on using Fourier-series reasoning, and computes heart-rate variability with a second Fourier transform of the beat intervals. On top of green, CHROM and POS we build TRACE, a signal-quality-adaptive fusion with a pulse-blind artifact reference. We then ask a research question the literature has not answered: does video compression widen the known skin-tone accuracy gap? A simulated pilot of {{N_SUBJECTS}} volunteers across {{CODECS}} gives the following answer. {{VERDICT_POS}}</p></div>
 

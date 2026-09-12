@@ -62,7 +62,7 @@ def stage1(job: dict) -> str:
         src = Path(job["source"])
     process_subject(src, subject, out_root, work_root, conds, crop_size=72 if nn else None,
                     delete_source=job.get("cfg") is not None, crop_conditions=NN_CONDITIONS,
-                    crops_root=crops_root)
+                    crops_root=crops_root, extra_meta=job.get("meta"))
     shutil.rmtree(work_root / subject, ignore_errors=True)
     if job.get("cfg") is not None:
         shutil.rmtree(work_root / f"{subject}_src", ignore_errors=True)
@@ -108,6 +108,8 @@ def main() -> None:
     ap.add_argument("--duration", type=float, default=60.0)
     ap.add_argument("--seed0", type=int, default=3000)
     ap.add_argument("--max-subjects", type=int, default=0, help="first N subjects in interleaved order")
+    ap.add_argument("--work-root", type=Path, default=None,
+                    help="scratch for encodes and crops; put it on the same drive as a large dataset")
     ap.add_argument("--workers", type=int, default=5)
     ap.add_argument("--no-nn", action="store_true")
     ap.add_argument("--stage", choices=("all", "1", "nn", "2"), default="all")
@@ -115,14 +117,23 @@ def main() -> None:
 
     nn = not args.no_nn and NN_PY.exists() and (ROOT / "third_party" / "rPPG-Toolbox").exists()
     out_root = ROOT / "results" / "raw" / args.tag
-    work_root = ROOT / "data" / "work" / args.tag
-    crops_root = ROOT / "data" / "crops" / args.tag
+    scratch = Path(args.work_root) if args.work_root else ROOT / "data"
+    work_root = scratch / "work" / args.tag
+    crops_root = scratch / "crops" / args.tag
     for p in (out_root, work_root, crops_root):
         p.mkdir(parents=True, exist_ok=True)
 
     if args.dataset is not None:
-        subjects = sorted(p for p in args.dataset.iterdir() if (p / "ground_truth.txt").exists())
-        jobs = [{"subject": p.name, "source": str(p), "cfg": None} for p in subjects]
+        # Recursive: a download keeps its own nesting and may live on another
+        # drive. Skin-type labels come from fitzpatrick.csv beside the data.
+        from tracerppg.datasets import load_dataset
+        recs = load_dataset(args.dataset)
+        jobs = [{"subject": r.subject, "source": str(r.video_path.parent), "cfg": None,
+                 "meta": {k: v for k, v in (("fitzpatrick", r.fitzpatrick),) if v is not None}} for r in recs]
+        missing = [r.subject for r in recs if r.fitzpatrick is None]
+        if missing:
+            print(f"  note: {len(missing)} of {len(recs)} subjects have no Fitzpatrick label; "
+                  "run scripts/make_labels_template.py to add them (skin-tone analysis needs them)", flush=True)
     else:
         from dataclasses import asdict
         cfgs = cohort(n_per_type=args.n_per_type, duration_s=args.duration, seed0=args.seed0)

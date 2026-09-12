@@ -20,6 +20,8 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "scripts"))
+from _common import UBFC_DIR  # noqa: E402
 
 from tracerppg.datasets import (  # noqa: E402
     WIN_S,
@@ -126,7 +128,7 @@ check("folder layout, lossless video, metadata and duration all present", ok,
 # ---------------------------------------------------------------------------
 rule("6. Real UBFC-rPPG (only if downloaded to data/ubfc/)")
 
-ubfc = ROOT / "data" / "ubfc"
+ubfc = UBFC_DIR
 if ubfc.exists() and any(ubfc.iterdir()):
     recs = load_dataset(ubfc)
     diffs = []
@@ -138,7 +140,7 @@ if ubfc.exists() and any(ubfc.iterdir()):
     check("reference HR agrees with provided HR on real subjects (median, per subject)",
           max(diffs) <= bin_bpm, f"{len(recs)} subjects, worst median {max(diffs):.2f} BPM")
 else:
-    print("  SKIPPED: data/ubfc/ not present. Download UBFC-rPPG DATASET_2 there to run it.")
+    print("  SKIPPED: no UBFC data (set TRACE_UBFC_DIR or use data/ubfc/). Set TRACE_UBFC_DIR to the download to run it.")
 
 # ---------------------------------------------------------------------------
 print("\n" + "=" * 62)

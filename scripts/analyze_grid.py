@@ -287,6 +287,11 @@ def main() -> None:
     figs = ROOT / "results" / "figures"
     figs.mkdir(parents=True, exist_ok=True)
 
+    if df["fitzpatrick"].isna().all():
+        raise SystemExit(
+            "No Fitzpatrick labels in this grid, so no skin-tone comparison is possible. "
+            "Run scripts/make_labels_template.py <dataset>, fill in fitzpatrick.csv, then rerun "
+            "run_grid.py (stage 2 is enough) and this script.")
     errs = subject_condition_errors(df)
     cells = cell_table(errs)
     cells.to_csv(ROOT / "results" / f"cells_{args.tag}.csv", index=False)
