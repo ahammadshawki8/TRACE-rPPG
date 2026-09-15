@@ -140,12 +140,15 @@ class LiveEngine:
         self.state: dict = {"running": False}
         self.hrv_start: float | None = None
         self.hrv_result: dict | None = None
+        self.window_s = WINDOW_S
 
     # ------------------------------------------------------------ control
     def start(self, source: str = "sim", **kw):
         self.stop()
         self.reset()
         self.error = None
+        self.window_s = float(kw.get("game_window", WINDOW_S))
+        self.window_s = min(30.0, max(8.0, self.window_s))
         try:
             if source == "webcam":
                 self.source = WebcamSource(int(kw.get("index", 0)))
@@ -236,7 +239,7 @@ class LiveEngine:
                         self.t.append(t)
                         self.rgb.append(mean)
                         self.centres.append((t, *centre))
-                    while self.t and self.t[0] < t - max(WINDOW_S, 330.0):
+                    while self.t and self.t[0] < t - max(self.window_s, 330.0):
                         self.t.popleft()
                         self.rgb.popleft()
                     while self.centres and self.centres[0][0] < t - 3.0:
@@ -303,10 +306,10 @@ class LiveEngine:
             state["hrv_elapsed"] = round(now - self.hrv_start, 1)
             state["hrv_needed"] = MIN_HRV_SECONDS
 
-        recent = t >= now - WINDOW_S
+        recent = t >= now - self.window_s
         if (buffered >= MIN_S and recent.sum() > FS * MIN_S and now - t[-1] < .5
                 and np.max(np.diff(t[recent])) < .5):
-            m = t >= now - WINDOW_S
+            m = t >= now - self.window_s
             tu, cols = self._uniform(t[m], rgb[m])
             pulses = band_limited_pulses(cols, FS)
             art = artifact_reference(cols, FS)

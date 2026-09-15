@@ -68,7 +68,7 @@ This file is the persistent memory of the project. Every session starts by readi
 | T8 | Own data collection (conditional) | Materials ready (`deliverables/data_collection_protocol.md`); recording needs participants and approval |
 | T9 | HRV / LF-HF layer | **Done.** 11/11 (`step7_hrv.py`); excellent on clean video, fragile with motion (reported) |
 | T10 | Live demo app | **Done.** Original research flow remains at `/lab`; `/` now opens TRACE Ghost Protocol, a pulse-aware stealth game with session replay and export |
-| T12 | Interactive extension | **Done (prototype).** Quality-gated baseline-relative pulse controller drives detection radius; synthetic mode, webcam mode, experimental camera rBCG, phone SCG CSV lab, replay and JSON export |
+| T12 | Interactive extension | **Done (prototype).** Linear camera flow shows three rPPG methods and experimental camera rBCG, then a quality-gated pulse controller drives a horror mission with replay and JSON export |
 | T11 | Write-up (abstract, poster, report) | **Done (drafts from simulated results).** Poster A1, extended abstract (IEEE .tex + PDF), course report PDF; author names are placeholders |
 
 Also done: seven bilingual theory lessons (`Lesson/`), pitch deck and Bangla presentation script (`Idea/`), generated `pipeline-viz.html`.
@@ -672,11 +672,10 @@ Track tags: **[P]** poster, **[C]** course, **[B]** both.
 
 - [x] `app/static/game.html`, `game.css`, `game.js`: pixel-art stealth arena with walls, lockers, watchers, decoys, three memory cores, extraction, mobile controls, mission log and session replay
 - [x] The game uses a local baseline, slow pulse filtering and quality gates. A usable pulse changes watcher sensing radius gradually; invalid or stale data returns the field to neutral.
-- [x] Three source modes: synthetic FFT pulse for a repeatable demo, webcam rPPG, and the existing simulated video source. The original seven-step research UI is retained at `/lab`.
+- [x] Two source modes: synthetic FFT pulse for a repeatable demo and webcam rPPG with camera BCG. The game opens directly into a linear signal check.
 - [x] Replay records pulse, detection radius, player path and events. JSON export includes a research disclaimer and no camera frames.
-- [x] `src/tracerppg/mechanical.py`: experimental camera-motion rBCG channel and phone accelerometer SCG CSV analysis with separate respiration branch. Neither is presented as ECG or diagnosis.
-- [x] `POST /api/phone/analyse` accepts `t,ax,ay,az` CSV and reports a quality-gated mechanical estimate with limitations.
-- [x] Verified: Python compilation, JavaScript syntax, T0 12/12, websocket demo states, phone CSV endpoint on a 30-second synthetic 100 Hz recording (72 BPM, quality 1.0). Real webcam and phone placement still need human testing.
+- [x] `src/tracerppg/mechanical.py`: experimental camera-motion rBCG channel. It is shown as corroboration, never as ECG or diagnosis.
+- [x] Verified: Python compilation, JavaScript syntax, T0 12/12 and websocket demo states. Real webcam BCG still needs human testing.
 - Findings: the darker-skin replay read 73 BPM vs true 90 marked high confidence (confidence gate unreliable on dark skin); earlier, before replays existed, TRACE v2 read 153 vs 74 on light skin with a short buffer (Section 8.4 leakage); live rendering runs at about 0.1x real time under load, hence pre-rendered replays (`data/replay/`, about 580 MB each, pulse fidelity preserved by storage, e.g. 0.323 lossless vs 0.297 stored)
 
 ### T11: Write-up [B] (drafts done from simulated results)
@@ -843,7 +842,9 @@ Where the Idea documents disagree, the Novelty document (newer) wins, and this f
 
 Newest first. One entry per session: date, what was done, what was verified, where it stopped.
 
-- **2026-09-15:** Built TRACE Ghost Protocol at `/`: a futuristic pixel-art stealth mission driven by a quality-gated, baseline-relative pulse feedback loop. Added mission mechanics (watchers, cover, decoys, cores, extraction), signal telemetry, replay chart, event log and JSON export. Added synthetic FFT demo mode, webcam rPPG mode and experimental camera rBCG feature tracking. Added `tracerppg.mechanical.analyse_phone_csv` and `/api/phone/analyse` for timestamped phone accelerometer SCG research recordings. Verified Python compilation, JavaScript syntax, T0 12/12, websocket demo states, and a 30-second 100 Hz CSV endpoint fixture at 72 BPM with quality 1.0. Real camera and phone placement remain to be tested with a person.
+- **2026-09-16:** Reworked `/` into a single-canvas linear experience. The first phase opens the camera and displays BPM plus live Green, CHROM, POS and camera-BCG charts; a baseline lock then presents an explicit Enter Night handoff. The second phase is a horror mission with visible live telemetry, rapid synthetic scare pulses, jumpscare overlays, pause/settings controls and keyboard instructions. Removed the SCG/phone route and removed the old research navbar from the game page. Verified JavaScript syntax, Python compilation, T0 12/12 and websocket method state.
+
+- **2026-09-15:** Built TRACE Ghost Protocol at `/`: a futuristic pixel-art stealth mission driven by a quality-gated, baseline-relative pulse feedback loop. Added mission mechanics (watchers, cover, decoys, cores, extraction), signal telemetry, replay chart, event log and JSON export. Added synthetic FFT demo mode, webcam rPPG mode and experimental camera rBCG feature tracking. Verified Python compilation, JavaScript syntax, T0 12/12 and websocket demo states. Real camera BCG remains to be tested with a person.
 
 - **2026-09-12:** Authors set to Ahammad Shawki and S. M. Abu Fayeem in all three deliverables (department, university and emails still placeholders). Supervisor gave full approval. Added drive-independent data handling: `TRACE_UBFC_DIR`, `run_grid.py --work-root`, recursive subject discovery, `fitzpatrick.csv` labels and `scripts/make_labels_template.py`; verified end to end on a nested fake dataset. UBFC will come from the Kaggle mirror (73.37 GB) onto the D drive.
 - **2026-09-11 (overnight into the next day):** Completed T1 to T7 and T9 to T11 on the simulated pilot, T8 materials. Key events: phase-correlation tracking replaced box re-detection (dark-skin error 25 to 0.1 BPM on still video); simulator gained screen light, calibrated to published UBFC numbers; TRACE v1 failed held-out, v2 (artifact mask) tuned on 48 subjects and tested on fresh cohorts; Wiener mask rejected; grid of 36 subjects found no widening but a floor effect, with the mechanism favouring the hypothesis at the signal level; HRV two-stage timing (41 to 5.8 ms) and POS as HRV waveform; demo verified on replays; poster, abstract and report generated from results. Two runs were killed for low memory; see the T7 memory rule. Commits: T0 to T8 as ahammadshawki8, T9 onward as S-M-Abu-Fayeem (user instruction).

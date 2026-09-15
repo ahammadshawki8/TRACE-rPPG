@@ -22,11 +22,9 @@ import uvicorn  # noqa: E402
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect  # noqa: E402
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
-from pydantic import BaseModel, Field  # noqa: E402
 
 from engine import LiveEngine  # noqa: E402
 from biofeedback import PulseController, demo_state  # noqa: E402
-from tracerppg.mechanical import analyse_phone_csv  # noqa: E402
 
 STATIC = Path(__file__).resolve().parent / "static"
 app = FastAPI(title="TRACE live")
@@ -43,18 +41,6 @@ def index():
 @app.get("/lab")
 def legacy_lab():
     return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-store"})
-
-
-class PhoneRecording(BaseModel):
-    csv: str = Field(max_length=8_000_000)
-
-
-@app.post("/api/phone/analyse")
-async def phone(recording: PhoneRecording):
-    try:
-        return await asyncio.to_thread(analyse_phone_csv, recording.csv)
-    except ValueError as exc:
-        return JSONResponse({"error": str(exc)}, status_code=422)
 
 
 @app.get("/api/lab")
@@ -106,7 +92,7 @@ async def ws(sock: WebSocket):
                 started = time.monotonic()
                 controller.reset()
             elif cmd == "scenario":
-                if msg.get("value") in ("cycle", "steady", "elevated", "dropout"):
+                if msg.get("value") in ("cycle", "steady", "elevated", "scare", "dropout"):
                     scenario = msg["value"]
             elif cmd == "calibrate":
                 controller.reset()
@@ -130,7 +116,7 @@ async def ws(sock: WebSocket):
                     state = {**state, "confident": False, "error": "Video data is stale"}
             state["feedback"] = controller.update(state, now)
             await sock.send_text(json.dumps({"type": "state", "state": state}, allow_nan=False))
-            await asyncio.sleep(0.25)
+            await asyncio.sleep(0.12)
         task.result()
     except (WebSocketDisconnect, RuntimeError):
         pass

@@ -43,12 +43,14 @@ class PulseController:
         if valid and bcg.get("usable") and abs(bcg["bpm"] - bpm) > 12:
             valid, reason = False, "Optical and motion estimates disagree"
         if valid:
-            self.filtered = bpm if self.filtered is None else self.filtered + (1 - math.exp(-dt / 4)) * (bpm - self.filtered)
+            # A horror mechanic needs visible changes within a few seconds,
+            # while the estimate itself remains the pipeline's windowed BPM.
+            self.filtered = bpm if self.filtered is None else self.filtered + (1 - math.exp(-dt / 1.4)) * (bpm - self.filtered)
             if self.baseline is None:
                 self.samples.append(bpm)
                 if self.previous_valid:
                     self.valid_seconds += dt
-                if self.valid_seconds >= 12:
+                if self.valid_seconds >= 8:
                     self.baseline = float(np.median(self.samples))
             self.history.append((now, self.filtered))
         self.previous_valid = bool(valid)
@@ -60,18 +62,35 @@ class PulseController:
         return {"valid": bool(valid), "reason": reason if not valid else "Pulse linked",
                 "baseline": round(self.baseline, 1) if self.baseline else None,
                 "bpm": round(self.filtered, 1) if valid else None,
-                "calibration": min(1, self.valid_seconds / 12),
+                "calibration": min(1, self.valid_seconds / 8),
                 "intensity": round(self.intensity, 4), "trend": round(trend, 1),
                 "delta": round(self.filtered - self.baseline, 1) if valid and self.baseline else None}
 
 
 def demo_state(elapsed: float, scenario: str = "cycle") -> dict:
     """Explicit synthetic signal, analysed with the real FFT estimator."""
-    target = {"steady": 72, "elevated": 100}.get(scenario, 72 + 26 * max(0, math.sin((elapsed - 18) / 22)))
+    if elapsed < 8:
+        target = 72.0
+    elif scenario == "steady":
+        target = 72.0
+    elif scenario == "elevated":
+        target = 108.0
+    elif scenario == "scare":
+        target = 112.0 - 18.0 * abs(math.sin(elapsed * 2.5))
+    elif scenario == "dropout":
+        target = 72.0
+    else:
+        # A deliberately visible demo rhythm: calm, alarm, recovery.
+        cycle = elapsed % 28
+        target = 72.0 if cycle < 8 else (112.0 if cycle < 15 else 82.0)
     t = np.arange(600) / 30
     pulse = np.sin(2 * np.pi * target / 60 * t) + .2 * np.sin(4 * np.pi * target / 60 * t)
     est = estimate_bpm(pulse, 30)
     return {"running": True, "source": "demo", "t": elapsed, "bpm": round(est.bpm, 1),
             "quality": est.quality, "confident": scenario != "dropout",
             "checks": {"face": True, "light": True, "still": True},
-            "trace": {"pulse": pulse[-180:].tolist()}, "bcg": {"usable": False, "reason": "Synthetic optical signal only"}}
+            "methods": {"green": {"bpm": round(est.bpm + 1.2, 1), "quality": .78},
+                        "chrom": {"bpm": round(est.bpm - .7, 1), "quality": .71},
+                        "pos": {"bpm": round(est.bpm, 1), "quality": .86}},
+            "trace": {"pulse": pulse[-180:].tolist()},
+            "bcg": {"usable": False, "reason": "Synthetic mode has no camera motion channel"}}

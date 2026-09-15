@@ -1,140 +1,103 @@
-const $ = (s) => document.querySelector(s);
-const $$ = (s) => [...document.querySelectorAll(s)];
+const $ = s => document.querySelector(s);
+const canvas = $('#experience');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
 const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
-let latest = { feedback: { intensity: 0, valid: false }, running: false };
+const feed = $('#camera-frame');
+let state = {feedback:{intensity:0, valid:false}};
+let phase = 'welcome';
 let source = null;
-let mission = null;
 let paused = false;
 let soundOn = false;
-let audio = null;
-let lastRender = performance.now();
-
-const canvas = $('#arena');
-const ctx = canvas.getContext('2d');
-ctx.imageSmoothingEnabled = false;
-const W = canvas.width, H = canvas.height;
+let audio;
+let mission;
+let last = performance.now();
 const keys = new Set();
-const pulseHistory = [];
-const eventHistory = [];
+const rppgHistory = [];
+const bcgHistory = [];
+const methodHistory = [];
 
 const walls = [
-  {x:0,y:0,w:960,h:24},{x:0,y:576,w:960,h:24},{x:0,y:0,w:24,h:600},{x:936,y:0,w:24,h:600},
-  {x:220,y:24,w:20,h:170},{x:220,y:280,w:20,h:296},{x:460,y:24,w:20,h:105},{x:460,y:205,w:20,h:210},{x:460,y:490,w:20,h:86},
-  {x:700,y:24,w:20,h:190},{x:700,y:290,w:20,h:286},{x:24,y:184,w:130,h:20},{x:286,y:184,w:155,h:20},
-  {x:539,y:184,w:150,h:20},{x:764,y:184,w:172,h:20},{x:24,y:414,w:130,h:20},{x:286,y:414,w:155,h:20},
-  {x:539,y:414,w:150,h:20},{x:764,y:414,w:172,h:20}
+  {x:0,y:0,w:1040,h:20},{x:0,y:680,w:1040,h:20},{x:0,y:0,w:20,h:700},{x:1020,y:0,w:20,h:700},
+  {x:245,y:20,w:18,h:180},{x:245,y:325,w:18,h:355},{x:510,y:20,w:18,h:115},{x:510,y:255,w:18,h:210},{x:510,y:565,w:18,h:115},
+  {x:780,y:20,w:18,h:180},{x:780,y:325,w:18,h:355},{x:20,y:205,w:150,h:18},{x:320,y:205,w:150,h:18},{x:570,y:205,w:170,h:18},{x:840,y:205,w:180,h:18},
+  {x:20,y:475,w:150,h:18},{x:320,y:475,w:150,h:18},{x:570,y:475,w:170,h:18},{x:840,y:475,w:180,h:18}
 ];
-const lockers = [{x:70,y:100,w:94,h:58},{x:330,y:235,w:92,h:52},{x:570,y:330,w:90,h:54},{x:790,y:95,w:92,h:58}];
-const spawn = {x:80,y:500};
-const coreSpawns = [{x:110,y:90},{x:370,y:505},{x:830,y:335}];
-const watcherSpawns = [{x:365,y:90},{x:825,y:500}];
+const hidingSpots = [{x:65,y:75,w:105,h:70},{x:355,y:255,w:100,h:60},{x:625,y:355,w:100,h:60},{x:855,y:75,w:100,h:70}];
+const echoes = [{x:95,y:575},{x:390,y:85},{x:910,y:365}];
+const hunterHome = [{x:400,y:95},{x:900,y:585}];
 
-function send(obj) { if (ws.readyState === 1) ws.send(JSON.stringify(obj)); }
-ws.addEventListener('open', () => { $('#connection-dot').style.background = 'var(--mint)'; $('#connection-label').textContent = 'LINKED'; });
-ws.addEventListener('close', () => { $('#connection-dot').style.background = 'var(--coral)'; $('#connection-label').textContent = 'OFFLINE'; });
-ws.addEventListener('message', e => {
-  const msg = JSON.parse(e.data);
-  if (msg.type === 'state') { latest = msg.state; receiveState(latest); }
-  if (msg.type === 'hrv') showToast(msg.result.error || 'HRV session complete');
-});
+function send(obj){if(ws.readyState===1)ws.send(JSON.stringify(obj));}
+ws.onopen=()=>{$('#link-status').textContent='LINKED';$('#link-status').style.color='var(--mint)';draw();};
+ws.onclose=()=>{$('#link-status').textContent='OFFLINE';$('#link-status').style.color='var(--red)';};
+ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='state'){state=m.state;consumeState();}};
 
-function receiveState(s) {
-  const fb = s.feedback || {};
-  $('#bpm').textContent = fb.bpm == null ? '--' : Math.round(fb.bpm);
-  $('#delta').textContent = fb.baseline ? `BASELINE ${Math.round(fb.baseline)} / ${fb.delta >= 0 ? '+' : ''}${Math.round(fb.delta)} Δ` : 'BASELINE CALIBRATING';
-  $('#calibration-progress').style.width = `${Math.round((fb.calibration || 0) * 100)}%`;
-  $('#source-label').textContent = source === 'camera' ? 'LIVE rPPG' : source === 'demo' ? 'SYNTHETIC FFT' : source === 'replay' ? 'SIM REPLAY' : 'NO SOURCE';
-  const q = s.quality == null ? '--' : `QUALITY ${Math.round(s.quality * 100)}%`;
-  $('#quality-label').textContent = q;
-  const status = $('#signal-status'); status.textContent = fb.valid ? 'LINKED' : 'WAITING'; status.classList.toggle('online', !!fb.valid);
-  $('#signal-message').textContent = fb.valid ? 'The measured pulse is controlling the detection field.' : (fb.reason || 'Establishing a stable signal.');
-  $('#mode-badge').textContent = mission?.started ? (fb.valid ? 'FEEDBACK ACTIVE' : 'SIGNAL PAUSED') : (fb.baseline ? 'LINK READY' : 'AWAITING LINK');
-  if (!mission?.started && fb.baseline) { $('#launch').disabled = false; $('#launch').textContent = 'LAUNCH MISSION'; }
-  if (s.trace?.pulse) drawWave($('#pulse-chart'), s.trace.pulse, '#91f2ce');
-  if (s.bcg) {
-    $('#bcg-result').textContent = s.bcg.usable ? `${s.bcg.bpm} BPM / quality ${Math.round(s.bcg.quality*100)}%` : 'No usable camera BCG yet';
-    $('#bcg-detail').textContent = s.bcg.reason || '';
-    if (s.bcg.pulse) drawWave($('#bcg-chart'), s.bcg.pulse, '#f1c877');
+function consumeState(){
+  const fb=state.feedback||{};
+  if(fb.bpm!=null)rppgHistory.push({v:fb.bpm,ok:fb.valid});
+  if(state.bcg?.bpm!=null)bcgHistory.push({v:state.bcg.bpm,ok:state.bcg.usable});
+  if(state.methods)methodHistory.push({green:state.methods.green?.bpm,chrom:state.methods.chrom?.bpm,pos:state.methods.pos?.bpm});
+  if(rppgHistory.length>100)rppgHistory.shift();
+  if(bcgHistory.length>100)bcgHistory.shift();
+  if(methodHistory.length>100)methodHistory.shift();
+  if(phase==='scan' && fb.baseline && fb.calibration>=1){
+    $('#enter-game').hidden=false;
+    $('#camera-start').textContent='ENTER NIGHT';
+    $('#control-message').textContent='Signal locked. Enter the facility when you are ready.';
   }
-  if (s.jpeg) $('#feed').src = '/video.mjpg?t=' + Date.now();
-  pulseHistory.push({t: performance.now()/1000, bpm: fb.bpm, intensity: fb.intensity || 0, valid: !!fb.valid});
-  while (pulseHistory.length && pulseHistory[0].t < performance.now()/1000 - 600) pulseHistory.shift();
+  draw();
 }
 
-function drawWave(c, values, color) {
-  const c2 = c.getContext('2d'), w = c.width, h = c.height;
-  c2.clearRect(0,0,w,h); c2.strokeStyle = '#243432'; c2.lineWidth = 1;
-  c2.beginPath(); c2.moveTo(0,h/2); c2.lineTo(w,h/2); c2.stroke();
-  if (!values?.length) return;
-  c2.strokeStyle = color; c2.lineWidth = 1.7; c2.beginPath();
-  values.forEach((v,i) => { const x=i/(values.length-1)*w; const y=h/2-Math.max(-2,Math.min(2,v))*h*.22; i ? c2.lineTo(x,y) : c2.moveTo(x,y); }); c2.stroke();
+function begin(kind){
+  source=kind;phase='scan';paused=false;$('#source-controls').hidden=false;$('#game-controls').hidden=true;$('#enter-game').hidden=true;
+  $('#camera-start').textContent='CALIBRATING';$('#camera-start').disabled=true;$('#simulation-start').disabled=true;
+  if(kind==='camera'){send({cmd:'start',source:'webcam',options:{game_window:10}});feed.src='/video.mjpg?session='+Date.now();$('#canvas-note').textContent='LOCAL CAMERA / FRAMES NEVER LEAVE THIS COMPUTER';}
+  else{send({cmd:'demo'});$('#canvas-note').textContent='SYNTHETIC SIGNAL / REPEATABLE DEMO';}
+  $('#flow-step').textContent='SIGNAL CHECK';$('#headline').innerHTML='Watch the signal.<br><em>Before it watches you.</em>';$('#subhead').textContent='Keep your face still while TRACE separates colour pulse from tiny facial motion. Both channels will stay visible during the mission.';
+  draw();
 }
+function enterGame(){if(!state.feedback?.baseline)return;phase='game';mission={start:performance.now(),t:0,player:{x:78,y:600},hunters:hunterHome.map((p,i)=>({x:p.x,y:p.y,home:{...p},a:0,phase:i*1.7})),echoes:echoes.map(p=>({...p,got:false})),flares:3,health:3,scare:0,nextScare:9,events:[],frames:[],ended:false};paused=false;$('#flow-step').textContent='NIGHT RUN';$('#camera-start').hidden=true;$('#simulation-start').hidden=true;$('#enter-game').hidden=true;$('#game-controls').hidden=false;$('#pause').disabled=false;$('#headline').innerHTML='The facility is awake.<br><em>Do not let it hear you.</em>';$('#subhead').textContent='Find the three echoes and reach the exit. When the signal jumps, the night gets closer.';$('#control-message').textContent='The right side of the canvas is your live monitor. Escape pauses the run.';canvas.focus();beep(180,.16);draw();}
 
-function pickSource(kind) {
-  if (mission?.started) endMission(false);
-  source = kind;
-  $$('.source-option').forEach(x => x.classList.toggle('active', x.id === `source-${kind}`));
-  $('#scenario-control').hidden = kind !== 'demo';
-  $('#camera-preview').hidden = kind !== 'camera';
-  $('#cover').hidden = true;
-  $('#launch').disabled = true;
-  $('#launch').textContent = 'CALIBRATING SIGNAL';
-  $('#quick-camera').textContent = 'LINK MY CAMERA';
-  if (kind === 'demo') send({cmd:'demo'});
-  else if (kind === 'camera') { send({cmd:'start', source:'webcam'}); $('#feed').src='/video.mjpg'; }
-  else send({cmd:'start', source:'sim', options:{fitzpatrick:2, motion:.3}});
-  showToast(kind === 'camera' ? 'Camera stays local. Look at the preview and hold still.' : 'Synthetic pulse is running through the real feedback controller.');
+$('#camera-start').onclick=()=>{if(phase==='scan')enterGame();else begin('camera');};
+$('#simulation-start').onclick=()=>begin('demo');
+const enter=document.createElement('button');enter.id='enter-game';enter.className='primary';enter.textContent='ENTER NIGHT';enter.hidden=true;enter.onclick=enterGame;$('#source-controls').append(enter);
+$('#return-scan').onclick=()=>{if(mission?.frames.length)downloadSession();send({cmd:'stop'});phase='welcome';mission=null;paused=false;$('#camera-start').hidden=false;$('#simulation-start').hidden=false;$('#camera-start').disabled=false;$('#simulation-start').disabled=false;$('#camera-start').textContent='OPEN CAMERA';$('#game-controls').hidden=true;$('#headline').innerHTML='Something is listening<br><em>to your heartbeat.</em>';$('#subhead').textContent='First, let TRACE find your pulse. Then enter the facility and see what happens when the dark learns your rhythm.';draw();};
+$('#pause').onclick=()=>{if(!mission)return;paused=!paused;$('#pause').textContent=paused?'RESUME':'PAUSE';draw();};
+$('#settings').onclick=()=>$('#settings-dialog').showModal();$('#close-settings').onclick=()=>$('#settings-dialog').close();
+$('#sound-toggle').onchange=e=>{soundOn=e.target.checked;if(soundOn)beep(240,.06);};
+$('#feedback-mode').onchange=()=>{if(mission)mission.events.push({t:mission.t,text:'Feedback rule changed during run.'});};
+window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright',' ','e','escape'].includes(k))e.preventDefault();if(k==='escape'&&mission)$('#pause').click();if(k===' '&&mission&&!paused)flare();if(k==='e'&&mission&&!paused)interact();keys.add(k);});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
+
+function beep(freq,dur=.1){if(!soundOn)return;if(!audio)audio=new(window.AudioContext||window.webkitAudioContext)();const o=audio.createOscillator(),g=audio.createGain();o.type='sawtooth';o.frequency.value=freq;g.gain.value=.035;o.connect(g);g.connect(audio.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.stop(audio.currentTime+dur);}
+function collide(x,y,r=12){return walls.some(w=>x+r>w.x&&x-r<w.x+w.w&&y+r>w.y&&y-r<w.y+w.h)}
+function inHiding(){return hidingSpots.some(s=>mission.player.x>s.x&&mission.player.x<s.x+s.w&&mission.player.y>s.y&&mission.player.y<s.y+s.h)}
+function blocked(a,b){const n=Math.ceil(Math.hypot(a.x-b.x,a.y-b.y)/8);for(let i=1;i<n;i++){const x=a.x+(b.x-a.x)*i/n,y=a.y+(b.y-a.y)*i/n;if(walls.some(w=>x>w.x&&x<w.x+w.w&&y>w.y&&y<w.y+w.h))return true;}return false;}
+function move(dx,dy,dt){const p=mission.player,s=125;let nx=p.x+dx*s*dt,ny=p.y+dy*s*dt;if(!collide(nx,p.y))p.x=Math.max(34,Math.min(1006,nx));if(!collide(p.x,ny))p.y=Math.max(34,Math.min(666,ny));}
+function interact(){mission.hidden=inHiding();const e=mission.echoes.find(x=>!x.got&&Math.hypot(x.x-mission.player.x,x.y-mission.player.y)<35);if(e){e.got=true;mission.events.push({t:mission.t,text:`Echo recovered (${mission.echoes.filter(x=>x.got).length}/3).`});beep(600,.11);}else if(mission.hidden){mission.events.push({t:mission.t,text:'You held your breath inside the locker.'});}}
+function flare(){if(mission.flares<=0)return;mission.flares--;mission.flare={x:mission.player.x,y:mission.player.y,end:performance.now()+4200};beep(480,.08);mission.events.push({t:mission.t,text:'Flare thrown. The dark moved.'});}
+function triggerScare(){mission.scare=1.25;mission.nextScare=mission.t+12+Math.random()*7;mission.events.push({t:mission.t,text:'JUMPSCARE: acoustic event detected.'});beep(55,.5);if(source==='demo')send({cmd:'scenario',value:'scare'});setTimeout(()=>{if(source==='demo')send({cmd:'scenario',value:'cycle'});},3500);}
+function update(dt){if(phase!=='game'||paused||mission.ended)return;mission.t=(performance.now()-mission.start)/1000;const u=keys.has('w')||keys.has('arrowup'),d=keys.has('s')||keys.has('arrowdown'),l=keys.has('a')||keys.has('arrowleft'),r=keys.has('d')||keys.has('arrowright');let dx=(r?1:0)-(l?1:0),dy=(d?1:0)-(u?1:0);if(dx||dy){const q=Math.hypot(dx,dy);move(dx/q,dy/q,dt);}mission.hidden=inHiding();if(mission.t>mission.nextScare&&$('#horror-intensity').value!=='quiet')triggerScare();mission.scare=Math.max(0,mission.scare-dt);
+  const mode=$('#feedback-mode').value,valid=state.feedback?.valid,intensity=valid?state.feedback.intensity||0:0;const radius=mode==='fixed'?1:mode==='balance'?1-.35*intensity:1+.95*intensity;mission.radius=radius;
+  mission.hunters.forEach(h=>{const p=mission.player,dist=Math.hypot(h.x-p.x,h.y-p.y);let target=null;if(mission.flare&&performance.now()<mission.flare.end)target=mission.flare;else if(!mission.hidden&&!blocked(h,p)&&dist<150*radius)target=p;if(target){const q=Math.max(1,Math.hypot(target.x-h.x,target.y-h.y)),speed=target===p?40+35*intensity:65;h.x+=(target.x-h.x)/q*speed*dt;h.y+=(target.y-h.y)/q*speed*dt;h.a=Math.min(1,h.a+dt);}else{h.a=Math.max(0,h.a-dt);h.x=h.home.x+Math.sin(mission.t*.35+h.phase)*25;h.y=h.home.y+Math.cos(mission.t*.29+h.phase)*20;}if(target===p&&dist<25){mission.health--;h.x=h.home.x;h.y=h.home.y;mission.events.push({t:mission.t,text:`The watcher touched you. Integrity ${mission.health}/3.`});beep(70,.25);if(mission.health<=0)finish(false);}});if(mission.flare&&performance.now()>mission.flare.end)mission.flare=null;
+  const done=mission.echoes.every(e=>e.got),exit={x:965,y:605};if(done&&Math.hypot(exit.x-mission.player.x,exit.y-mission.player.y)<35)finish(true);mission.frames.push({t:mission.t,bpm:state.feedback?.bpm||null,baseline:state.feedback?.baseline||null,intensity,radius,valid,scare:mission.scare,health:mission.health});if(mission.frames.length>3600)mission.frames.shift();
 }
-$('#source-demo').onclick = () => pickSource('demo');
-$('#source-camera').onclick = () => pickSource('camera');
-$('#source-replay').onclick = () => pickSource('replay');
-$('#quick-demo').onclick = () => pickSource('demo');
-$('#quick-camera').onclick = () => pickSource('camera');
-$('#recalibrate').onclick = () => { send({cmd:'calibrate'}); resetMission(); showToast('Baseline cleared. Remain still for calibration.'); };
-$('#scenario').onchange = e => send({cmd:'scenario', value:e.target.value});
-$('#feedback-mode').onchange = () => { if(mission) addEvent(`Feedback rule: ${$('#feedback-mode').selectedOptions[0].text}`); };
-$('#nav-sensors').onclick = () => $('#sensor-dialog').showModal();
-$('#close-sensors').onclick = () => $('#sensor-dialog').close();
-$('#sound').onclick = () => { soundOn = !soundOn; $('#sound').textContent = soundOn ? 'SOUND ON' : 'SOUND OFF'; if (soundOn) beep(220, .06); };
+function finish(success){if(mission.ended)return;mission.ended=true;mission.success=success;paused=true;$('#pause').disabled=true;$('#control-message').textContent=success?'You escaped the Night Signal. Review the pulse response below.':'The signal dropped to zero. Review what the director saw.';setTimeout(()=>downloadSession(),200);}
+function downloadSession(){if(!mission)return;const payload={experiment:'TRACE Night Signal',success:mission.success,events:mission.events,frames:mission.frames,source,disclaimer:'Interactive research telemetry. Not a medical measurement or diagnosis.'};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));a.download='trace-night-signal.json';a.click();URL.revokeObjectURL(a.href);}
 
-$('#launch').onclick = () => { if (!latest.feedback?.baseline) return; startMission(); };
-function startMission() {
-  mission = {started:true, start:performance.now(), elapsed:0, player:{...spawn}, cores:coreSpawns.map(p=>({...p, collected:false})), watchers:watcherSpawns.map((p,i)=>({x:p.x,y:p.y,base:{...p},phase:i*2,alert:0,stun:0})), decoys:3, integrity:3, hidden:false, ended:false, events:[], frame:[]};
-  paused=false; $('#pause').disabled=false; $('#cover').hidden=true; $('#launch').disabled=true; $('#launch').textContent='MISSION RUNNING'; $('#objective').textContent='COLLECT THE MEMORY CORES'; $('#game-message').textContent='Keep to the shadows.'; $('#event-log').innerHTML=''; $('#cores').innerHTML='00 <small>/ 03</small>'; $('#integrity').textContent='INTEGRITY 3 / 3'; addEvent('Signal link established. Entering sector.'); canvas.focus();
-}
-function resetMission(){ if(mission?.started) endMission(false); mission=null; $('#cover').hidden=false; $('#cover-title').textContent='Enter the quiet.'; $('#cover-copy').innerHTML='Your heartbeat shapes how far the watchers can sense you.<br>Use cover. Choose your moment. Leave no trace.'; $('#launch').disabled=true; $('#launch').textContent='WAITING FOR SIGNAL'; }
-$('#retry').onclick = () => { $('#replay-section').hidden=true; resetMission(); startMission(); };
-$('#pause').onclick = () => { paused=!paused; $('#pause').textContent=paused?'RESUME':'PAUSE'; addEvent(paused?'Mission paused.':'Mission resumed.'); };
-window.addEventListener('keydown', e => { if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','w','a','s','d','W','A','S','D','e','E','Escape'].includes(e.key)) e.preventDefault(); if(e.key==='Escape' && mission?.started) $('#pause').click(); if(e.key===' ' && mission?.started) deployDecoy(); if((e.key==='e'||e.key==='E') && mission?.started) interact(); keys.add(e.key.toLowerCase()); });
-window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
-$$('.touch-controls button').forEach(b=>{b.onpointerdown=()=>{if(b.dataset.key)keys.add(b.dataset.key.toLowerCase()); else b.dataset.action==='decoy'?deployDecoy():interact()};b.onpointerup=()=>{if(b.dataset.key)keys.delete(b.dataset.key.toLowerCase())};});
+function text(s,x,y,size,color= '#dceae6',font='IBM Plex Mono',align='left'){ctx.fillStyle=color;ctx.font=`${size}px ${font}`;ctx.textAlign=align;ctx.fillText(s,x,y);ctx.textAlign='left';}
+function rect(x,y,w,h,fill,stroke=null){ctx.fillStyle=fill;ctx.fillRect(x,y,w,h);if(stroke){ctx.strokeStyle=stroke;ctx.strokeRect(x+.5,y+.5,w-1,h-1);}}
+function line(points,color,width=2){if(!points.length)return;ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();}
+function panel(x,y,w,h,title){rect(x,y,w,h,'#0b151e','#2a4240');text(title.startsWith('#')?'SESSION FLOW':title,x+15,y+22,10,'#91f2ce','IBM Plex Mono');}
+function chart(x,y,w,h,arr,color,label,min=null,max=null){rect(x,y,w,h,'#081018','#263e3d');text(label,x+10,y+18,9,'#91aaa7');if(!arr.length)return;const vals=arr.map(a=>typeof a==='number'?a:a.v),lo=min??Math.min(...vals),hi=max??Math.max(...vals),span=hi-lo||1;line(vals.map((v,i)=>[x+10+i/(vals.length-1)*(w-20),y+h-12-(v-lo)/span*(h-30)]),color,2);}
+function methodChart(x,y,w,h){rect(x,y,w,h,'#081018','#263e3d');text('rPPG / GREEN  CHROM  POS / LIVE BPM',x+10,y+18,9,'#91aaa7');if(!methodHistory.length)return;const colors={green:'#efc66d',chrom:'#ff8876',pos:'#91f2ce'};for(const key of Object.keys(colors)){const vals=methodHistory.map(a=>a[key]).filter(v=>v!=null);if(!vals.length)continue;line(vals.map((v,i)=>[x+10+i/Math.max(1,vals.length-1)*(w-20),y+h-12-(v-40)/100*(h-30)]),colors[key],2);}text('GREEN',x+w-150,y+18,8,colors.green);text('CHROM',x+w-100,y+18,8,colors.chrom);text('POS',x+w-50,y+18,8,colors.pos);}
+function drawPreview(x,y,w,h){rect(x,y,w,h,'#111d25','#41534f');if(feed.complete&&feed.naturalWidth){ctx.drawImage(feed,x,y,w,h);}else{rect(x+80,y+45,w-160,h-100,'#182a32');ctx.fillStyle='#2e6861';ctx.beginPath();ctx.arc(x+w/2,y+h/2-15,58,0,Math.PI*2);ctx.fill();ctx.fillStyle='#081017';ctx.fillRect(x+w/2-34,y+h/2-27,20,8);ctx.fillRect(x+w/2+14,y+h/2-27,20,8);ctx.strokeStyle='#91f2ce';ctx.strokeRect(x+w/2-76,y+h/2-82,152,178);}text('LOCAL FACE TRACK',x+12,y+22,9,'#91f2ce');text('ROI / FOREHEAD + CHEEKS',x+12,y+h-13,8,'#8caaa2');}
+function graphForPulse(vals){return vals.length?vals.map(a=>typeof a==='number'?a:a.v):[]}
+function drawScan(){background();text('01 / SIGNAL ACQUISITION',42,40,11,'#91f2ce');text('TRACE is looking for a heartbeat in colour and motion.',42,68,21,'#dceae6','Barlow Condensed');drawPreview(42,94,500,345);panel(565,94,833,345,'LIVE READOUT / THREE OPTICAL METHODS + CAMERA BCG');const fb=state.feedback||{},bpm=fb.bpm?Math.round(fb.bpm):'--';text(String(bpm),595,190,94,fb.valid?'#91f2ce':'#7f9293','Barlow Condensed');text('BPM',735,184,18,'#8ca6a2');text(fb.baseline?`BASELINE ${Math.round(fb.baseline)}  /  ${fb.delta>=0?'+':''}${Math.round(fb.delta)} Δ`:'CALIBRATING PERSONAL BASELINE',595,216,10,'#8ca6a2');text(fb.valid?'PULSE LINKED':'WAITING FOR STABLE SIGNAL',595,243,10,fb.valid?'#91f2ce':'#efc66d');const methods=state.methods||{};[['GREEN',methods.green],['CHROM',methods.chrom],['POS',methods.pos]].forEach((m,i)=>{const yy=276+i*42;text(m[0],595,yy,9,'#8ca6a2');const v=m[1]?.bpm;text(v?`${v.toFixed(1)} BPM`:'--',700,yy,12,v?'#dceae6':'#657a7c');rect(820,yy-10,500,5,'#17252b');if(v)rect(820,yy-10,Math.min(1,Math.max(0,(m[1].quality||0)))*500,5,i===0?'#efc66d':i===1?'#ff8876':'#91f2ce');});text(state.bcg?.usable?'BCG LOCKED':'BCG / GATHERING MOTION',1135,204,9,state.bcg?.usable?'#91f2ce':'#efc66d');if(state.bcg?.bpm)text(`${state.bcg.bpm} BPM`,1135,228,16,'#efc66d','Barlow Condensed');text('Optical and mechanical channels remain separate.',1135,250,8,'#718a88');methodChart(42,474,660,205);chart(728,474,670,205,graphForPulse(bcgHistory),'#efc66d','rBCG / FACIAL MOTION BPM',40,140);text(fb.calibration>=1?'BASELINE LOCKED / READY':'HOLD STILL / BASELINE '+Math.round((fb.calibration||0)*100)+'%',42,735,11,fb.calibration>=1?'#91f2ce':'#efc66d');text('GREEN  /  CHROM  /  POS   =   DIFFERENT CLASSICAL VIEWS OF THE SAME FACE',42,765,9,'#718a88');if(fb.baseline&&fb.calibration>=1){rect(1065,718,333,45,'#91f2ce','#91f2ce');text('ENTER NIGHT  >>',1231,746,13,'#092019','IBM Plex Mono','center');}}
+function background(){ctx.clearRect(0,0,W,H);rect(0,0,W,H,'#081119');ctx.strokeStyle='#10252a';ctx.lineWidth=1;for(let x=0;x<W;x+=32){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}for(let y=0;y<H;y+=32){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}}
+function drawGame(){background();const gW=1040;rect(22,22,gW,656,'#081219','#38544e');text('02 / NIGHT SIGNAL',42,49,11,'#91f2ce');text(`SURVIVE  ${fmt(mission.t)}    ECHOES ${mission.echoes.filter(e=>e.got).length}/3`,770,49,10,'#8aa39e','IBM Plex Mono','right');walls.forEach(w=>{rect(w.x+22,w.y+22,w.w,w.h,'#152a31','#294846');});hidingSpots.forEach(s=>{rect(s.x+22,s.y+22,s.w,s.h,mission.hidden&&mission.player.x>s.x&&mission.player.x<s.x+s.w&&mission.player.y>s.y&&mission.player.y<s.y+s.h?'#365f58':'#1a393c','#47756c');});mission.echoes.forEach(e=>{if(e.got)return;ctx.save();ctx.translate(e.x+22,e.y+22);ctx.rotate(Math.PI/4);ctx.fillStyle='#efc66d';ctx.shadowColor='#efc66d';ctx.shadowBlur=16;ctx.fillRect(-10,-10,20,20);ctx.restore();});const exit={x:965,y:605};ctx.strokeStyle='#91f2ce';ctx.globalAlpha=.6+.25*Math.sin(performance.now()/250);ctx.strokeRect(exit.x+7,exit.y+7,36,36);ctx.globalAlpha=1;text('EXIT',exit.x+11,666,8,'#91f2ce');mission.hunters.forEach(h=>{ctx.save();ctx.translate(h.x+22,h.y+22);ctx.fillStyle='#ff695d';ctx.shadowColor='#ff695d';ctx.shadowBlur=18;ctx.beginPath();ctx.arc(0,0,15,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#170d17';ctx.fillRect(-8,-4,5,8);ctx.fillRect(3,-4,5,8);ctx.strokeStyle='#ff695d';ctx.globalAlpha=.19;ctx.beginPath();ctx.arc(0,0,150*mission.radius,0,Math.PI*2);ctx.stroke();ctx.restore();});ctx.fillStyle='#91f2ce';ctx.shadowColor='#91f2ce';ctx.shadowBlur=18;ctx.fillRect(mission.player.x+14,mission.player.y+14,16,16);ctx.shadowBlur=0;if(mission.hidden){ctx.strokeStyle='#91f2ce';ctx.beginPath();ctx.arc(mission.player.x+22,mission.player.y+22,20,0,Math.PI*2);ctx.stroke();}if(mission.flare){ctx.strokeStyle='#efc66d';ctx.beginPath();ctx.arc(mission.flare.x+22,mission.flare.y+22,18+Math.sin(performance.now()/80)*4,0,Math.PI*2);ctx.stroke();}if(mission.scare>0){rect(22,22,gW,656,`rgba(255,30,35,${Math.min(.48,mission.scare*.35)})`);ctx.fillStyle='#09040a';ctx.beginPath();ctx.arc(530,330,105,0,Math.PI*2);ctx.fill();ctx.fillStyle='#ff695d';ctx.shadowColor='#ff695d';ctx.shadowBlur=25;ctx.fillRect(480,300,28,18);ctx.fillRect(552,300,28,18);ctx.fillRect(500,370,60,10);ctx.shadowBlur=0;text('MOVE',530,455,24,'#fff1e8','Barlow Condensed','center');}
+  drawMonitor(1082,22,336,656);if(paused){rect(22,22,W-44,H-44,'rgba(0,0,0,.7)');text('SIGNAL PAUSED',W/2,350,48,'#91f2ce','Barlow Condensed','center');text('Press ESC or PAUSE to return.',W/2,386,12,'#b7c8c2','IBM Plex Mono','center');}}
+function drawMonitor(x,y,w,h){panel(x,y,w,h,'LIVE PHYSIOLOGY');const fb=state.feedback||{};text(fb.bpm?Math.round(fb.bpm):'--',x+18,y+94,78,fb.valid?'#91f2ce':'#70858a','Barlow Condensed');text('BPM',x+145,y+86,16,'#91aaa7');text(fb.baseline?`Δ ${fb.delta>=0?'+':''}${Math.round(fb.delta)} BPM`:'BASELINE ...',x+145,y+109,9,'#efc66d');text(fb.valid?'LINKED':'NO RELIABLE SIGNAL',x+18,y+126,9,fb.valid?'#91f2ce':'#efc66d');const meter=Math.min(1,Math.max(0,(fb.intensity||0)));rect(x+18,y+143,w-36,7,'#1c292e');rect(x+18,y+143,(w-36)*meter,7,'#ff695d');text('FEAR RESPONSE',x+18,y+168,8,'#7e9791');text(`FIELD ${mission.radius?.toFixed(2)||'1.00'}x`,x+w-18,y+168,9,'#efc66d','IBM Plex Mono','right');chart(x+18,y+184,w-36,145,graphForPulse(rppgHistory),'#91f2ce','rPPG / LIVE',40,140);chart(x+18,y+345,w-36,145,graphForPulse(bcgHistory),'#efc66d','rBCG / EXPERIMENTAL',40,140);text(`INTEGRITY  ${mission.health}/3`,x+18,y+525,10,mission.health===1?'#ff695d':'#dceae6');text(`FLARES  ${mission.flares}`,x+w-18,y+525,10,'#efc66d','IBM Plex Mono','right');text('A rise expands the watcher field.',x+18,y+560,9,'#8aa09b');text('A scare is not a diagnosis.',x+18,y+578,9,'#8aa09b');}
+function fmt(v){return`${String(Math.floor(v/60)).padStart(2,'0')}:${String(Math.floor(v%60)).padStart(2,'0')}`}
+function draw(){if(phase==='game')drawGame();else if(phase==='scan')drawScan();else{background();text('TRACE / NIGHT SIGNAL',42,65,13,'#91f2ce');text('A camera sees the pulse in your face.',42,155,50,'#e4eeeb','Barlow Condensed');text('Then the pulse becomes part of the horror.',42,210,50,'#91aaa7','Barlow Condensed');text('Start with a live camera to see three rPPG methods and experimental camera BCG in one monitor.',42,270,13,'#8d9eaa');panel(42,345,570,260,'#0b151e');text('THE FLOW',67,380,10,'#91f2ce');[['01','CAMERA ACQUISITION','colour pulse + facial motion'],['02','SIGNAL CHECK','live BPM and graphs'],['03','NIGHT RUN','your measured response changes the danger']].forEach((a,i)=>{const yy=430+i*52;text(a[0],67,yy,11,'#efc66d');text(a[1],115,yy,11,'#dceae6');text(a[2],115,yy+17,9,'#7e9692');});text('Use simulation if a camera is unavailable.',42,658,10,'#687f7d');}}
 
-function resetEntities(){ return {player:{...spawn},cores:coreSpawns.map(p=>({...p,collected:false})),watchers:watcherSpawns.map((p,i)=>({x:p.x,y:p.y,base:{...p},phase:i*2,alert:0,stun:0})),decoys:3,integrity:3,hidden:false}; }
-function collide(x,y,r=10){ return walls.some(w=>x+r>w.x&&x-r<w.x+w.w&&y+r>w.y&&y-r<w.y+w.h); }
-function movePlayer(dx,dy){ const p=mission.player, speed=105; let nx=p.x+dx*speed, ny=p.y+dy*speed; if(!collide(nx,p.y))p.x=Math.max(35,Math.min(925,nx)); if(!collide(p.x,ny))p.y=Math.max(35,Math.min(565,ny)); }
-function inLocker(){return lockers.some(l=>mission.player.x>l.x&&mission.player.x<l.x+l.w&&mission.player.y>l.y&&mission.player.y<l.y+l.h)}
-function lineBlocked(a,b){ const n=Math.ceil(Math.hypot(a.x-b.x,a.y-b.y)/7); for(let i=1;i<n;i++){const x=a.x+(b.x-a.x)*i/n,y=a.y+(b.y-a.y)*i/n;if(walls.some(w=>x>w.x&&x<w.x+w.w&&y>w.y&&y<w.y+w.h))return true} return false; }
-function interact(){if(!mission)return; mission.hidden=inLocker(); const core=mission.cores.find(c=>!c.collected&&Math.hypot(c.x-mission.player.x,c.y-mission.player.y)<34); if(core){core.collected=true; addEvent(`Memory core ${mission.cores.filter(c=>c.collected).length} recovered.`); $('#cores').innerHTML=`${String(mission.cores.filter(c=>c.collected).length).padStart(2,'0')} <small>/ 03</small>`; beep(560,.1); if(mission.cores.every(c=>c.collected)){ $('#objective').textContent='RETURN TO EXTRACTION'; addEvent('All cores recovered. Extraction pad is live.'); }} else if(mission.hidden)addEvent('Cover engaged. Watchers cannot see you through a locker.'); }
-function deployDecoy(){if(!mission||mission.decoys<=0)return; mission.decoys--;$('#decoys').textContent=mission.decoys; mission.decoy={x:mission.player.x,y:mission.player.y,until:performance.now()+5000};addEvent('Decoy pulse deployed. Watchers are investigating.');beep(160,.16);}
-function updateGame(dt){ if(!mission?.started||mission.ended||paused)return; mission.elapsed=(performance.now()-mission.start)/1000; const up=keys.has('w')||keys.has('arrowup'),down=keys.has('s')||keys.has('arrowdown'),left=keys.has('a')||keys.has('arrowleft'),right=keys.has('d')||keys.has('arrowright'); let dx=(right?1:0)-(left?1:0),dy=(down?1:0)-(up?1:0);if(dx||dy){const q=Math.hypot(dx,dy);movePlayer(dx/q*dt,dy/q*dt)} mission.hidden=inLocker(); const mode=$('#feedback-mode').value; const intensity=mode==='fixed'?0:(latest.feedback?.valid?latest.feedback.intensity||0:0); const radius=mode==='balance'?1-.32*intensity:1+.7*intensity; mission.radius=radius;
-  mission.watchers.forEach(w=>{if(w.stun>0){w.stun-=dt;return}const p=mission.player;const distance=Math.hypot(w.x-p.x,w.y-p.y);let target=null;if(mission.decoy&&performance.now()<mission.decoy.until)target=mission.decoy;else if(!mission.hidden&&!lineBlocked(w,p)&&distance<125*radius){target=p;w.alert=Math.min(1,w.alert+dt*.7)}else w.alert=Math.max(0,w.alert-dt*.3);if(target){const d=Math.max(1,Math.hypot(target.x-w.x,target.y-w.y));const speed=28+35*w.alert;const nx=w.x+(target.x-w.x)/d*speed*dt,ny=w.y+(target.y-w.y)/d*speed*dt;if(!collide(nx,w.y,12))w.x=nx;if(!collide(w.x,ny,12))w.y=ny}else{w.x=w.base.x+Math.cos(mission.elapsed*.35+w.phase)*23;w.y=w.base.y+Math.sin(mission.elapsed*.28+w.phase)*18}if(target===p&&distance<22){mission.integrity--;w.x=w.base.x;w.y=w.base.y;w.alert=0;addEvent(`Watcher contact. Integrity ${mission.integrity} / 3.`);$('#integrity').textContent=`INTEGRITY ${mission.integrity} / 3`;beep(90,.2);if(mission.integrity<=0)endMission(false)}});if(mission.decoy&&performance.now()>mission.decoy.until)mission.decoy=null;const exit={x:875,y:510};if(mission.cores.every(c=>c.collected)&&Math.hypot(exit.x-mission.player.x,exit.y-mission.player.y)<34)endMission(true); mission.frame.push({t:mission.elapsed,bpm:latest.feedback?.bpm||null,intensity:latest.feedback?.intensity||0,radius,px:mission.player.x,py:mission.player.y,hidden:mission.hidden});if(mission.frame.length>3600)mission.frame.shift();updateHud(radius); }
-function updateHud(radius){const val=radius||1;$('#field-value').innerHTML=`${val.toFixed(2)}<small>×</small>`;$('#field-label').textContent=val>1.3?'ELEVATED':val<.9?'CALM':'NOMINAL';$('#field-label').style.color=val>1.3?'var(--coral)':'var(--gold)';const on=Math.round(Math.min(1.5,val)/1.5*8);$('#field-bars').innerHTML=Array.from({length:8},(_,i)=>`<i class="${i<on?'on':''}"></i>`).join('');$('#danger-vignette').style.opacity=Math.max(0,(val-1)*.45); }
-function endMission(success){if(!mission||mission.ended)return;mission.ended=true;mission.success=success;$('#pause').disabled=true;$('#cover').hidden=false;$('#cover-title').textContent=success?'Extraction complete.': 'Signal lost.';$('#cover-copy').innerHTML=success?'Three cores recovered. The quiet array is yours.':'The watchers found you. Every run teaches the director.';$('#quick-demo').textContent='REVIEW SESSION';$('#quick-camera').textContent='NEW MISSION';$('#quick-demo').onclick=()=>{$('#cover').hidden=true;showReplay()};$('#quick-camera').onclick=()=>{resetMission();pickSource(source||'demo')};addEvent(success?'Mission complete.':'Mission failed.');showReplay(); }
-function addEvent(text){const t=mission?mission.elapsed:0;eventHistory.push({t,text});if(eventHistory.length>100)eventHistory.shift();const p=document.createElement('p');p.innerHTML=`<time>${fmt(t)}</time>${text}`;$('#event-log').prepend(p);if(mission)mission.events.push({t,text});}
-function fmt(s){return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`}
-function showReplay(){const frames=mission?.frame||[];$('#replay-section').hidden=false;$('#result-title').textContent=mission.success?'Mission complete.':'Mission interrupted.';$('#result-copy').textContent=mission.success?'You crossed the field without asking your body to perform. The director adapted gradually to the measured signal.':'The response is part of the experiment. Review where signal quality and detection diverged.';const valid=frames.filter(f=>f.bpm);const mean=valid.length?valid.reduce((a,f)=>a+f.bpm,0)/valid.length:0;const maxR=frames.length?Math.max(...frames.map(f=>f.radius)):1;$('#result-stats').innerHTML=`<div><span>MISSION TIME</span><strong>${fmt(frames.at(-1)?.t||0)}</strong></div><div><span>RECOVERED</span><strong>${mission.cores.filter(c=>c.collected).length} / 3</strong></div><div><span>MEASURED BPM</span><strong>${mean?Math.round(mean):'--'}</strong></div><div><span>MAX DETECTION</span><strong>${maxR.toFixed(2)}×</strong></div>`;drawSession();$('#replay-section').scrollIntoView({behavior:'smooth',block:'start'});}
-function drawSession(){const c=$('#session-chart'),x=c.getContext('2d'),f=mission?.frame||[];x.clearRect(0,0,c.width,c.height);x.fillStyle='#101923';x.fillRect(0,0,c.width,c.height);if(!f.length)return;const maxT=f.at(-1).t||1;x.strokeStyle='#263b39';x.lineWidth=1;for(let i=0;i<5;i++){x.beginPath();x.moveTo(0,i*c.height/4);x.lineTo(c.width,i*c.height/4);x.stroke()}function line(key,color,scale,off){x.beginPath();let started=false;f.forEach(v=>{if(v[key]==null)return;const xx=v.t/maxT*c.width,yy=c.height-off-(v[key]/scale)*scale*.3;if(!started){x.moveTo(xx,yy);started=true}else x.lineTo(xx,yy)});x.strokeStyle=color;x.lineWidth=2;x.stroke()}line('bpm','#91f2ce',140,120);line('radius','#f1c877',1.5,150);x.fillStyle='#879f9a';x.font='10px IBM Plex Mono';x.fillText('PULSE',8,16);x.fillStyle='#c79d54';x.fillText('DETECTION',58,16);}
-$('#replay-toggle').onclick=()=>{if(!mission?.frame.length)return;let i=0;const timer=setInterval(()=>{if(i>=mission.frame.length){clearInterval(timer);return}$('#scrub').value=i/mission.frame.length*100;drawScrub(i);i+=4},35)};
-$('#scrub').oninput=e=>drawScrub(Math.round(e.target.value/100*(mission?.frame.length||1)));
-function drawScrub(i){const f=mission?.frame[i];if(!f)return;$('#scrub-time').textContent=fmt(f.t);$('#field-value').innerHTML=`${f.radius.toFixed(2)}<small>×</small>`;}
-$('#export').onclick=()=>{const data={experiment:'TRACE Ghost Protocol',success:mission?.success,events:mission?.events,frames:mission?.frame,signal_source:source,disclaimer:'Research gameplay telemetry, not a medical measurement or diagnosis.'};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='trace-ghost-session.json';a.click();URL.revokeObjectURL(a.href)};
-
-function beep(freq,dur){if(!soundOn)return;if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=freq;o.type='square';g.gain.value=.025;o.connect(g);g.connect(audio.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.stop(audio.currentTime+dur)}
-function drawArena(){ctx.clearRect(0,0,W,H);ctx.fillStyle='#0b171f';ctx.fillRect(0,0,W,H);ctx.strokeStyle='#122a2c';ctx.lineWidth=1;for(let x=24;x<936;x+=24){ctx.beginPath();ctx.moveTo(x,24);ctx.lineTo(x,576);ctx.stroke()}for(let y=24;y<576;y+=24){ctx.beginPath();ctx.moveTo(24,y);ctx.lineTo(936,y);ctx.stroke()}walls.forEach(w=>{ctx.fillStyle='#172b31';ctx.fillRect(w.x,w.y,w.w,w.h);ctx.fillStyle='#284341';ctx.fillRect(w.x,w.y,w.w,2);ctx.fillStyle='#0c141c';ctx.fillRect(w.x+4,w.y+5,w.w-8,2)});lockers.forEach(l=>{ctx.fillStyle=mission?.hidden&&mission.player.x>l.x&&mission.player.x<l.x+l.w&&mission.player.y>l.y&&mission.player.y<l.y+l.h?'#52786d':'#203c3e';ctx.fillRect(l.x,l.y,l.w,l.h);ctx.strokeStyle='#45736a';ctx.strokeRect(l.x+.5,l.y+.5,l.w-1,l.h-1);ctx.fillStyle='#0b1a21';for(let x=l.x+12;x<l.x+l.w-4;x+=16)ctx.fillRect(x,l.y+10,5,l.h-20)});const exit={x:875,y:510};ctx.strokeStyle='#91f2ce';ctx.globalAlpha=.5+.2*Math.sin(performance.now()/300);ctx.strokeRect(exit.x-18,exit.y-18,36,36);ctx.globalAlpha=1;ctx.fillStyle='#91f2ce';ctx.font='9px IBM Plex Mono';ctx.fillText('EXIT',exit.x-12,exit.y+32);if(mission){mission.cores.forEach(c=>{if(c.collected)return;ctx.save();ctx.translate(c.x,c.y);ctx.rotate(Math.PI/4);ctx.fillStyle='#f1c877';ctx.shadowColor='#f1c877';ctx.shadowBlur=15;ctx.fillRect(-9,-9,18,18);ctx.shadowBlur=0;ctx.restore()});if(mission.decoy){ctx.strokeStyle='#f87868';ctx.beginPath();ctx.arc(mission.decoy.x,mission.decoy.y,12+Math.sin(performance.now()/80)*3,0,Math.PI*2);ctx.stroke()}mission.watchers.forEach(w=>{ctx.save();ctx.translate(w.x,w.y);ctx.fillStyle='#fa826e';ctx.shadowColor='#fa826e';ctx.shadowBlur=12;ctx.fillRect(-10,-8,20,16);ctx.shadowBlur=0;ctx.fillStyle='#3b1c26';ctx.fillRect(-5,-3,10,4);ctx.strokeStyle='#fa826e';ctx.globalAlpha=.25;ctx.beginPath();ctx.arc(0,0,125*(mission.radius||1),0,Math.PI*2);ctx.stroke();ctx.restore()});ctx.fillStyle='#91f2ce';ctx.shadowColor='#91f2ce';ctx.shadowBlur=12;ctx.fillRect(mission.player.x-8,mission.player.y-8,16,16);ctx.shadowBlur=0;ctx.strokeStyle='#b9ffe7';ctx.strokeRect(mission.player.x-11,mission.player.y-11,22,22);if(mission.hidden){ctx.strokeStyle='#91f2ce';ctx.globalAlpha=.65;ctx.beginPath();ctx.arc(mission.player.x,mission.player.y,16,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1}}}
-function loop(now){const dt=Math.min(.04,(now-lastRender)/1000);lastRender=now;updateGame(dt);drawArena();requestAnimationFrame(loop)}requestAnimationFrame(loop);
-
-$('#phone-file').onchange=async e=>{const file=e.target.files[0];if(!file)return;$('#phone-result').textContent='Processing CSV locally on the TRACE server...';const r=await fetch('/api/phone/analyse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({csv:await file.text()})});const out=await r.json();if(!r.ok){$('#phone-result').textContent=out.error;return}$('#phone-result').textContent=`SCG research estimate: ${out.bpm} BPM, quality ${Math.round(out.quality*100)}%, respiration ${out.respiration_bpm||'--'} BPM. ${out.note}`;if(out.pulse)drawWave($('#phone-chart'),out.pulse,'#f1c877');};
-$('#sample-csv').onclick=()=>{const fs=100,rows=['t,ax,ay,az'];for(let i=0;i<3000;i++){const t=i/fs;rows.push(`${t.toFixed(3)},${(9.81+.03*Math.sin(2*Math.PI*1.2*t)+.005*Math.sin(2*Math.PI*8*t)).toFixed(6)},${(.01*Math.sin(2*Math.PI*1.2*t)).toFixed(6)},${(.02*Math.sin(2*Math.PI*1.2*t)).toFixed(6)}`)}const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='trace-synthetic-accelerometer.csv';a.click()};
-function showToast(text){const t=$('#toast');t.textContent=text;t.classList.add('visible');clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>t.classList.remove('visible'),3500)}
-// Initial state is intentionally quiet. The cover explains the experiment before a sensor starts.
-drawArena();
+function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(phase==='game')update(dt);draw();requestAnimationFrame(loop);}requestAnimationFrame(loop);

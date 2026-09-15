@@ -31,7 +31,7 @@ Their interaction had not been measured.
 | T7 | Full grid, interaction statistics, figures | done on the simulated pilot (36 subjects, 23 conditions, 11 methods) |
 | T8 | Own data collection | protocol and consent form ready; recording not started |
 | T9 | HRV and LF/HF (the second Fourier transform) | done, 11/11 |
-| T10 | Live demo and TRACE Ghost Protocol | done; pulse-aware stealth game, replay, camera BCG experiment and phone SCG lab |
+| T10 | Live demo and TRACE Ghost Protocol | done; live rPPG monitor, camera BCG experiment, pulse-aware horror game and replay |
 | T11 | Extended abstract, poster, course report | drafts generated from results, see `deliverables/` |
 
 `CLAUDE.md` is the detailed project memory: every measured number, every
@@ -122,7 +122,7 @@ app/                FastAPI live pipeline and TRACE Ghost Protocol game
   static/game.html  pixel-art stealth game and session replay
   static/game.js    game loop, pulse feedback controller UI, export
   biofeedback.py    baseline-relative, quality-gated feedback controller
-src/tracerppg/mechanical.py  experimental camera rBCG and phone SCG CSV analysis
+src/tracerppg/mechanical.py  experimental camera rBCG feature tracking
 deliverables/       poster, extended abstract, course report, data protocol
 results/            frozen parameters, tables, figures (raw outputs gitignored)
 Lesson/             seven bilingual lessons on the theory
