@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import json
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,8 +22,11 @@ import uvicorn  # noqa: E402
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect  # noqa: E402
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
+from pydantic import BaseModel, Field  # noqa: E402
 
 from engine import LiveEngine  # noqa: E402
+from biofeedback import PulseController, demo_state  # noqa: E402
+from tracerppg.mechanical import analyse_phone_csv  # noqa: E402
 
 STATIC = Path(__file__).resolve().parent / "static"
 app = FastAPI(title="TRACE live")
@@ -33,7 +37,24 @@ engine = LiveEngine()
 @app.get("/")
 def index():
     # Never cache the page: a demo machine must always load the current build.
+    return FileResponse(STATIC / "game.html", headers={"Cache-Control": "no-store"})
+
+
+@app.get("/lab")
+def legacy_lab():
     return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-store"})
+
+
+class PhoneRecording(BaseModel):
+    csv: str = Field(max_length=8_000_000)
+
+
+@app.post("/api/phone/analyse")
+async def phone(recording: PhoneRecording):
+    try:
+        return await asyncio.to_thread(analyse_phone_csv, recording.csv)
+    except ValueError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=422)
 
 
 @app.get("/api/lab")
@@ -63,13 +84,32 @@ async def video():
 @app.websocket("/ws")
 async def ws(sock: WebSocket):
     await sock.accept()
+    controller = PulseController()
+    mode = "engine"
+    scenario = "cycle"
+    started = time.monotonic()
+    last_frame = None
+    last_fresh = time.monotonic()
 
     async def reader():
+        nonlocal mode, scenario, started
         while True:
             msg = json.loads(await sock.receive_text())
             cmd = msg.get("cmd")
             if cmd == "start":
+                mode = "engine"
+                controller.reset()
                 await asyncio.to_thread(engine.start, msg.get("source", "sim"), **msg.get("options", {}))
+            elif cmd == "demo":
+                mode = "demo"
+                scenario = "cycle"
+                started = time.monotonic()
+                controller.reset()
+            elif cmd == "scenario":
+                if msg.get("value") in ("cycle", "steady", "elevated", "dropout"):
+                    scenario = msg["value"]
+            elif cmd == "calibrate":
+                controller.reset()
             elif cmd == "stop":
                 await asyncio.to_thread(engine.stop)
             elif cmd == "hrv_start":
@@ -81,7 +121,15 @@ async def ws(sock: WebSocket):
     task = asyncio.create_task(reader())
     try:
         while not task.done():
-            await sock.send_text(json.dumps({"type": "state", "state": engine.state}))
+            now = time.monotonic()
+            state = demo_state(now - started, scenario) if mode == "demo" else dict(engine.state)
+            if mode == "engine":
+                if state.get("t") != last_frame:
+                    last_frame, last_fresh = state.get("t"), now
+                if now - last_fresh > 2:
+                    state = {**state, "confident": False, "error": "Video data is stale"}
+            state["feedback"] = controller.update(state, now)
+            await sock.send_text(json.dumps({"type": "state", "state": state}, allow_nan=False))
             await asyncio.sleep(0.25)
         task.result()
     except (WebSocketDisconnect, RuntimeError):

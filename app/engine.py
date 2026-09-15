@@ -25,6 +25,7 @@ from tracerppg.fusion import artifact_reference, band_limited_pulses, fuse
 from tracerppg.hrv import DISCLAIMER, HRV_METHOD, MIN_HRV_SECONDS, clean_rr, hrv_from_pulse
 from tracerppg.roi import REGIONS, FaceTracker, skin_mean
 from tracerppg.spectral import HR_BAND, estimate_bpm
+from tracerppg.mechanical import CameraBCG
 
 ROOT = Path(__file__).resolve().parents[1]
 FS = 30.0
@@ -216,12 +217,15 @@ class LiveEngine:
     # ------------------------------------------------------------ worker
     def _run(self):
         tracker = FaceTracker()
+        mechanical = CameraBCG()
         last = 0.0
         try:
             for i, (frame, t) in enumerate(self.source):
                 if self.stop_flag.is_set():
                     break
                 box, _ = tracker.update(frame)
+                if self.source_name == "webcam":
+                    mechanical.update(frame, box, t)
                 if box is not None:
                     mean, npx = skin_mean(frame, box)
                     centre = box[:2] + box[2:] / 2
@@ -242,6 +246,8 @@ class LiveEngine:
                 if t - last >= ANALYSE_EVERY:
                     last = t
                     self._analyse(t, box, npx, frame if box is not None else None)
+                    self.state["bcg"] = mechanical.result() if self.source_name == "webcam" else {
+                        "usable": False, "reason": "Replay has no validated cardiac head motion", "experimental": True}
         except Exception as exc:
             self.error = f"The video source stopped: {exc}"
         finally:
@@ -297,7 +303,9 @@ class LiveEngine:
             state["hrv_elapsed"] = round(now - self.hrv_start, 1)
             state["hrv_needed"] = MIN_HRV_SECONDS
 
-        if buffered >= MIN_S:
+        recent = t >= now - WINDOW_S
+        if (buffered >= MIN_S and recent.sum() > FS * MIN_S and now - t[-1] < .5
+                and np.max(np.diff(t[recent])) < .5):
             m = t >= now - WINDOW_S
             tu, cols = self._uniform(t[m], rgb[m])
             pulses = band_limited_pulses(cols, FS)

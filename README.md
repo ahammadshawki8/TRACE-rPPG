@@ -31,7 +31,7 @@ Their interaction had not been measured.
 | T7 | Full grid, interaction statistics, figures | done on the simulated pilot (36 subjects, 23 conditions, 11 methods) |
 | T8 | Own data collection | protocol and consent form ready; recording not started |
 | T9 | HRV and LF/HF (the second Fourier transform) | done, 11/11 |
-| T10 | Live demo app | done; verified on simulated volunteers |
+| T10 | Live demo and TRACE Ghost Protocol | done; pulse-aware stealth game, replay, camera BCG experiment and phone SCG lab |
 | T11 | Extended abstract, poster, course report | drafts generated from results, see `deliverables/` |
 
 `CLAUDE.md` is the detailed project memory: every measured number, every
@@ -80,7 +80,7 @@ set TRACE_UBFC_DIR=D:/datasets/ubfc                    # the acceptance scripts 
 .venv/Scripts/python.exe scripts/run_grid.py --dataset D:/datasets/ubfc --tag ubfc --work-root D:/trace-scratch
 .venv/Scripts/python.exe scripts/analyze_grid.py --tag ubfc
 
-# live demo (camera or simulated volunteers), then open http://127.0.0.1:8000
+# live demo and pulse-aware stealth game (camera or synthetic pulse), then open http://127.0.0.1:8000
 .venv/Scripts/python.exe app/server.py
 ```
 
@@ -118,7 +118,11 @@ src/tracerppg/      the pipeline package
   metrics.py, stats.py  agreement metrics; the interaction model; power
   grid.py             the subject x condition x method experiment
 scripts/            acceptance checks (stepN), grid, analysis, builders
-app/                live demo (FastAPI server, seven-step web interface)
+app/                FastAPI live pipeline and TRACE Ghost Protocol game
+  static/game.html  pixel-art stealth game and session replay
+  static/game.js    game loop, pulse feedback controller UI, export
+  biofeedback.py    baseline-relative, quality-gated feedback controller
+src/tracerppg/mechanical.py  experimental camera rBCG and phone SCG CSV analysis
 deliverables/       poster, extended abstract, course report, data protocol
 results/            frozen parameters, tables, figures (raw outputs gitignored)
 Lesson/             seven bilingual lessons on the theory
