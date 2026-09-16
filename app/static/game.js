@@ -4,6 +4,7 @@ const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
 const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
 const feed = $('#camera-frame');
+const pending = [];
 let state = {feedback:{intensity:0, valid:false}};
 let phase = 'welcome';
 let source = null;
@@ -27,8 +28,8 @@ const hidingSpots = [{x:65,y:75,w:105,h:70},{x:355,y:255,w:100,h:60},{x:625,y:35
 const echoes = [{x:95,y:575},{x:390,y:85},{x:910,y:365}];
 const hunterHome = [{x:400,y:95},{x:900,y:585}];
 
-function send(obj){if(ws.readyState===1)ws.send(JSON.stringify(obj));}
-ws.onopen=()=>{$('#link-status').textContent='LINKED';$('#link-status').style.color='var(--mint)';draw();};
+function send(obj){if(ws.readyState===1)ws.send(JSON.stringify(obj));else pending.push(obj);}
+ws.onopen=()=>{$('#link-status').textContent='LINKED';$('#link-status').style.color='var(--mint)';while(pending.length)ws.send(JSON.stringify(pending.shift()));draw();};
 ws.onclose=()=>{$('#link-status').textContent='OFFLINE';$('#link-status').style.color='var(--red)';};
 ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='state'){state=m.state;consumeState();}};
 
@@ -101,3 +102,4 @@ function fmt(v){return`${String(Math.floor(v/60)).padStart(2,'0')}:${String(Math
 function draw(){if(phase==='game')drawGame();else if(phase==='scan')drawScan();else{background();text('TRACE / NIGHT SIGNAL',42,65,13,'#91f2ce');text('A camera sees the pulse in your face.',42,155,50,'#e4eeeb','Barlow Condensed');text('Then the pulse becomes part of the horror.',42,210,50,'#91aaa7','Barlow Condensed');text('Start with a live camera to see three rPPG methods and experimental camera BCG in one monitor.',42,270,13,'#8d9eaa');panel(42,345,570,260,'#0b151e');text('THE FLOW',67,380,10,'#91f2ce');[['01','CAMERA ACQUISITION','colour pulse + facial motion'],['02','SIGNAL CHECK','live BPM and graphs'],['03','NIGHT RUN','your measured response changes the danger']].forEach((a,i)=>{const yy=430+i*52;text(a[0],67,yy,11,'#efc66d');text(a[1],115,yy,11,'#dceae6');text(a[2],115,yy+17,9,'#7e9692');});text('Use simulation if a camera is unavailable.',42,658,10,'#687f7d');}}
 
 function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(phase==='game')update(dt);draw();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+if(new URLSearchParams(location.search).has('demo'))begin('demo');

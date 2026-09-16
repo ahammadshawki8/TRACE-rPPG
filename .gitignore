@@ -9,6 +9,8 @@ venv/
 .playwright-mcp/
 .firecrawl/
 .claude/
+.edge-test/
+app/screenshots/night-signal-*.png
 
 # OS
 Thumbs.db
