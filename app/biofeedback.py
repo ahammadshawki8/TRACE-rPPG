@@ -22,6 +22,8 @@ class PulseController:
         self.last_t = None
         self.previous_valid = False
         self.filtered = None
+        self.measurements = deque(maxlen=7)
+        self.last_measurement_t = None
         self.intensity = 0.0
         self.history = deque(maxlen=40)
 
@@ -42,17 +44,31 @@ class PulseController:
         bcg = state.get("bcg", {})
         if valid and bcg.get("usable") and abs(bcg["bpm"] - bpm) > 12:
             valid, reason = False, "Optical and motion estimates disagree"
-        if valid:
-            # A horror mechanic needs visible changes within a few seconds,
-            # while the estimate itself remains the pipeline's windowed BPM.
-            self.filtered = bpm if self.filtered is None else self.filtered + (1 - math.exp(-dt / 1.4)) * (bpm - self.filtered)
-            if self.baseline is None:
-                self.samples.append(bpm)
+        measurement_t = state.get("t")
+        fresh = valid and measurement_t != self.last_measurement_t
+        if fresh:
+            sample_dt = min(max(float(measurement_t) - self.last_measurement_t, 0), 1) \
+                if self.last_measurement_t is not None else 0
+            self.last_measurement_t = float(measurement_t)
+            self.measurements.append(float(bpm))
+            stable = float(np.median(self.measurements))
+            if self.filtered is None:
+                if len(self.measurements) >= 3:
+                    self.filtered = stable
+            else:
+                # Median rejection removes one-window peak swaps. The slew
+                # limit still allows a real response to appear within seconds.
+                step = max(0.5, 6.0 * sample_dt)
+                target_bpm = float(np.clip(stable, self.filtered - step, self.filtered + step))
+                self.filtered += (1 - math.exp(-sample_dt / 1.8)) * (target_bpm - self.filtered)
+            if self.filtered is not None and self.baseline is None:
+                self.samples.append(stable)
                 if self.previous_valid:
-                    self.valid_seconds += dt
+                    self.valid_seconds += sample_dt
                 if self.valid_seconds >= 8:
                     self.baseline = float(np.median(self.samples))
-            self.history.append((now, self.filtered))
+            if self.filtered is not None:
+                self.history.append((now, self.filtered))
         self.previous_valid = bool(valid)
         target = float(np.clip((self.filtered - self.baseline) / 25, 0, 1)) if valid and self.baseline else 0.0
         self.intensity += (1 - math.exp(-dt / 6)) * (target - self.intensity)
@@ -61,7 +77,7 @@ class PulseController:
             trend = (self.history[-1][1] - self.history[0][1]) / (self.history[-1][0] - self.history[0][0]) * 10
         return {"valid": bool(valid), "reason": reason if not valid else "Pulse linked",
                 "baseline": round(self.baseline, 1) if self.baseline else None,
-                "bpm": round(self.filtered, 1) if valid else None,
+                "bpm": round(self.filtered, 1) if valid and self.filtered is not None else None,
                 "calibration": min(1, self.valid_seconds / 8),
                 "intensity": round(self.intensity, 4), "trend": round(trend, 1),
                 "delta": round(self.filtered - self.baseline, 1) if valid and self.baseline else None}
@@ -92,5 +108,8 @@ def demo_state(elapsed: float, scenario: str = "cycle") -> dict:
             "methods": {"green": {"bpm": round(est.bpm + 1.2, 1), "quality": .78},
                         "chrom": {"bpm": round(est.bpm - .7, 1), "quality": .71},
                         "pos": {"bpm": round(est.bpm, 1), "quality": .86}},
+            "method_traces": {"green": (pulse + .08 * np.sin(2 * np.pi * .3 * t))[-180:].tolist(),
+                              "chrom": (pulse * .86 + .12 * np.sin(2 * np.pi * target / 30 * t))[-180:].tolist(),
+                              "pos": pulse[-180:].tolist()},
             "trace": {"pulse": pulse[-180:].tolist()},
             "bcg": {"usable": False, "reason": "Synthetic mode has no camera motion channel"}}

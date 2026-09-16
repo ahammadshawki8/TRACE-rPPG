@@ -326,6 +326,8 @@ class LiveEngine:
                 "weights": {k: round(v, 3) for k, v in fr.weights.items()},
                 "methods": {k: {"bpm": round(v.bpm, 1), "quality": round(v.quality, 3)}
                             for k, v in fr.per_method.items()},
+                "method_traces": {k: _thin(pulses[k][show] / (np.std(pulses[k][show]) + 1e-12))
+                                  for k in ("green", "chrom", "pos")},
                 "naive_green": round(estimate_bpm(pulses["green"], FS).bpm, 1),
                 "trace": {"raw": _thin(green_raw[show]), "pulse": _thin(pulses[best][show] / (np.std(pulses[best][show]) + 1e-12)),
                           "best": best},
