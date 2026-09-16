@@ -72,6 +72,10 @@ $('#settings').onclick=()=>$('#settings-dialog').showModal();$('#close-settings'
 $('#sound-toggle').onchange=e=>{soundOn=e.target.checked;if(soundOn)beep(240,.06);};
 $('#feedback-mode').onchange=()=>{if(mission)mission.events.push({t:mission.t,text:'Feedback rule changed during run.'});};
 window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright',' ','e','escape'].includes(k))e.preventDefault();if(k==='escape'&&mission)$('#pause').click();if(k===' '&&mission&&!paused)flare();if(k==='e'&&mission&&!paused)interact();keys.add(k);});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
+function canvasPoint(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H};}
+function nightButtonReady(){return phase==='scan'&&state.feedback?.baseline&&state.feedback?.calibration>=1;}
+canvas.addEventListener('click',e=>{const p=canvasPoint(e);if(nightButtonReady()&&p.x>=1065&&p.x<=1398&&p.y>=718&&p.y<=763)enterGame();});
+canvas.addEventListener('mousemove',e=>{const p=canvasPoint(e);canvas.style.cursor=nightButtonReady()&&p.x>=1065&&p.x<=1398&&p.y>=718&&p.y<=763?'pointer':'default';});
 
 function beep(freq,dur=.1){if(!soundOn)return;if(!audio)audio=new(window.AudioContext||window.webkitAudioContext)();const o=audio.createOscillator(),g=audio.createGain();o.type='sawtooth';o.frequency.value=freq;g.gain.value=.035;o.connect(g);g.connect(audio.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.stop(audio.currentTime+dur);}
 function collide(x,y,r=12){return walls.some(w=>x+r>w.x&&x-r<w.x+w.w&&y+r>w.y&&y-r<w.y+w.h)}
@@ -99,7 +103,38 @@ function waveChart(x,y,w,h,values,color,label){rect(x,y,w,h,'#081018','#263e3d')
 function methodChart(x,y,w,h){rect(x,y,w,h,'#081018','#263e3d');text('rPPG / THREE COLOUR EXTRACTIONS',x+10,y+18,9,'#91aaa7');const traces=state.method_traces||{};const rows=[['green','#efc66d'],['chrom','#ff8876'],['pos','#91f2ce']],lane=(h-34)/3;rows.forEach(([key,color],i)=>{const vals=(traces[key]||[]).filter(Number.isFinite),cy=y+30+lane*(i+.5);text(key.toUpperCase(),x+10,cy+3,8,color);ctx.strokeStyle='#15272c';ctx.beginPath();ctx.moveTo(x+62,cy);ctx.lineTo(x+w-10,cy);ctx.stroke();if(vals.length<2)return;const sorted=vals.map(Math.abs).sort((a,b)=>a-b),scale=sorted[Math.floor(sorted.length*.95)]||1;clippedLine(vals.map((v,j)=>[x+62+j/(vals.length-1)*(w-72),cy-Math.max(-1.2,Math.min(1.2,v/scale))*lane*.33]),color,1.7,x+61,cy-lane*.43,w-70,lane*.86);});}
 function drawPreview(x,y,w,h){rect(x,y,w,h,'#111d25','#41534f');if(feed.complete&&feed.naturalWidth){ctx.drawImage(feed,x,y,w,h);}else{rect(x+80,y+45,w-160,h-100,'#182a32');ctx.fillStyle='#2e6861';ctx.beginPath();ctx.arc(x+w/2,y+h/2-15,58,0,Math.PI*2);ctx.fill();ctx.fillStyle='#081017';ctx.fillRect(x+w/2-34,y+h/2-27,20,8);ctx.fillRect(x+w/2+14,y+h/2-27,20,8);ctx.strokeStyle='#91f2ce';ctx.strokeRect(x+w/2-76,y+h/2-82,152,178);}text('LOCAL FACE TRACK',x+12,y+22,9,'#91f2ce');text('ROI / FOREHEAD + CHEEKS',x+12,y+h-13,8,'#8caaa2');}
 function graphForPulse(vals){if(vals===bcgHistory&&state.bcg?.pulse)return state.bcg.pulse;if(vals===rppgHistory&&state.trace?.pulse)return state.trace.pulse;return vals.length?vals.map(a=>typeof a==='number'?a:a.v):[]}
-function drawScan(){background();text('01 / SIGNAL ACQUISITION',42,40,11,'#91f2ce');text('TRACE is looking for a heartbeat in colour and motion.',42,68,21,'#dceae6','Barlow Condensed');drawPreview(42,94,500,345);panel(565,94,833,345,'LIVE READOUT / THREE OPTICAL METHODS + CAMERA BCG');const fb=state.feedback||{},bpm=fb.bpm?Math.round(fb.bpm):'--';text(String(bpm),595,190,94,fb.valid?'#91f2ce':'#7f9293','Barlow Condensed');text('BPM',735,184,18,'#8ca6a2');text(fb.baseline?`BASELINE ${Math.round(fb.baseline)}  /  ${fb.delta>=0?'+':''}${Math.round(fb.delta)} Δ`:'CALIBRATING PERSONAL BASELINE',595,216,10,'#8ca6a2');text(fb.valid?'PULSE LINKED':'WAITING FOR STABLE SIGNAL',595,243,10,fb.valid?'#91f2ce':'#efc66d');const methods=state.methods||{};[['GREEN',methods.green],['CHROM',methods.chrom],['POS',methods.pos]].forEach((m,i)=>{const yy=276+i*42;text(m[0],595,yy,9,'#8ca6a2');const v=m[1]?.bpm;text(v?`${v.toFixed(1)} BPM`:'--',700,yy,12,v?'#dceae6':'#657a7c');rect(820,yy-10,500,5,'#17252b');if(v)rect(820,yy-10,Math.min(1,Math.max(0,(m[1].quality||0)))*500,5,i===0?'#efc66d':i===1?'#ff8876':'#91f2ce');});text(state.bcg?.usable?'BCG LOCKED':'BCG / GATHERING MOTION',1135,204,9,state.bcg?.usable?'#91f2ce':'#efc66d');if(state.bcg?.bpm)text(`${state.bcg.bpm} BPM`,1135,228,16,'#efc66d','Barlow Condensed');text('Optical and mechanical channels remain separate.',1135,250,8,'#718a88');methodChart(42,474,660,205);chart(728,474,670,205,graphForPulse(bcgHistory),'#efc66d','rBCG / FACIAL MOTION BPM',40,140);text(fb.calibration>=1?'BASELINE LOCKED / READY':'HOLD STILL / BASELINE '+Math.round((fb.calibration||0)*100)+'%',42,735,11,fb.calibration>=1?'#91f2ce':'#efc66d');text('GREEN  /  CHROM  /  POS   =   DIFFERENT CLASSICAL VIEWS OF THE SAME FACE',42,765,9,'#718a88');if(fb.baseline&&fb.calibration>=1){rect(1065,718,333,45,'#91f2ce','#91f2ce');text('ENTER NIGHT  >>',1231,746,13,'#092019','IBM Plex Mono','center');}}
+function drawScan(){
+  background();
+  text('01 / SIGNAL ACQUISITION',42,40,11,'#91f2ce');
+  text('TRACE is looking for a heartbeat in colour and motion.',42,68,21,'#dceae6','Barlow Condensed');
+  drawPreview(42,94,500,345);
+  panel(565,94,833,345,'LIVE READOUT / THREE OPTICAL METHODS + GUIDED rBCG');
+  const fb=state.feedback||{},bpm=fb.bpm?Math.round(fb.bpm):'--';
+  text(String(bpm),595,190,94,fb.valid?'#91f2ce':'#7f9293','Barlow Condensed');
+  text('BPM',735,184,18,'#8ca6a2');
+  text(fb.baseline?`BASELINE ${Math.round(fb.baseline)}  /  ${fb.delta>=0?'+':''}${Math.round(fb.delta)} Δ`:'CALIBRATING PERSONAL BASELINE',595,216,10,'#8ca6a2');
+  text(fb.valid?'PULSE LINKED':'WAITING FOR STABLE SIGNAL',595,243,10,fb.valid?'#91f2ce':'#efc66d');
+  const methods=state.methods||{};
+  [['GREEN',methods.green],['CHROM',methods.chrom],['POS',methods.pos]].forEach((m,i)=>{
+    const yy=276+i*42;
+    text(m[0],595,yy,9,'#8ca6a2');
+    const v=m[1]?.bpm;
+    text(v?`${v.toFixed(1)} BPM`:'--',700,yy,12,v?'#dceae6':'#657a7c');
+    rect(820,yy-10,500,5,'#17252b');
+    if(v)rect(820,yy-10,Math.min(1,Math.max(0,(m[1].quality||0)))*500,5,i===0?'#efc66d':i===1?'#ff8876':'#91f2ce');
+  });
+  text(state.bcg?.usable?'rBCG CONFIRMED':'rBCG / VERIFYING',1135,204,9,state.bcg?.usable?'#91f2ce':'#efc66d');
+  if(state.bcg?.bpm)text(`${state.bcg.bpm} BPM`,1135,228,16,'#efc66d','Barlow Condensed');
+  text('Shown only when motion agrees with rPPG.',1135,250,8,'#718a88');
+  methodChart(42,474,660,205);
+  chart(728,474,670,205,graphForPulse(bcgHistory),'#efc66d','rBCG / GUIDED FACIAL MOTION',40,140);
+  text(fb.calibration>=1?'BASELINE LOCKED / READY':'HOLD STILL / BASELINE '+Math.round((fb.calibration||0)*100)+'%',42,735,11,fb.calibration>=1?'#91f2ce':'#efc66d');
+  text('GREEN  /  CHROM  /  POS   =   DIFFERENT CLASSICAL VIEWS OF THE SAME FACE',42,765,9,'#718a88');
+  if(fb.baseline&&fb.calibration>=1){
+    rect(1065,718,333,45,'#91f2ce','#91f2ce');
+    text('ENTER NIGHT  >>',1231,746,13,'#092019','IBM Plex Mono','center');
+  }
+}
 function background(){ctx.clearRect(0,0,W,H);rect(0,0,W,H,'#081119');ctx.strokeStyle='#10252a';ctx.lineWidth=1;for(let x=0;x<W;x+=32){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}for(let y=0;y<H;y+=32){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}}
 function drawGame(){background();const gW=1040;rect(22,22,gW,656,'#081219','#38544e');text('02 / NIGHT SIGNAL',42,49,11,'#91f2ce');text(`SURVIVE  ${fmt(mission.t)}    ECHOES ${mission.echoes.filter(e=>e.got).length}/3`,770,49,10,'#8aa39e','IBM Plex Mono','right');walls.forEach(w=>{rect(w.x+22,w.y+22,w.w,w.h,'#152a31','#294846');});hidingSpots.forEach(s=>{rect(s.x+22,s.y+22,s.w,s.h,mission.hidden&&mission.player.x>s.x&&mission.player.x<s.x+s.w&&mission.player.y>s.y&&mission.player.y<s.y+s.h?'#365f58':'#1a393c','#47756c');});mission.echoes.forEach(e=>{if(e.got)return;ctx.save();ctx.translate(e.x+22,e.y+22);ctx.rotate(Math.PI/4);ctx.fillStyle='#efc66d';ctx.shadowColor='#efc66d';ctx.shadowBlur=16;ctx.fillRect(-10,-10,20,20);ctx.restore();});const exit={x:965,y:605};ctx.strokeStyle='#91f2ce';ctx.globalAlpha=.6+.25*Math.sin(performance.now()/250);ctx.strokeRect(exit.x+7,exit.y+7,36,36);ctx.globalAlpha=1;text('EXIT',exit.x+11,666,8,'#91f2ce');mission.hunters.forEach(h=>{ctx.save();ctx.translate(h.x+22,h.y+22);ctx.fillStyle='#ff695d';ctx.shadowColor='#ff695d';ctx.shadowBlur=18;ctx.beginPath();ctx.arc(0,0,15,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#170d17';ctx.fillRect(-8,-4,5,8);ctx.fillRect(3,-4,5,8);ctx.strokeStyle='#ff695d';ctx.globalAlpha=.19;ctx.beginPath();ctx.arc(0,0,150*mission.radius,0,Math.PI*2);ctx.stroke();ctx.restore();});ctx.fillStyle='#91f2ce';ctx.shadowColor='#91f2ce';ctx.shadowBlur=18;ctx.fillRect(mission.player.x+14,mission.player.y+14,16,16);ctx.shadowBlur=0;if(mission.hidden){ctx.strokeStyle='#91f2ce';ctx.beginPath();ctx.arc(mission.player.x+22,mission.player.y+22,20,0,Math.PI*2);ctx.stroke();}if(mission.flare){ctx.strokeStyle='#efc66d';ctx.beginPath();ctx.arc(mission.flare.x+22,mission.flare.y+22,18+Math.sin(performance.now()/80)*4,0,Math.PI*2);ctx.stroke();}if(mission.scare>0){rect(22,22,gW,656,`rgba(255,30,35,${Math.min(.48,mission.scare*.35)})`);ctx.fillStyle='#09040a';ctx.beginPath();ctx.arc(530,330,105,0,Math.PI*2);ctx.fill();ctx.fillStyle='#ff695d';ctx.shadowColor='#ff695d';ctx.shadowBlur=25;ctx.fillRect(480,300,28,18);ctx.fillRect(552,300,28,18);ctx.fillRect(500,370,60,10);ctx.shadowBlur=0;text('MOVE',530,455,24,'#fff1e8','Barlow Condensed','center');}
   drawMonitor(1082,22,336,656);if(paused){rect(22,22,W-44,H-44,'rgba(0,0,0,.7)');text('SIGNAL PAUSED',W/2,350,48,'#91f2ce','Barlow Condensed','center');text('Press ESC or PAUSE to return.',W/2,386,12,'#b7c8c2','IBM Plex Mono','center');}}

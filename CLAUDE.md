@@ -68,7 +68,7 @@ This file is the persistent memory of the project. Every session starts by readi
 | T8 | Own data collection (conditional) | Materials ready (`deliverables/data_collection_protocol.md`); recording needs participants and approval |
 | T9 | HRV / LF-HF layer | **Done.** 11/11 (`step7_hrv.py`); excellent on clean video, fragile with motion (reported) |
 | T10 | Live demo app | **Done.** Original research flow remains at `/lab`; `/` now opens TRACE Ghost Protocol, a pulse-aware stealth game with session replay and export |
-| T12 | Interactive extension | **Done (prototype).** Linear camera flow shows three rPPG methods and experimental camera rBCG, then a quality-gated pulse controller drives a horror mission with replay and JSON export |
+| T12 | Interactive extension | **Done (prototype).** Linear camera flow shows three rPPG methods and conservative rPPG-guided camera rBCG, then a quality-gated pulse controller drives a horror mission with replay and JSON export; guided rBCG gate 6/6 (`step9_camera_bcg.py`) |
 | T11 | Write-up (abstract, poster, report) | **Done (drafts from simulated results).** Poster A1, extended abstract (IEEE .tex + PDF), course report PDF; author names are placeholders |
 
 Also done: seven bilingual theory lessons (`Lesson/`), pitch deck and Bangla presentation script (`Idea/`), generated `pipeline-viz.html`.
@@ -674,8 +674,8 @@ Track tags: **[P]** poster, **[C]** course, **[B]** both.
 - [x] The game uses a local baseline, slow pulse filtering and quality gates. A usable pulse changes watcher sensing radius gradually; invalid or stale data returns the field to neutral.
 - [x] Two source modes: synthetic FFT pulse for a repeatable demo and webcam rPPG with camera BCG. The game opens directly into a linear signal check.
 - [x] Replay records pulse, detection radius, player path and events. JSON export includes a research disclaimer and no camera frames.
-- [x] `src/tracerppg/mechanical.py`: experimental camera-motion rBCG channel. It is shown as corroboration, never as ECG or diagnosis.
-- [x] Verified: Python compilation, JavaScript syntax, T0 12/12 and websocket demo states. Real webcam BCG still needs human testing.
+- [x] `src/tracerppg/mechanical.py`: experimental camera-motion rBCG channel. Its spectral search is guided by stable rPPG, requires three consecutive agreeing analysis windows and withholds BPM when mechanical evidence is weak or contradictory. It is shown as corroboration, never as ECG or diagnosis.
+- [x] Verified: Python compilation, JavaScript syntax, T0 12/12, guided rBCG 6/6 (`step9_camera_bcg.py`) and websocket demo states. The synthetic rBCG check holds 65 BPM against a slightly stronger 80 BPM motion component and rejects pure 80 BPM motion when rPPG says 65. Real webcam rBCG still needs human testing.
 - Findings: the darker-skin replay read 73 BPM vs true 90 marked high confidence (confidence gate unreliable on dark skin); earlier, before replays existed, TRACE v2 read 153 vs 74 on light skin with a short buffer (Section 8.4 leakage); live rendering runs at about 0.1x real time under load, hence pre-rendered replays (`data/replay/`, about 580 MB each, pulse fidelity preserved by storage, e.g. 0.323 lossless vs 0.297 stored)
 
 ### T11: Write-up [B] (drafts done from simulated results)
@@ -842,6 +842,7 @@ Where the Idea documents disagree, the Novelty document (newer) wins, and this f
 
 Newest first. One entry per session: date, what was done, what was verified, where it stopped.
 
+- **2026-09-16:** Fixed the drawn Enter Night canvas button by adding logical-coordinate hit testing that accounts for CSS scaling and high-DPI backing resolution. Replaced unconditional camera-BCG peak reporting with an rPPG-guided spectral gate, continuity check and three-window lock; failed mechanical evidence now returns no BPM instead of a plausible false number. Added `step9_camera_bcg.py`, 6/6 passing, including 65 BPM with a competing 80 BPM component and rejection of isolated 80 BPM motion.
 - **2026-09-16:** Reworked `/` into a single-canvas linear experience. The first phase opens the camera and displays BPM plus live Green, CHROM, POS and camera-BCG charts; a baseline lock then presents an explicit Enter Night handoff. The second phase is a horror mission with visible live telemetry, rapid synthetic scare pulses, jumpscare overlays, pause/settings controls and keyboard instructions. Removed the SCG/phone route and removed the old research navbar from the game page. A follow-up browser pass added a fresh-sample median BPM lock, 15-second live window, clipped normalized pulse waveforms, preserved canvas aspect ratio and high-DPI rendering. Verified JavaScript syntax, Python compilation, T0 12/12 and websocket method state.
 
 - **2026-09-15:** Built TRACE Ghost Protocol at `/`: a futuristic pixel-art stealth mission driven by a quality-gated, baseline-relative pulse feedback loop. Added mission mechanics (watchers, cover, decoys, cores, extraction), signal telemetry, replay chart, event log and JSON export. Added synthetic FFT demo mode, webcam rPPG mode and experimental camera rBCG feature tracking. Verified Python compilation, JavaScript syntax, T0 12/12 and websocket demo states. Real camera BCG remains to be tested with a person.

@@ -249,7 +249,8 @@ class LiveEngine:
                 if t - last >= ANALYSE_EVERY:
                     last = t
                     self._analyse(t, box, npx, frame if box is not None else None)
-                    self.state["bcg"] = mechanical.result() if self.source_name == "webcam" else {
+                    reference_bpm = self.state.get("bpm") if self.state.get("confident") else None
+                    self.state["bcg"] = mechanical.result(reference_bpm) if self.source_name == "webcam" else {
                         "usable": False, "reason": "Replay has no validated cardiac head motion", "experimental": True}
         except Exception as exc:
             self.error = f"The video source stopped: {exc}"

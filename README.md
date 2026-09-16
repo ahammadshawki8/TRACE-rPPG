@@ -67,6 +67,7 @@ python -m venv .venv
 .venv/Scripts/python.exe scripts/step6_compression.py    # T5
 .venv/Scripts/python.exe scripts/step7_hrv.py            # T9
 .venv/Scripts/python.exe scripts/step8_neural.py         # T6 (needs .venv-nn)
+.venv/Scripts/python.exe scripts/step9_camera_bcg.py     # T12 guided rBCG gate
 
 # the experiment: simulated pilot, then statistics, figures and documents
 .venv/Scripts/python.exe scripts/run_grid.py --max-subjects 36
