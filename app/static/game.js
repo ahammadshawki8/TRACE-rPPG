@@ -18,6 +18,7 @@ let source = null;
 let paused = false;
 let soundOn = false;
 let audio;
+let soundscape;
 let mission;
 let last = performance.now();
 const keys = new Set();
@@ -44,6 +45,11 @@ const patrolPoints = [
   {x:900,y:560},{x:650,y:535},{x:390,y:575},{x:180,y:390}
 ];
 const MAP = {x:22,y:70,w:1040,h:700};
+const levels = [
+  {roman:'I',name:'THE LISTENING WARD',brief:'One stalker. Restore the morgue relay.'},
+  {roman:'II',name:'THE BLACKOUT',brief:'A second signal wakes. Restore the archive relay.'},
+  {roman:'III',name:'THE CHOIR',brief:'The ward is hunting. Restore the final relay and extract.'}
+];
 
 function send(obj){if(ws.readyState===1)ws.send(JSON.stringify(obj));else pending.push(obj);}
 ws.onopen=()=>{$('#link-status').textContent='LINKED';$('#link-status').style.color='var(--mint)';while(pending.length)ws.send(JSON.stringify(pending.shift()));draw();};
@@ -80,7 +86,7 @@ function newMission(){
     mode:'briefing',start:now,t:0,player:{x:75,y:615,facing:-Math.PI/2,moving:false},
     hunters:hunterHome.map((p,i)=>({x:p.x,y:p.y,home:{...p},mode:'patrol',patrol:(i*4+1)%patrolPoints.length,lastSeen:null,alert:0,revealed:0,stun:0})),
     relays:relaySites.map(p=>({...p,online:false,progress:0})),flares:2,health:3,
-    hidden:false,flashlight:true,battery:100,beatClock:.2,rings:[],stage:0,
+    hidden:false,flashlight:true,battery:100,beatClock:.2,rings:[],stage:0,level:1,interlude:null,
     radius:1,scare:0,scareType:'face',blackout:0,flicker:0,apparition:null,
     nextEvent:11,detections:0,invulnerable:0,events:[],frames:[],ended:false,
     message:'Restore three pulse relays. The exit has no power.'
@@ -88,7 +94,7 @@ function newMission(){
 }
 function enterGame(){
   if(!state.feedback?.baseline)return;
-  phase='game';mission=newMission();paused=false;document.body.classList.add('game-active');
+  phase='game';mission=newMission();paused=false;document.body.classList.add('game-active');soundOn=$('#sound-toggle').checked;if(soundOn)ensureAudio();
   $('#flow-step').textContent='NIGHT RUN';$('#camera-start').hidden=true;$('#simulation-start').hidden=true;$('#enter-game').hidden=true;$('#game-controls').hidden=false;$('#pause').disabled=false;
   $('#headline').innerHTML='The facility knows<br><em>the rhythm of your blood.</em>';
   $('#subhead').textContent='Restore the three pulse relays. Every measured heartbeat reveals the dark and tells the stalker where to search.';
@@ -104,7 +110,8 @@ $('#pause').onclick=()=>{if(!mission||mission.ended)return;const now=performance
 $('#settings').onclick=()=>{if(mission&&!mission.ended&&!paused){mission.settingsPause=true;$('#pause').click();}$('#settings-dialog').showModal();};
 $('#close-settings').onclick=()=>$('#settings-dialog').close();
 $('#settings-dialog').addEventListener('close',()=>{if(mission?.settingsPause){mission.settingsPause=false;$('#pause').click();}});
-$('#sound-toggle').onchange=e=>{soundOn=e.target.checked;if(soundOn)beep(240,.06);};
+$('#sound-toggle').onchange=e=>{soundOn=e.target.checked;if(soundOn){ensureAudio();beep(240,.06);}else if(soundscape)soundscape.master.gain.setTargetAtTime(0,audio.currentTime,.08);};
+$('#sound-volume').oninput=()=>{if(soundscape&&soundOn)soundscape.master.gain.setTargetAtTime(Number($('#sound-volume').value),audio.currentTime,.08);};
 $('#feedback-mode').onchange=()=>{if(mission)mission.events.push({t:mission.t,text:'Feedback rule changed during run.'});};
 window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright',' ','e','f','shift','enter','escape'].includes(k))e.preventDefault();if(k==='escape'&&mission)$('#pause').click();if(!e.repeat)pressed.add(k);keys.add(k);});
 window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
@@ -113,12 +120,30 @@ function nightButtonReady(){return phase==='scan'&&state.feedback?.baseline&&sta
 canvas.addEventListener('click',e=>{const p=canvasPoint(e);if(nightButtonReady()&&p.x>=1065&&p.x<=1398&&p.y>=718&&p.y<=763){enterGame();return;}if(phase==='game'&&mission?.mode==='briefing'&&p.x>=520&&p.x<=920&&p.y>=590&&p.y<=650)startNight();else if(phase==='game'&&mission?.ended&&p.x>=425&&p.x<=705&&p.y>=590&&p.y<=650)restartNight();else if(phase==='game'&&mission?.ended&&p.x>=735&&p.x<=1015&&p.y>=590&&p.y<=650)downloadSession();});
 canvas.addEventListener('mousemove',e=>{const p=canvasPoint(e);const hot=nightButtonReady()&&p.x>=1065&&p.x<=1398&&p.y>=718&&p.y<=763||phase==='game'&&mission?.mode==='briefing'&&p.x>=520&&p.x<=920&&p.y>=590&&p.y<=650||phase==='game'&&mission?.ended&&p.y>=590&&p.y<=650&&p.x>=425&&p.x<=1015;canvas.style.cursor=hot?'pointer':'default';});
 
-function beep(freq,dur=.1){if(!soundOn)return;if(!audio)audio=new(window.AudioContext||window.webkitAudioContext)();const o=audio.createOscillator(),g=audio.createGain();o.type='sawtooth';o.frequency.value=freq;g.gain.value=.035;o.connect(g);g.connect(audio.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.stop(audio.currentTime+dur);}
+function ensureAudio(){
+  if(audio){audio.resume();if(soundscape)soundscape.master.gain.setTargetAtTime(Number($('#sound-volume').value),audio.currentTime,.08);return;}
+  audio=new(window.AudioContext||window.webkitAudioContext)();const master=audio.createGain(),limiter=audio.createDynamicsCompressor(),droneGain=audio.createGain(),droneA=audio.createOscillator(),droneB=audio.createOscillator();
+  limiter.threshold.value=-18;limiter.knee.value=18;limiter.ratio.value=7;limiter.attack.value=.003;limiter.release.value=.22;master.gain.value=Number($('#sound-volume').value);master.connect(limiter);limiter.connect(audio.destination);
+  droneA.type='triangle';droneB.type='sine';droneA.frequency.value=38;droneB.frequency.value=57.2;droneB.detune.value=-9;droneGain.gain.value=.012;droneA.connect(droneGain);droneB.connect(droneGain);droneGain.connect(master);droneA.start();droneB.start();soundscape={master,droneGain,droneA,droneB,lastBreathCue:-1};audio.resume();
+}
+function tone(freq,dur=.1,gain=.03,type='sine',delay=0,pan=0,endFreq=null){
+  if(!soundOn)return;ensureAudio();const now=audio.currentTime+delay,o=audio.createOscillator(),g=audio.createGain(),p=audio.createStereoPanner?audio.createStereoPanner():null;o.type=type;o.frequency.setValueAtTime(Math.max(20,freq),now);if(endFreq)o.frequency.exponentialRampToValueAtTime(Math.max(20,endFreq),now+dur);g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(gain,now+.012);g.gain.exponentialRampToValueAtTime(.0001,now+dur);o.connect(g);if(p){p.pan.value=Math.max(-1,Math.min(1,pan));g.connect(p);p.connect(soundscape.master);}else g.connect(soundscape.master);o.start(now);o.stop(now+dur+.03);
+}
+function beep(freq,dur=.1){tone(freq,dur,.025,'triangle',0,0,freq*.72);}
+function noiseBurst(dur=.35,gain=.045,centre=900,pan=0){
+  if(!soundOn)return;ensureAudio();const n=Math.ceil(audio.sampleRate*dur),buffer=audio.createBuffer(1,n,audio.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<n;i++)data[i]=(Math.random()*2-1)*(1-i/n);const src=audio.createBufferSource(),filter=audio.createBiquadFilter(),g=audio.createGain(),p=audio.createStereoPanner?audio.createStereoPanner():null;src.buffer=buffer;filter.type='bandpass';filter.frequency.value=centre;filter.Q.value=.7;g.gain.setValueAtTime(gain,audio.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+dur);src.connect(filter);filter.connect(g);if(p){p.pan.value=pan;g.connect(p);p.connect(soundscape.master);}else g.connect(soundscape.master);src.start();
+}
+function heartbeatSound(bpm,intensity){const root=38+Math.min(18,bpm*.12)+intensity*8;tone(root,.105,.045,'sine',0,0,root*.58);tone(root*.82,.115,.03,'triangle',.13,0,root*.48);}
+function scareAudio(type){const hard=type==='hit';noiseBurst(hard?.62:.42,hard?.075:.055,hard?1250:780,Math.random()*.8-.4);tone(hard?74:92,hard?.75:.48,hard?.065:.045,'sawtooth',0,0,31);tone(311,.36,.025,'square',.025,-.45,143);tone(337,.39,.025,'square',.035,.45,151);}
+function updateSoundscape(intensity){
+  if(!soundscape||!audio)return;const on=soundOn?1:0,interlude=mission?.interlude&&mission.interlude.delay<=0,stage=mission?.stage||0,nearest=mission?Math.min(...mission.hunters.map(h=>distance(h,mission.player))):999,proximity=Math.max(0,1-nearest/310),now=audio.currentTime;
+  soundscape.master.gain.setTargetAtTime(on*Number($('#sound-volume').value),now,.12);soundscape.droneGain.gain.setTargetAtTime(on*(interlude?.004:.009+.014*intensity+.018*proximity),now,.35);soundscape.droneA.frequency.setTargetAtTime(interlude?32:37+stage*2.5+intensity*7,now,.5);soundscape.droneB.frequency.setTargetAtTime(interlude?48:55+stage*3+proximity*9,now,.5);
+}
 function collide(x,y,r=12){return walls.some(w=>x+r>w.x&&x-r<w.x+w.w&&y+r>w.y&&y-r<w.y+w.h)}
 function blocked(a,b){const n=Math.ceil(Math.hypot(a.x-b.x,a.y-b.y)/8);for(let i=1;i<n;i++){const x=a.x+(b.x-a.x)*i/n,y=a.y+(b.y-a.y)*i/n;if(walls.some(w=>x>w.x&&x<w.x+w.w&&y>w.y&&y<w.y+w.h))return true;}return false;}
 function distance(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
 function nearestLocker(){return hidingSpots.map(s=>({...s,cx:s.x+s.w/2,cy:s.y+s.h/2})).find(s=>Math.hypot(s.cx-mission.player.x,s.cy-mission.player.y)<58)}
-function nearbyRelay(){return mission.relays.find(r=>!r.online&&distance(r,mission.player)<48)}
+function nearbyRelay(){const relay=mission.relays[mission.stage];return relay&&!relay.online&&distance(relay,mission.player)<48?relay:null}
 function startNight(){if(!mission||mission.mode!=='briefing')return;mission.mode='play';mission.start=performance.now();mission.events.push({t:0,text:'Entered Saint Orison Ward.'});mission.message='Restore a relay. Hold E at an amber terminal.';beep(115,.25);}
 function restartNight(){mission=newMission();paused=false;$('#pause').disabled=false;$('#pause').textContent='PAUSE';canvas.focus();}
 function movePlayer(dx,dy,dt,speed){const p=mission.player,nx=p.x+dx*speed*dt,ny=p.y+dy*speed*dt;if(!collide(nx,p.y))p.x=Math.max(34,Math.min(1006,nx));if(!collide(p.x,ny))p.y=Math.max(34,Math.min(666,ny));p.facing=Math.atan2(dy,dx);}
@@ -144,9 +169,9 @@ function flare(){if(!mission||mission.mode!=='play'||mission.ended||mission.hidd
 function toggleFlashlight(){if(!mission||mission.mode!=='play'||mission.ended)return;if(mission.battery<=0){mission.message='Flashlight cell empty. Keep it off to recharge.';return;}mission.flashlight=!mission.flashlight;beep(mission.flashlight?260:110,.04);}
 function triggerScare(type='face'){
   if(!mission||mission.ended)return;
+  if($('#horror-intensity').value==='quiet'&&type!=='hit'){mission.flicker=1.2;mission.blackout=.25;mission.message='The ward shudders, then goes quiet.';return;}
   mission.scare=type==='hit'?1.35:.9;mission.scareType=type;mission.blackout=Math.max(mission.blackout,type==='hit'?.55:.2);
-  mission.events.push({t:mission.t,text:`Director event: ${type}.`});
-  beep(type==='hit'?42:55,type==='hit'?.7:.42);
+  mission.events.push({t:mission.t,text:`Director event: ${type}.`});scareAudio(type);
   if(source==='demo')send({cmd:'scenario',value:'scare'});
   setTimeout(()=>{if(source==='demo')send({cmd:'scenario',value:'cycle'});},3200);
 }
@@ -155,18 +180,18 @@ function directorEvent(){
   if(setting==='quiet'){mission.flicker=.5;mission.message='The current stutters through the empty ward.';}
   else{
     const roll=Math.random();
-    if(roll<.34){mission.flicker=1.5;mission.message='Something crossed the light behind you.';beep(38,.18);}
-    else if(roll<.7){mission.apparition={x:mission.player.x-Math.cos(mission.player.facing)*115,y:mission.player.y-Math.sin(mission.player.facing)*115,end:performance.now()+1450};mission.message='Do not turn around.';beep(74,.3);}
+    if(roll<.34){mission.flicker=1.5;mission.message='Something crossed the light behind you.';tone(38,.55,.025,'sawtooth',0,Math.random()>.5?-.7:.7,27);}
+    else if(roll<.7){const pan=Math.random()>.5?-.8:.8;mission.apparition={x:mission.player.x-Math.cos(mission.player.facing)*115,y:mission.player.y-Math.sin(mission.player.facing)*115,end:performance.now()+1450};mission.message='Do not turn around.';noiseBurst(.7,.018,1700,pan);tone(74,.65,.02,'triangle',0,pan,49);}
     else triggerScare(pressure>2.4?'hands':'face');
   }
-  const base=setting==='nightmare'?7:13;mission.nextEvent=mission.t+base+Math.random()*(setting==='nightmare'?5:9);
+  const base=Math.max(6,(setting==='nightmare'?8:14)-mission.stage*1.5);mission.nextEvent=mission.t+base+Math.random()*(setting==='nightmare'?5:9);
 }
-function emitHeartbeat(intensity){
+function emitHeartbeat(intensity,bpm){
   const p=mission.player,max=145+155*intensity;
   mission.rings.push({x:p.x,y:p.y,r:8,max,speed:255,flare:false});mission.beatFlash=.16;
-  if(soundOn){beep(48,.07);setTimeout(()=>beep(42,.055),95);}
+  heartbeatSound(bpm,intensity);
   mission.hunters.forEach((h,i)=>{
-    if(i===1&&mission.stage<2)return;
+    if(i===1&&mission.stage<1)return;
     const heard=distance(h,p)<max*(blocked(h,p)?.65:1);
     if(heard&&(!mission.hidden||distance(h,p)<70+45*intensity)){
       if(h.mode==='patrol')h.mode='investigate';h.lastSeen={x:p.x,y:p.y};h.alert=Math.max(h.alert,2.8+2*intensity);
@@ -178,8 +203,13 @@ function activateRelay(relay){
   mission.events.push({t:mission.t,text:`${relay.name} restored (${mission.stage}/3).`});
   mission.message=mission.stage===3?'All relays online. Reach the green extraction door.':`${relay.name} online. The ward has noticed.`;
   mission.rings.push({x:relay.x,y:relay.y,r:8,max:360,speed:380,flare:true});beep(720,.16);
-  if(mission.stage===2)triggerScare('hands');
-  mission.hunters.forEach(h=>{h.mode='investigate';h.lastSeen={x:relay.x,y:relay.y};h.alert=5;});
+  if(mission.stage<3){triggerScare(mission.stage===1?'face':'hands');mission.interlude={delay:1,total:10,remaining:10,nextLevel:mission.stage+1,startBpm:state.feedback?.bpm||null,segment:''};mission.hunters.forEach(h=>h.stun=12);}
+  else{triggerScare('hands');mission.nextEvent=mission.t+5;mission.hunters.forEach(h=>{h.mode='hunt';h.lastSeen={x:mission.player.x,y:mission.player.y};h.alert=30;});}
+}
+function updateInterlude(dt){
+  const q=mission.interlude;if(!q)return false;if(q.delay>0){q.delay-=dt;return true;}q.remaining=Math.max(0,q.remaining-dt);const phase=(q.total-q.remaining)%10,segment=phase<4?'INHALE':'EXHALE';q.breathPhase=phase;q.segment=segment;
+  if(q.audioSegment!==segment){q.audioSegment=segment;tone(segment==='INHALE'?196:147,segment==='INHALE'?3.5:5.2,.014,'sine',0,0,segment==='INHALE'?247:98);}
+  if(q.remaining<=0){mission.level=q.nextLevel;mission.interlude=null;mission.message=levels[mission.level-1].brief;mission.nextEvent=mission.t+8;mission.events.push({t:mission.t,text:`Level ${mission.level} entered after paced recovery.`});mission.hunters.forEach(h=>{h.stun=0;h.mode='patrol';h.path=null;});tone(294,.5,.025,'triangle');return false;}return true;
 }
 function damagePlayer(h){
   if(mission.invulnerable>0)return;mission.health--;mission.invulnerable=2.8;mission.detections++;
@@ -188,7 +218,7 @@ function damagePlayer(h){
   if(mission.health<=0)finish(false);
 }
 function updateHunter(h,index,dt,intensity){
-  if(index===1&&mission.stage<2)return;
+  if(index===1&&mission.stage<1)return;
   h.revealed=Math.max(0,h.revealed-dt);h.stun=Math.max(0,h.stun-dt);if(h.stun>0)return;
   const p=mission.player,dist=distance(h,p),lightRange=mission.flashlight?260:105;
   const sees=!mission.hidden&&!blocked(h,p)&&dist<lightRange*mission.radius;
@@ -201,29 +231,32 @@ function updateHunter(h,index,dt,intensity){
   if(target)moveHunter(h,target,speed,dt);
   if(dist<25)damagePlayer(h);
 }
+function recordFrame(fb,intensity,valid,recovery=false){if(!mission.nextFrame||mission.t>=mission.nextFrame){mission.frames.push({t:mission.t,bpm:fb.bpm||null,baseline:fb.baseline||null,intensity,radius:mission.radius,valid,level:mission.level,stage:mission.stage,recovery,hidden:mission.hidden,flashlight:mission.flashlight,health:mission.health,player:{x:Math.round(mission.player.x),y:Math.round(mission.player.y)},hunters:mission.hunters.map(h=>({x:Math.round(h.x),y:Math.round(h.y),mode:h.mode}))});mission.nextFrame=mission.t+.25;if(mission.frames.length>2400)mission.frames.shift();}}
 function update(dt){
   if(phase!=='game'||paused||!mission)return;
   if(mission.mode==='briefing'){if(pressed.has('e')||pressed.has('enter'))startNight();pressed.clear();return;}
   if(mission.ended){pressed.clear();return;}
   mission.t=(performance.now()-mission.start)/1000;
-  if(pressed.has(' '))flare();if(pressed.has('f'))toggleFlashlight();if(pressed.has('e'))interact();
   const fb=state.feedback||{},valid=!!fb.valid,intensity=valid?fb.intensity||0:0,mode=$('#feedback-mode').value;
   mission.radius=mode==='fixed'?1:mode==='balance'?Math.max(.72,1-.28*intensity):1+.85*intensity;
+  updateSoundscape(intensity);
+  if(mission.interlude){mission.scare=Math.max(0,mission.scare-dt);mission.blackout=Math.max(0,mission.blackout-dt);mission.flicker=Math.max(0,mission.flicker-dt);const recovering=updateInterlude(dt);recordFrame(fb,intensity,valid,recovering);pressed.clear();return;}
+  if(pressed.has(' '))flare();if(pressed.has('f'))toggleFlashlight();if(pressed.has('e'))interact();
   const u=keys.has('w')||keys.has('arrowup'),d=keys.has('s')||keys.has('arrowdown'),l=keys.has('a')||keys.has('arrowleft'),r=keys.has('d')||keys.has('arrowright');
   let dx=(r?1:0)-(l?1:0),dy=(d?1:0)-(u?1:0);const sprint=keys.has('shift')&&!mission.hidden,relay=nearbyRelay();
   mission.player.moving=!!(dx||dy)&&!mission.hidden;
   if(mission.player.moving){const q=Math.hypot(dx,dy);movePlayer(dx/q,dy/q,dt,(sprint?174:112)*(relay&&keys.has('e')?.42:1));}
-  if(sprint&&mission.player.moving)mission.hunters.forEach((h,i)=>{if((i===0||mission.stage>=2)&&distance(h,mission.player)<245*mission.radius){h.mode='investigate';h.lastSeen={x:mission.player.x,y:mission.player.y};h.alert=2.2;}});
+  if(sprint&&mission.player.moving)mission.hunters.forEach((h,i)=>{if((i===0||mission.stage>=1)&&distance(h,mission.player)<245*mission.radius){h.mode='investigate';h.lastSeen={x:mission.player.x,y:mission.player.y};h.alert=2.2;}});
   if(relay&&keys.has('e')&&!mission.hidden){relay.progress=Math.min(1,relay.progress+dt/(1.65+mission.stage*.28));mission.message=`LINKING ${relay.name}  ${Math.round(relay.progress*100)}%`;if(relay.progress>=1)activateRelay(relay);}else mission.relays.filter(q=>!q.online).forEach(q=>q.progress=Math.max(0,q.progress-dt*.08));
   mission.battery=Math.max(0,Math.min(100,mission.battery+(mission.flashlight?-.75:1.5)*dt));if(mission.battery<=0)mission.flashlight=false;
-  mission.beatClock-=dt;const bpm=valid&&fb.bpm?fb.bpm:fb.baseline||72;if(mission.beatClock<=0){mission.beatClock+=60/Math.max(45,Math.min(180,bpm));emitHeartbeat(intensity);}
+  mission.beatClock-=dt;const bpm=valid&&fb.bpm?fb.bpm:fb.baseline||72;if(mission.beatClock<=0){mission.beatClock+=60/Math.max(45,Math.min(180,bpm));emitHeartbeat(intensity,bpm);}
   mission.rings.forEach(ring=>{ring.r+=ring.speed*dt;mission.hunters.forEach(h=>{if(Math.abs(distance(h,ring)-ring.r)<25)h.revealed=Math.max(h.revealed,.35);});});mission.rings=mission.rings.filter(ring=>ring.r<ring.max);
   mission.hunters.forEach((h,i)=>updateHunter(h,i,dt,intensity));
   mission.invulnerable=Math.max(0,mission.invulnerable-dt);mission.scare=Math.max(0,mission.scare-dt);mission.blackout=Math.max(0,mission.blackout-dt);mission.flicker=Math.max(0,mission.flicker-dt);mission.beatFlash=Math.max(0,(mission.beatFlash||0)-dt);
   if(mission.apparition&&performance.now()>mission.apparition.end)mission.apparition=null;if(mission.flare&&performance.now()>mission.flare.end)mission.flare=null;
   if(mission.t>mission.nextEvent)directorEvent();
   const exit={x:965,y:605};if(mission.stage===3&&distance(exit,mission.player)<36)finish(true);
-  if(!mission.nextFrame||mission.t>=mission.nextFrame){mission.frames.push({t:mission.t,bpm:fb.bpm||null,baseline:fb.baseline||null,intensity,radius:mission.radius,valid,stage:mission.stage,hidden:mission.hidden,flashlight:mission.flashlight,health:mission.health,player:{x:Math.round(mission.player.x),y:Math.round(mission.player.y)},hunters:mission.hunters.map(h=>({x:Math.round(h.x),y:Math.round(h.y),mode:h.mode}))});mission.nextFrame=mission.t+.25;if(mission.frames.length>2400)mission.frames.shift();}
+  recordFrame(fb,intensity,valid);
   pressed.clear();
 }
 function finish(success){if(mission.ended)return;mission.ended=true;mission.success=success;mission.mode='end';mission.score=Math.max(0,Math.round(1200-mission.t*5+mission.health*240+mission.flares*90-mission.detections*35));$('#pause').disabled=true;$('#control-message').textContent=success?'Extraction complete. Run again or export the physiology timeline.':'The stalker found the signal. Run again or export the physiology timeline.';beep(success?640:45,success?.35:.8);}
@@ -278,13 +311,13 @@ function drawGame(){background();const gW=1040;rect(22,22,gW,656,'#081219','#385
 function drawMonitor(x,y,w,h){panel(x,y,w,h,'LIVE PHYSIOLOGY');const fb=state.feedback||{};text(fb.bpm?Math.round(fb.bpm):'--',x+18,y+94,78,fb.valid?'#91f2ce':'#70858a','Barlow Condensed');text('BPM',x+145,y+86,16,'#91aaa7');text(fb.baseline?`Δ ${fb.delta>=0?'+':''}${Math.round(fb.delta)} BPM`:'BASELINE ...',x+145,y+109,9,'#efc66d');text(fb.valid?'LINKED':'NO RELIABLE SIGNAL',x+18,y+126,9,fb.valid?'#91f2ce':'#efc66d');const meter=Math.min(1,Math.max(0,(fb.intensity||0)));rect(x+18,y+143,w-36,7,'#1c292e');rect(x+18,y+143,(w-36)*meter,7,'#ff695d');text('FEAR RESPONSE',x+18,y+168,8,'#7e9791');text(`FIELD ${mission.radius?.toFixed(2)||'1.00'}x`,x+w-18,y+168,9,'#efc66d','IBM Plex Mono','right');chart(x+18,y+184,w-36,145,graphForPulse(rppgHistory),'#91f2ce','rPPG / LIVE',40,140);chart(x+18,y+345,w-36,145,graphForPulse(bcgHistory),'#efc66d','rBCG / EXPERIMENTAL',40,140);text(`INTEGRITY  ${mission.health}/3`,x+18,y+525,10,mission.health===1?'#ff695d':'#dceae6');text(`FLARES  ${mission.flares}`,x+w-18,y+525,10,'#efc66d','IBM Plex Mono','right');text('A rise expands the watcher field.',x+18,y+560,9,'#8aa09b');text('A scare is not a diagnosis.',x+18,y+578,9,'#8aa09b');}
 }
 function drawRelay(r,index){
-  const active=!r.online,glow=r.online?'#91f2ce':'#efc66d';
-  ctx.save();ctx.translate(r.x,r.y);ctx.shadowColor=glow;ctx.shadowBlur=active?13:22;ctx.strokeStyle=glow;ctx.lineWidth=2;ctx.strokeRect(-13,-13,26,26);ctx.fillStyle=r.online?'#173d35':'#3a2d16';ctx.fillRect(-8,-8,16,16);ctx.shadowBlur=0;
+  const active=!r.online&&index===mission.stage,locked=index>mission.stage,glow=r.online?'#91f2ce':locked?'#41504f':'#efc66d';
+  ctx.save();ctx.translate(r.x,r.y);ctx.shadowColor=glow;ctx.shadowBlur=active?13:r.online?22:0;ctx.strokeStyle=glow;ctx.lineWidth=2;ctx.strokeRect(-13,-13,26,26);ctx.fillStyle=r.online?'#173d35':locked?'#151e20':'#3a2d16';ctx.fillRect(-8,-8,16,16);ctx.shadowBlur=0;
   if(active&&r.progress>0){ctx.strokeStyle='#fff1bd';ctx.lineWidth=4;ctx.beginPath();ctx.arc(0,0,20,-Math.PI/2,-Math.PI/2+Math.PI*2*r.progress);ctx.stroke();}
   text(String(index+1).padStart(2,'0'),0,4,8,glow,'IBM Plex Mono','center');ctx.restore();
 }
 function drawHunter(h,index,afterDark=false){
-  if(index===1&&mission.stage<2)return;if(afterDark&&h.revealed<=0)return;
+  if(index===1&&mission.stage<1)return;if(afterDark&&h.revealed<=0)return;
   ctx.save();ctx.translate(h.x,h.y);const hunt=h.mode==='hunt',alpha=afterDark?Math.min(1,h.revealed*3):1;ctx.globalAlpha=alpha;
   ctx.shadowColor=hunt?'#ff4d52':'#ab3346';ctx.shadowBlur=hunt?24:12;ctx.fillStyle='#09070d';
   ctx.beginPath();ctx.moveTo(-12,25);ctx.lineTo(-18,-5);ctx.quadraticCurveTo(-15,-31,0,-35);ctx.quadraticCurveTo(15,-31,18,-5);ctx.lineTo(13,25);ctx.lineTo(5,15);ctx.lineTo(0,29);ctx.lineTo(-6,15);ctx.closePath();ctx.fill();
@@ -324,21 +357,22 @@ function drawJumpscare(){
   else{ctx.beginPath();ctx.ellipse(0,-20,138,175,0,0,Math.PI*2);ctx.fill();ctx.shadowBlur=24;ctx.fillStyle='#ff5360';ctx.fillRect(-78,-72,42,13);ctx.fillRect(36,-72,42,13);ctx.fillStyle='#f7ddd7';for(let i=-4;i<=4;i++)ctx.fillRect(i*15-5,55+Math.abs(i)*2,10,30);text(mission.scareType==='hit'?'FOUND YOU':'I HEARD THAT BEAT',0,225,34,'#fff1e8','Barlow Condensed','center');}
   ctx.restore();for(let y=MAP.y;y<MAP.y+MAP.h;y+=9)rect(MAP.x,y,MAP.w,2,'rgba(255,255,255,.035)');
 }
-function drawBriefing(){rect(245,125,950,570,'rgba(4,8,13,.96)','#4c6962');text('SAINT ORISON / INCIDENT 06',285,170,10,'#efc66d');text('THE BUILDING CAN HEAR YOU.',285,230,46,'#e9f3ef','Barlow Condensed');text('Your measured heartbeat travels through the ward as a signal wave.',285,272,13,'#91aaa7');text('The wave reveals the stalker for a moment. It also tells the stalker where to search.',285,296,13,'#91aaa7');const cards=[['01','RESTORE','Hold E at three amber relays.'],['02','SURVIVE','Break line of sight and use lockers.'],['03','ADAPT','Sprint, light and a fast pulse create risk.']];cards.forEach((c,i)=>{const x=285+i*285;rect(x,345,255,132,'#0b1820','#29443f');text(c[0],x+18,375,10,'#efc66d');text(c[1],x+18,409,20,'#dceae6','Barlow Condensed');text(c[2],x+18,441,9,'#829895');});text('WASD MOVE   /   SHIFT SPRINT   /   F FLASHLIGHT   /   SPACE SIGNAL FLARE',720,530,9,'#78908c','IBM Plex Mono','center');rect(520,590,400,60,'#91f2ce','#91f2ce');text('ENTER SAINT ORISON  >>',720,627,13,'#071a17','IBM Plex Mono','center');text('PRESS E OR ENTER',720,674,8,'#607a75','IBM Plex Mono','center');}
+function drawInterlude(){const q=mission.interlude,phase=q.breathPhase||0,grow=phase<4?phase/4:1-(phase-4)/6,ease=.5-.5*Math.cos(Math.PI*Math.max(0,Math.min(1,grow))),radius=54+38*ease,fb=state.feedback||{},entry=q.startBpm?Math.round(q.startBpm):'--',now=fb.bpm?Math.round(fb.bpm):'--',next=levels[q.nextLevel-1];rect(235,145,970,520,'rgba(3,8,13,.97)','#3d665e');text(`LEVEL ${levels[mission.level-1].roman} COMPLETE`,720,195,10,'#91f2ce','IBM Plex Mono','center');text(`NEXT / ${next.name}`,720,250,39,'#e4efeb','Barlow Condensed','center');text('RECOVERY WINDOW / 6 BREATHS PER MINUTE',720,286,9,'#718984','IBM Plex Mono','center');ctx.save();ctx.translate(500,430);ctx.strokeStyle='#91f2ce';ctx.shadowColor='#91f2ce';ctx.shadowBlur=22;ctx.lineWidth=4;ctx.beginPath();ctx.arc(0,0,radius,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;text(q.segment||'INHALE',0,5,13,'#dceae6','IBM Plex Mono','center');ctx.restore();text(`${Math.ceil(q.remaining)} s`,500,555,11,'#718984','IBM Plex Mono','center');text('LIVE RESPONSE',835,376,9,'#718984');text(String(now),835,445,62,'#91f2ce','Barlow Condensed');text('BPM NOW',950,437,10,'#91aaa7');text(`ENTRY ${entry} BPM`,835,477,9,'#efc66d');text('Slow pacing can increase vagal rhythm and HRV.',835,525,9,'#809690');text('Your immediate BPM response may differ.',835,546,9,'#809690');}
+function drawBriefing(){rect(245,125,950,570,'rgba(4,8,13,.96)','#4c6962');text('SAINT ORISON / INCIDENT 06',285,170,10,'#efc66d');text('THE BUILDING CAN HEAR YOU.',285,230,46,'#e9f3ef','Barlow Condensed');text('Your measured heartbeat travels through the ward as a signal wave.',285,272,13,'#91aaa7');text('The wave reveals the stalker for a moment. It also tells the stalker where to search.',285,296,13,'#91aaa7');levels.forEach((level,i)=>{const x=285+i*285;rect(x,345,255,132,'#0b1820','#29443f');text(`LEVEL ${level.roman}`,x+18,375,10,'#efc66d');text(level.name.replace('THE ',''),x+18,409,18,'#dceae6','Barlow Condensed');text(level.brief,x+18,441,8,'#829895');});text('WASD MOVE   /   SHIFT SPRINT   /   F FLASHLIGHT   /   SPACE SIGNAL FLARE',720,530,9,'#78908c','IBM Plex Mono','center');rect(520,590,400,60,'#91f2ce','#91f2ce');text('ENTER SAINT ORISON  >>',720,627,13,'#071a17','IBM Plex Mono','center');text('PRESS E OR ENTER',720,674,8,'#607a75','IBM Plex Mono','center');}
 function drawEnd(){const won=mission.success;rect(315,120,810,590,'rgba(4,8,13,.97)',won?'#91f2ce':'#ff5960');text(won?'EXTRACTION COMPLETE':'SIGNAL CONSUMED',720,208,48,won?'#91f2ce':'#ff5960','Barlow Condensed','center');text(won?'You restored the ward and escaped with the recording.':'The stalker learned the rhythm before you found the exit.',720,245,11,'#99aaa6','IBM Plex Mono','center');const peak=Math.round(Math.max(...mission.frames.map(f=>f.bpm||0),0));[['SCORE',mission.score],['TIME',fmt(mission.t)],['PEAK',peak?`${peak} BPM`:'--'],['DETECTIONS',mission.detections]].forEach((s,i)=>{const x=390+i*170;text(s[0],x,345,8,'#718984','IBM Plex Mono','center');text(String(s[1]),x,385,25,'#e3eeea','Barlow Condensed','center');});text('RELAYS',410,470,9,'#718984');for(let i=0;i<3;i++)rect(410+i*58,490,42,8,i<mission.stage?'#91f2ce':'#26373a');text(`INTEGRITY  ${mission.health}/3`,1030,498,10,mission.health===0?'#ff5960':'#e3eeea','IBM Plex Mono','right');rect(425,590,280,60,'#91f2ce','#91f2ce');text('RUN AGAIN',565,627,12,'#071a17','IBM Plex Mono','center');rect(735,590,280,60,'#111e26','#45635c');text('EXPORT RUN JSON',875,627,11,'#b8cbc5','IBM Plex Mono','center');}
 function drawGame(){
-  background();text('02 / NIGHT SIGNAL',22,35,11,'#91f2ce');text(`SAINT ORISON WARD  /  ${fmt(mission.t)}`,270,35,9,'#607975');text(`RELAYS ${mission.stage}/3`,1048,35,10,mission.stage===3?'#91f2ce':'#efc66d','IBM Plex Mono','right');
+  const level=levels[mission.level-1];background();text(`LEVEL ${level.roman} / ${level.name}`,22,35,11,'#91f2ce');text(`SAINT ORISON  /  ${fmt(mission.t)}`,400,35,9,'#607975');text(`RELAYS ${mission.stage}/3`,1048,35,10,mission.stage===3?'#91f2ce':'#efc66d','IBM Plex Mono','right');
   drawFacility();drawMonitor(1082,70,336,700);drawJumpscare();text(mission.message||'',32,800,9,'#718984');
-  if(mission.mode==='briefing')drawBriefing();else if(mission.ended)drawEnd();else if(paused){rect(22,70,W-44,700,'rgba(0,0,0,.82)');text('NIGHT PAUSED',W/2,350,52,'#91f2ce','Barlow Condensed','center');text('Press ESC or PAUSE to return to Saint Orison.',W/2,390,11,'#b7c8c2','IBM Plex Mono','center');}
+  if(mission.mode==='briefing')drawBriefing();else if(mission.ended)drawEnd();else if(paused){rect(22,70,W-44,700,'rgba(0,0,0,.82)');text('NIGHT PAUSED',W/2,350,52,'#91f2ce','Barlow Condensed','center');text('Press ESC or PAUSE to return to Saint Orison.',W/2,390,11,'#b7c8c2','IBM Plex Mono','center');}else if(mission.interlude&&mission.interlude.delay<=0)drawInterlude();
 }
 function drawMonitor(x,y,w,h){
   panel(x,y,w,h,'LIVE PHYSIOLOGY / NIGHT DIRECTOR');const fb=state.feedback||{},meter=Math.min(1,Math.max(0,fb.intensity||0));
   text(fb.bpm?Math.round(fb.bpm):'--',x+18,y+90,70,fb.valid?'#91f2ce':'#70858a','Barlow Condensed');text('BPM',x+148,y+82,15,'#91aaa7');text(fb.baseline?`DELTA ${fb.delta>=0?'+':''}${Math.round(fb.delta)} BPM`:'BASELINE ...',x+148,y+106,8,'#efc66d');
   text(fb.valid?'PULSE LINKED':'NEUTRAL / SIGNAL LOST',x+18,y+126,8,fb.valid?'#91f2ce':'#efc66d');rect(x+18,y+141,w-36,7,'#1c292e');rect(x+18,y+141,(w-36)*meter,7,'#ff5960');text('DIRECTOR PRESSURE',x+18,y+164,8,'#718984');text(`${mission.radius.toFixed(2)}x HEARING`,x+w-18,y+164,8,'#efc66d','IBM Plex Mono','right');
   chart(x+18,y+180,w-36,125,graphForPulse(rppgHistory),'#91f2ce','rPPG / LIVE PULSE',40,140);chart(x+18,y+320,w-36,94,graphForPulse(bcgHistory),'#efc66d','rBCG / GUIDED MOTION',40,140);
-  text('MISSION STATE',x+18,y+444,8,'#718984');text(mission.stage===3?'REACH EXTRACTION':`RESTORE RELAYS  ${mission.stage}/3`,x+18,y+468,13,mission.stage===3?'#91f2ce':'#dceae6','Barlow Condensed');
+  text(`LEVEL ${levels[mission.level-1].roman} / MISSION STATE`,x+18,y+444,8,'#718984');text(mission.stage===3?'REACH EXTRACTION':`RESTORE RELAY  ${mission.stage+1}/3`,x+18,y+468,13,mission.stage===3?'#91f2ce':'#dceae6','Barlow Condensed');
   [['INTEGRITY',`${mission.health}/3`,mission.health===1?'#ff5960':'#dceae6'],['FLASHLIGHT',`${Math.round(mission.battery)}%`,mission.battery<20?'#ff5960':'#dceae6'],['FLARES',String(mission.flares),'#efc66d']].forEach((s,i)=>{const yy=y+500+i*31;text(s[0],x+18,yy,8,'#718984');text(s[1],x+w-18,yy,9,s[2],'IBM Plex Mono','right');});
-  rect(x+18,y+605,w-36,58,'#081118','#263e3d');text('HEARTBEAT WAVE',x+30,y+627,8,'#91f2ce');text('REVEALS THE STALKER',x+30,y+645,8,'#899d98');text('AND REVEALS YOU',x+w-30,y+645,8,'#ff5960','IBM Plex Mono','right');
+  rect(x+18,y+605,w-36,58,'#081118','#263e3d');text(soundOn&&fb.bpm?`AUDIO SYNC / ${Math.round(fb.bpm)} BPM`:'AUDIO MUTED',x+30,y+627,8,soundOn?'#91f2ce':'#718984');text('EACH BEAT REVEALS IT',x+30,y+645,8,'#899d98');text('AND REVEALS YOU',x+w-30,y+645,8,'#ff5960','IBM Plex Mono','right');
 }
 function fmt(v){return`${String(Math.floor(v/60)).padStart(2,'0')}:${String(Math.floor(v%60)).padStart(2,'0')}`}
 function draw(){if(phase==='game')drawGame();else if(phase==='scan')drawScan();else{background();text('TRACE / NIGHT SIGNAL',42,65,13,'#91f2ce');text('A camera sees the pulse in your face.',42,155,50,'#e4eeeb','Barlow Condensed');text('Then the pulse becomes part of the horror.',42,210,50,'#91aaa7','Barlow Condensed');text('Start with a live camera to see three rPPG methods and experimental camera BCG in one monitor.',42,270,13,'#8d9eaa');panel(42,345,570,260,'#0b151e');text('THE FLOW',67,380,10,'#91f2ce');[['01','CAMERA ACQUISITION','colour pulse + facial motion'],['02','SIGNAL CHECK','live BPM and graphs'],['03','NIGHT RUN','your measured response changes the danger']].forEach((a,i)=>{const yy=430+i*52;text(a[0],67,yy,11,'#efc66d');text(a[1],115,yy,11,'#dceae6');text(a[2],115,yy+17,9,'#7e9692');});text('Use simulation if a camera is unavailable.',42,658,10,'#687f7d');}}
