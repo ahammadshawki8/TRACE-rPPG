@@ -16,7 +16,7 @@ let state = {feedback:{intensity:0, valid:false}};
 let phase = 'welcome';
 let source = null;
 let paused = false;
-let soundOn = false;
+let soundOn = true;
 let audio;
 let soundscape;
 let mission;
@@ -26,6 +26,8 @@ const pressed = new Set();
 const rppgHistory = [];
 const bcgHistory = [];
 const methodHistory = [];
+const listenerArt = new Image();
+listenerArt.src = '/static/assets/listener.png?v=1';
 
 const walls = [
   {x:0,y:0,w:1040,h:20},{x:0,y:680,w:1040,h:20},{x:0,y:0,w:20,h:700},{x:1020,y:0,w:20,h:700},
@@ -44,11 +46,19 @@ const patrolPoints = [
   {x:120,y:265},{x:390,y:270},{x:650,y:165},{x:900,y:270},
   {x:900,y:560},{x:650,y:535},{x:390,y:575},{x:180,y:390}
 ];
+const roomProps = [
+  {type:'bed',x:54,y:252,w:105,h:38,r:-.03},{type:'bed',x:326,y:254,w:112,h:38,r:.02},
+  {type:'desk',x:600,y:260,w:100,h:40,r:0},{type:'chair',x:725,y:275,w:24,h:24,r:.2},
+  {type:'bed',x:830,y:252,w:122,h:38,r:-.02},{type:'gurney',x:70,y:525,w:116,h:35,r:.06},
+  {type:'cabinet',x:342,y:535,w:64,h:48,r:0},{type:'gurney',x:595,y:535,w:120,h:35,r:-.04},
+  {type:'chair',x:870,y:540,w:25,h:25,r:-.3},{type:'chair',x:925,y:555,w:25,h:25,r:.25}
+];
+const floorMarks = Array.from({length:34},(_,i)=>({x:37+(i*137)%965,y:42+(i*83)%610,r:5+(i*17)%18,a:.025+(i%5)*.008}));
 const MAP = {x:22,y:70,w:1040,h:700};
 const levels = [
-  {roman:'I',name:'THE LISTENING WARD',brief:'One stalker. Restore the morgue relay.'},
-  {roman:'II',name:'THE BLACKOUT',brief:'A second signal wakes. Restore the archive relay.'},
-  {roman:'III',name:'THE CHOIR',brief:'The ward is hunting. Restore the final relay and extract.'}
+  {roman:'I',name:'THE LISTENING WARD',brief:'Calibrate the morgue relay before the Listener finds your pulse.',accent:'#8edfc5'},
+  {roman:'II',name:'THE BLACKOUT',brief:'Emergency power fails. A second signal begins to move.',accent:'#d6b463'},
+  {roman:'III',name:'THE CHOIR',brief:'Both signals are awake. Restore Ward C before they converge.',accent:'#ff5960'}
 ];
 
 function send(obj){if(ws.readyState===1)ws.send(JSON.stringify(obj));else pending.push(obj);}
@@ -86,9 +96,10 @@ function newMission(){
     mode:'briefing',start:now,t:0,player:{x:75,y:615,facing:-Math.PI/2,moving:false},
     hunters:hunterHome.map((p,i)=>({x:p.x,y:p.y,home:{...p},mode:'patrol',patrol:(i*4+1)%patrolPoints.length,lastSeen:null,alert:0,revealed:0,stun:0})),
     relays:relaySites.map(p=>({...p,online:false,progress:0})),flares:2,health:3,
-    hidden:false,flashlight:true,battery:100,beatClock:.2,rings:[],stage:0,level:1,interlude:null,
+    hidden:false,flashlight:true,battery:100,stamina:100,groundCharge:100,grounding:false,beatClock:.2,rings:[],stage:0,level:1,interlude:null,
     radius:1,scare:0,scareType:'face',blackout:0,flicker:0,apparition:null,
-    nextEvent:11,detections:0,invulnerable:0,events:[],frames:[],ended:false,
+    nextEvent:11,detections:0,invulnerable:0,events:[],frames:[],ended:false,footClock:0,relayClock:0,threatClock:0,
+    levelTitle:3.4,audioCue:'AUDIO LINK ARMED',audioCueTime:3,lastChase:false,ambientClock:7,grainSeed:Math.random()*1000,
     message:'Restore three pulse relays. The exit has no power.'
   };
 }
@@ -99,7 +110,7 @@ function enterGame(){
   $('#headline').innerHTML='The facility knows<br><em>the rhythm of your blood.</em>';
   $('#subhead').textContent='Restore the three pulse relays. Every measured heartbeat reveals the dark and tells the stalker where to search.';
   $('#control-message').textContent='Heartbeat waves reveal danger. Sprinting and flashlight use make you easier to find.';
-  canvas.focus();beep(180,.16);draw();
+  canvas.focus();playBootSequence();draw();
 }
 
 $('#camera-start').onclick=()=>{if(phase==='scan')enterGame();else begin('camera');};
@@ -110,10 +121,11 @@ $('#pause').onclick=()=>{if(!mission||mission.ended)return;const now=performance
 $('#settings').onclick=()=>{if(mission&&!mission.ended&&!paused){mission.settingsPause=true;$('#pause').click();}$('#settings-dialog').showModal();};
 $('#close-settings').onclick=()=>$('#settings-dialog').close();
 $('#settings-dialog').addEventListener('close',()=>{if(mission?.settingsPause){mission.settingsPause=false;$('#pause').click();}});
-$('#sound-toggle').onchange=e=>{soundOn=e.target.checked;if(soundOn){ensureAudio();beep(240,.06);}else if(soundscape)soundscape.master.gain.setTargetAtTime(0,audio.currentTime,.08);};
+$('#sound-toggle').onchange=e=>{soundOn=e.target.checked;$('#audio-toggle').textContent=soundOn?'SOUND ON':'SOUND OFF';$('#audio-toggle').setAttribute('aria-pressed',String(soundOn));if(soundOn){ensureAudio();beep(240,.06);}else if(soundscape)soundscape.master.gain.setTargetAtTime(0,audio.currentTime,.08);};
 $('#sound-volume').oninput=()=>{if(soundscape&&soundOn)soundscape.master.gain.setTargetAtTime(Number($('#sound-volume').value),audio.currentTime,.08);};
+$('#audio-toggle').onclick=()=>{soundOn=!soundOn;$('#sound-toggle').checked=soundOn;$('#audio-toggle').textContent=soundOn?'SOUND ON':'SOUND OFF';$('#audio-toggle').setAttribute('aria-pressed',String(soundOn));if(soundOn){ensureAudio();playBootSequence();}else if(soundscape)soundscape.master.gain.setTargetAtTime(0,audio.currentTime,.08);};
 $('#feedback-mode').onchange=()=>{if(mission)mission.events.push({t:mission.t,text:'Feedback rule changed during run.'});};
-window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright',' ','e','f','shift','enter','escape'].includes(k))e.preventDefault();if(k==='escape'&&mission)$('#pause').click();if(!e.repeat)pressed.add(k);keys.add(k);});
+window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright',' ','q','e','f','shift','enter','escape'].includes(k))e.preventDefault();if(k==='escape'&&mission)$('#pause').click();if(!e.repeat)pressed.add(k);keys.add(k);});
 window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 function canvasPoint(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H};}
 function nightButtonReady(){return phase==='scan'&&state.feedback?.baseline&&state.feedback?.calibration>=1;}
@@ -122,29 +134,45 @@ canvas.addEventListener('mousemove',e=>{const p=canvasPoint(e);const hot=nightBu
 
 function ensureAudio(){
   if(audio){audio.resume();if(soundscape)soundscape.master.gain.setTargetAtTime(Number($('#sound-volume').value),audio.currentTime,.08);return;}
-  audio=new(window.AudioContext||window.webkitAudioContext)();const master=audio.createGain(),limiter=audio.createDynamicsCompressor(),droneGain=audio.createGain(),droneA=audio.createOscillator(),droneB=audio.createOscillator();
-  limiter.threshold.value=-18;limiter.knee.value=18;limiter.ratio.value=7;limiter.attack.value=.003;limiter.release.value=.22;master.gain.value=Number($('#sound-volume').value);master.connect(limiter);limiter.connect(audio.destination);
-  droneA.type='triangle';droneB.type='sine';droneA.frequency.value=38;droneB.frequency.value=57.2;droneB.detune.value=-9;droneGain.gain.value=.012;droneA.connect(droneGain);droneB.connect(droneGain);droneGain.connect(master);droneA.start();droneB.start();soundscape={master,droneGain,droneA,droneB,lastBreathCue:-1};audio.resume();
+  audio=new(window.AudioContext||window.webkitAudioContext)();
+  const master=audio.createGain(),limiter=audio.createDynamicsCompressor(),ambienceGain=audio.createGain(),sfxGain=audio.createGain(),heartGain=audio.createGain();
+  limiter.threshold.value=-21;limiter.knee.value=16;limiter.ratio.value=9;limiter.attack.value=.002;limiter.release.value=.24;
+  master.gain.value=Number($('#sound-volume').value);ambienceGain.gain.value=.9;sfxGain.gain.value=1;heartGain.gain.value=.9;
+  ambienceGain.connect(master);sfxGain.connect(master);heartGain.connect(master);master.connect(limiter);limiter.connect(audio.destination);
+  const droneGain=audio.createGain(),droneFilter=audio.createBiquadFilter(),droneA=audio.createOscillator(),droneB=audio.createOscillator(),lfo=audio.createOscillator(),lfoGain=audio.createGain();
+  droneA.type='triangle';droneB.type='sine';droneA.frequency.value=36;droneB.frequency.value=53.8;droneB.detune.value=-11;droneGain.gain.value=.01;droneFilter.type='lowpass';droneFilter.frequency.value=180;
+  lfo.frequency.value=.11;lfoGain.gain.value=.004;lfo.connect(lfoGain);lfoGain.connect(droneGain.gain);droneA.connect(droneFilter);droneB.connect(droneFilter);droneFilter.connect(droneGain);droneGain.connect(ambienceGain);
+  const n=Math.ceil(audio.sampleRate*2),buffer=audio.createBuffer(1,n,audio.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<n;i++)data[i]=Math.random()*2-1;
+  const noiseSource=audio.createBufferSource(),noiseFilter=audio.createBiquadFilter(),noiseGain=audio.createGain();noiseSource.buffer=buffer;noiseSource.loop=true;noiseFilter.type='bandpass';noiseFilter.frequency.value=430;noiseFilter.Q.value=.34;noiseGain.gain.value=.0018;noiseSource.connect(noiseFilter);noiseFilter.connect(noiseGain);noiseGain.connect(ambienceGain);
+  droneA.start();droneB.start();lfo.start();noiseSource.start();soundscape={master,ambienceGain,sfxGain,heartGain,droneGain,droneFilter,droneA,droneB,noiseGain,noiseFilter,noiseSource,lastBreathCue:-1};audio.resume();
 }
-function tone(freq,dur=.1,gain=.03,type='sine',delay=0,pan=0,endFreq=null){
-  if(!soundOn)return;ensureAudio();const now=audio.currentTime+delay,o=audio.createOscillator(),g=audio.createGain(),p=audio.createStereoPanner?audio.createStereoPanner():null;o.type=type;o.frequency.setValueAtTime(Math.max(20,freq),now);if(endFreq)o.frequency.exponentialRampToValueAtTime(Math.max(20,endFreq),now+dur);g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(gain,now+.012);g.gain.exponentialRampToValueAtTime(.0001,now+dur);o.connect(g);if(p){p.pan.value=Math.max(-1,Math.min(1,pan));g.connect(p);p.connect(soundscape.master);}else g.connect(soundscape.master);o.start(now);o.stop(now+dur+.03);
+function tone(freq,dur=.1,gain=.03,type='sine',delay=0,pan=0,endFreq=null,bus='sfx'){
+  if(!soundOn)return;ensureAudio();const now=audio.currentTime+delay,o=audio.createOscillator(),g=audio.createGain(),p=audio.createStereoPanner?audio.createStereoPanner():null,target=bus==='heart'?soundscape.heartGain:soundscape.sfxGain;o.type=type;o.frequency.setValueAtTime(Math.max(20,freq),now);if(endFreq)o.frequency.exponentialRampToValueAtTime(Math.max(20,endFreq),now+dur);g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(gain,now+.012);g.gain.exponentialRampToValueAtTime(.0001,now+dur);o.connect(g);if(p){p.pan.value=Math.max(-1,Math.min(1,pan));g.connect(p);p.connect(target);}else g.connect(target);o.start(now);o.stop(now+dur+.03);
 }
 function beep(freq,dur=.1){tone(freq,dur,.025,'triangle',0,0,freq*.72);}
 function noiseBurst(dur=.35,gain=.045,centre=900,pan=0){
-  if(!soundOn)return;ensureAudio();const n=Math.ceil(audio.sampleRate*dur),buffer=audio.createBuffer(1,n,audio.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<n;i++)data[i]=(Math.random()*2-1)*(1-i/n);const src=audio.createBufferSource(),filter=audio.createBiquadFilter(),g=audio.createGain(),p=audio.createStereoPanner?audio.createStereoPanner():null;src.buffer=buffer;filter.type='bandpass';filter.frequency.value=centre;filter.Q.value=.7;g.gain.setValueAtTime(gain,audio.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+dur);src.connect(filter);filter.connect(g);if(p){p.pan.value=pan;g.connect(p);p.connect(soundscape.master);}else g.connect(soundscape.master);src.start();
+  if(!soundOn)return;ensureAudio();const n=Math.ceil(audio.sampleRate*dur),buffer=audio.createBuffer(1,n,audio.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<n;i++)data[i]=(Math.random()*2-1)*(1-i/n);const src=audio.createBufferSource(),filter=audio.createBiquadFilter(),g=audio.createGain(),p=audio.createStereoPanner?audio.createStereoPanner():null;src.buffer=buffer;filter.type='bandpass';filter.frequency.value=centre;filter.Q.value=.7;g.gain.setValueAtTime(gain,audio.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+dur);src.connect(filter);filter.connect(g);if(p){p.pan.value=pan;g.connect(p);p.connect(soundscape.sfxGain);}else g.connect(soundscape.sfxGain);src.start();
 }
-function heartbeatSound(bpm,intensity){const root=38+Math.min(18,bpm*.12)+intensity*8;tone(root,.105,.045,'sine',0,0,root*.58);tone(root*.82,.115,.03,'triangle',.13,0,root*.48);}
-function scareAudio(type){const hard=type==='hit';noiseBurst(hard?.62:.42,hard?.075:.055,hard?1250:780,Math.random()*.8-.4);tone(hard?74:92,hard?.75:.48,hard?.065:.045,'sawtooth',0,0,31);tone(311,.36,.025,'square',.025,-.45,143);tone(337,.39,.025,'square',.035,.45,151);}
+function heartbeatSound(bpm,intensity){const root=37+Math.min(20,bpm*.13)+intensity*9,gain=mission?.grounding?.018:.046;tone(root,.11,gain,'sine',0,-.05,root*.54,'heart');tone(root*.78,.12,gain*.72,'triangle',.13,.05,root*.44,'heart');}
+function scareAudio(type){const hard=type==='hit';noiseBurst(hard?.72:.5,hard?.085:.062,hard?1320:820,Math.random()*.8-.4);tone(hard?68:91,hard?.85:.55,hard?.072:.052,'sawtooth',0,0,29);tone(307,.42,.026,'square',.02,-.55,137);tone(337,.44,.026,'square',.03,.55,149);tone(46,1.1,.04,'sine',.08,0,24);}
+function playBootSequence(){tone(88,.55,.025,'sine',0,0,44);tone(176,.18,.02,'triangle',.18,-.35,132);tone(264,.24,.018,'triangle',.34,.35,198);}
+function playFootstep(sprint){noiseBurst(sprint?.075:.06,sprint?.018:.011,sprint?180:130,Math.random()*.32-.16);tone(sprint?63:54,.055,sprint?.016:.01,'sine',0,0,35);}
+function playDoor(open){noiseBurst(.24,.025,open?420:260,0);tone(open?105:78,.3,.025,'sawtooth',0,0,open?62:45);}
+function playRelayPulse(progress){const f=145+progress*310;tone(f,.08,.018,'triangle',0,(Math.random()-.5)*.25,f*1.18);}
+function playRelayComplete(){[110,165,220,330].forEach((f,i)=>tone(f,.5-i*.05,.03,'triangle',i*.09,(i-1.5)*.15,f*1.5));noiseBurst(.35,.025,520,0);}
+function playChaseStinger(){noiseBurst(.32,.05,1450,0);tone(59,.7,.055,'sawtooth',0,0,28);tone(233,.16,.025,'square',.04,-.5,91);tone(247,.19,.025,'square',.04,.5,98);setAudioCue('CHASE / BREAK LINE OF SIGHT',2.4);}
+function setAudioCue(label,seconds=2){if(!mission)return;mission.audioCue=label;mission.audioCueTime=seconds;}
 function updateSoundscape(intensity){
-  if(!soundscape||!audio)return;const on=soundOn?1:0,interlude=mission?.interlude&&mission.interlude.delay<=0,stage=mission?.stage||0,nearest=mission?Math.min(...mission.hunters.map(h=>distance(h,mission.player))):999,proximity=Math.max(0,1-nearest/310),now=audio.currentTime;
-  soundscape.master.gain.setTargetAtTime(on*Number($('#sound-volume').value),now,.12);soundscape.droneGain.gain.setTargetAtTime(on*(interlude?.004:.009+.014*intensity+.018*proximity),now,.35);soundscape.droneA.frequency.setTargetAtTime(interlude?32:37+stage*2.5+intensity*7,now,.5);soundscape.droneB.frequency.setTargetAtTime(interlude?48:55+stage*3+proximity*9,now,.5);
+  if(!soundscape||!audio)return;const on=soundOn?1:0,interlude=mission?.interlude&&mission.interlude.delay<=0,stage=mission?.stage||0,active=mission?mission.hunters.filter((h,i)=>i===0||mission.stage>=1):[],nearest=active.length?Math.min(...active.map(h=>distance(h,mission.player))):999,proximity=Math.max(0,1-nearest/360),chase=active.some(h=>h.mode==='hunt'),now=audio.currentTime;
+  soundscape.master.gain.setTargetAtTime(on*Number($('#sound-volume').value),now,.12);soundscape.droneGain.gain.setTargetAtTime(on*(interlude?.0035:.008+.012*intensity+.02*proximity+(chase?.012:0)),now,.32);soundscape.noiseGain.gain.setTargetAtTime(on*(interlude?.001:.0018+.004*proximity+(chase?.005:0)),now,.4);soundscape.droneFilter.frequency.setTargetAtTime(interlude?130:170+stage*35+proximity*280,now,.55);soundscape.noiseFilter.frequency.setTargetAtTime(320+stage*90+proximity*760,now,.55);soundscape.droneA.frequency.setTargetAtTime(interlude?32:35+stage*2.4+intensity*7,now,.5);soundscape.droneB.frequency.setTargetAtTime(interlude?48:52+stage*3+proximity*11,now,.5);
+  if(mission&&chase&&!mission.lastChase)playChaseStinger();if(mission)mission.lastChase=chase;
 }
 function collide(x,y,r=12){return walls.some(w=>x+r>w.x&&x-r<w.x+w.w&&y+r>w.y&&y-r<w.y+w.h)}
 function blocked(a,b){const n=Math.ceil(Math.hypot(a.x-b.x,a.y-b.y)/8);for(let i=1;i<n;i++){const x=a.x+(b.x-a.x)*i/n,y=a.y+(b.y-a.y)*i/n;if(walls.some(w=>x>w.x&&x<w.x+w.w&&y>w.y&&y<w.y+w.h))return true;}return false;}
 function distance(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
 function nearestLocker(){return hidingSpots.map(s=>({...s,cx:s.x+s.w/2,cy:s.y+s.h/2})).find(s=>Math.hypot(s.cx-mission.player.x,s.cy-mission.player.y)<58)}
 function nearbyRelay(){const relay=mission.relays[mission.stage];return relay&&!relay.online&&distance(relay,mission.player)<48?relay:null}
-function startNight(){if(!mission||mission.mode!=='briefing')return;mission.mode='play';mission.start=performance.now();mission.events.push({t:0,text:'Entered Saint Orison Ward.'});mission.message='Restore a relay. Hold E at an amber terminal.';beep(115,.25);}
+function startNight(){if(!mission||mission.mode!=='briefing')return;mission.mode='play';mission.start=performance.now();mission.events.push({t:0,text:'Entered Saint Orison Ward.'});mission.message='Reach the morgue relay. Hold E through the signal lock.';playDoor(true);setAudioCue('HEADPHONES RECOMMENDED / AUDIO ACTIVE',3);}
 function restartNight(){mission=newMission();paused=false;$('#pause').disabled=false;$('#pause').textContent='PAUSE';canvas.focus();}
 function movePlayer(dx,dy,dt,speed){const p=mission.player,nx=p.x+dx*speed*dt,ny=p.y+dy*speed*dt;if(!collide(nx,p.y))p.x=Math.max(34,Math.min(1006,nx));if(!collide(p.x,ny))p.y=Math.max(34,Math.min(666,ny));p.facing=Math.atan2(dy,dx);}
 function navPath(from,target){
@@ -161,17 +189,18 @@ function moveHunter(h,target,speed,dt){
 function interact(){
   if(mission.mode==='briefing'){startNight();return;}
   if(mission.ended)return;
-  if(mission.hidden){mission.hidden=false;mission.message='You leave the locker. Your pulse is audible again.';beep(170,.06);return;}
+  if(mission.hidden){mission.hidden=false;mission.message='You leave the locker. Your pulse is audible again.';playDoor(true);setAudioCue('LOCKER OPEN',1.2);return;}
   const locker=nearestLocker();
-  if(locker&&!nearbyRelay()){mission.hidden=true;mission.player.x=locker.cx;mission.player.y=locker.cy;mission.message='Hidden. Press E to leave. A racing pulse can still betray you.';mission.events.push({t:mission.t,text:'Entered a hiding place.'});beep(95,.08);}
+  if(locker&&!nearbyRelay()){mission.hidden=true;mission.player.x=locker.cx;mission.player.y=locker.cy;mission.message='Hidden. Press E to leave. A close Listener can still hear the pulse link.';mission.events.push({t:mission.t,text:'Entered a hiding place.'});playDoor(false);setAudioCue('HIDDEN / STAY QUIET',1.8);}
 }
-function flare(){if(!mission||mission.mode!=='play'||mission.ended||mission.hidden||mission.flares<=0)return;mission.flares--;mission.flare={x:mission.player.x+Math.cos(mission.player.facing)*46,y:mission.player.y+Math.sin(mission.player.facing)*46,end:performance.now()+5200};mission.rings.push({x:mission.flare.x,y:mission.flare.y,r:8,max:245,speed:310,flare:true});beep(520,.12);mission.events.push({t:mission.t,text:'Signal flare deployed. The stalker changed course.'});mission.message='The flare attracts and briefly stuns anything that reaches it.';}
-function toggleFlashlight(){if(!mission||mission.mode!=='play'||mission.ended)return;if(mission.battery<=0){mission.message='Flashlight cell empty. Keep it off to recharge.';return;}mission.flashlight=!mission.flashlight;beep(mission.flashlight?260:110,.04);}
+function flare(){if(!mission||mission.mode!=='play'||mission.ended||mission.hidden||mission.flares<=0)return;mission.flares--;mission.flare={x:mission.player.x+Math.cos(mission.player.facing)*46,y:mission.player.y+Math.sin(mission.player.facing)*46,end:performance.now()+5200};mission.rings.push({x:mission.flare.x,y:mission.flare.y,r:8,max:245,speed:310,flare:true});noiseBurst(.5,.032,2400,0);tone(680,.8,.028,'sawtooth',0,0,310);mission.events.push({t:mission.t,text:'Signal flare deployed. The stalker changed course.'});mission.message='The flare attracts and briefly stuns anything that reaches it.';setAudioCue('SIGNAL FLARE / THREAT DIVERTED',2);}
+function toggleFlashlight(){if(!mission||mission.mode!=='play'||mission.ended)return;if(mission.battery<=0){mission.message='Flashlight cell empty. Keep it off to recharge.';tone(45,.08,.018,'square');return;}mission.flashlight=!mission.flashlight;noiseBurst(.035,.018,2200,0);tone(mission.flashlight?320:105,.045,.02,'square');setAudioCue(mission.flashlight?'FLASHLIGHT ON':'FLASHLIGHT OFF',.8);}
 function triggerScare(type='face'){
   if(!mission||mission.ended)return;
   if($('#horror-intensity').value==='quiet'&&type!=='hit'){mission.flicker=1.2;mission.blackout=.25;mission.message='The ward shudders, then goes quiet.';return;}
   mission.scare=type==='hit'?1.35:.9;mission.scareType=type;mission.blackout=Math.max(mission.blackout,type==='hit'?.55:.2);
   mission.events.push({t:mission.t,text:`Director event: ${type}.`});scareAudio(type);
+  setAudioCue(type==='hit'?'CONTACT / SIGNAL BREACH':'ANOMALY DETECTED',1.6);
   if(source==='demo')send({cmd:'scenario',value:'scare'});
   setTimeout(()=>{if(source==='demo')send({cmd:'scenario',value:'cycle'});},3200);
 }
@@ -180,14 +209,14 @@ function directorEvent(){
   if(setting==='quiet'){mission.flicker=.5;mission.message='The current stutters through the empty ward.';}
   else{
     const roll=Math.random();
-    if(roll<.34){mission.flicker=1.5;mission.message='Something crossed the light behind you.';tone(38,.55,.025,'sawtooth',0,Math.random()>.5?-.7:.7,27);}
-    else if(roll<.7){const pan=Math.random()>.5?-.8:.8;mission.apparition={x:mission.player.x-Math.cos(mission.player.facing)*115,y:mission.player.y-Math.sin(mission.player.facing)*115,end:performance.now()+1450};mission.message='Do not turn around.';noiseBurst(.7,.018,1700,pan);tone(74,.65,.02,'triangle',0,pan,49);}
+    if(roll<.34){const pan=Math.random()>.5?-.72:.72;mission.flicker=1.5;mission.message='The lights fail in sequence behind you.';tone(38,.75,.03,'sawtooth',0,pan,24);noiseBurst(.22,.018,620,pan);setAudioCue(pan<0?'METAL IMPACT / LEFT':'METAL IMPACT / RIGHT',1.5);}
+    else if(roll<.7){const pan=Math.random()>.5?-.82:.82;mission.apparition={x:mission.player.x-Math.cos(mission.player.facing)*115,y:mission.player.y-Math.sin(mission.player.facing)*115,end:performance.now()+1450};mission.message='Do not turn around.';noiseBurst(.7,.022,1700,pan);tone(74,.78,.024,'triangle',0,pan,42);setAudioCue(pan<0?'WHISPER / LEFT':'WHISPER / RIGHT',1.8);}
     else triggerScare(pressure>2.4?'hands':'face');
   }
   const base=Math.max(6,(setting==='nightmare'?8:14)-mission.stage*1.5);mission.nextEvent=mission.t+base+Math.random()*(setting==='nightmare'?5:9);
 }
 function emitHeartbeat(intensity,bpm){
-  const p=mission.player,max=145+155*intensity;
+  const p=mission.player,max=(145+155*intensity)*(mission.grounding ? .52 : 1);
   mission.rings.push({x:p.x,y:p.y,r:8,max,speed:255,flare:false});mission.beatFlash=.16;
   heartbeatSound(bpm,intensity);
   mission.hunters.forEach((h,i)=>{
@@ -202,14 +231,14 @@ function activateRelay(relay){
   relay.online=true;relay.progress=1;mission.stage++;mission.blackout=.75;mission.flicker=2;
   mission.events.push({t:mission.t,text:`${relay.name} restored (${mission.stage}/3).`});
   mission.message=mission.stage===3?'All relays online. Reach the green extraction door.':`${relay.name} online. The ward has noticed.`;
-  mission.rings.push({x:relay.x,y:relay.y,r:8,max:360,speed:380,flare:true});beep(720,.16);
+  mission.rings.push({x:relay.x,y:relay.y,r:8,max:360,speed:380,flare:true});playRelayComplete();setAudioCue('RELAY LOCKED / POWER RESTORED',2.5);
   if(mission.stage<3){triggerScare(mission.stage===1?'face':'hands');mission.interlude={delay:1,total:10,remaining:10,nextLevel:mission.stage+1,startBpm:state.feedback?.bpm||null,segment:''};mission.hunters.forEach(h=>h.stun=12);}
   else{triggerScare('hands');mission.nextEvent=mission.t+5;mission.hunters.forEach(h=>{h.mode='hunt';h.lastSeen={x:mission.player.x,y:mission.player.y};h.alert=30;});}
 }
 function updateInterlude(dt){
   const q=mission.interlude;if(!q)return false;if(q.delay>0){q.delay-=dt;return true;}q.remaining=Math.max(0,q.remaining-dt);const phase=(q.total-q.remaining)%10,segment=phase<4?'INHALE':'EXHALE';q.breathPhase=phase;q.segment=segment;
   if(q.audioSegment!==segment){q.audioSegment=segment;tone(segment==='INHALE'?196:147,segment==='INHALE'?3.5:5.2,.014,'sine',0,0,segment==='INHALE'?247:98);}
-  if(q.remaining<=0){mission.level=q.nextLevel;mission.interlude=null;mission.message=levels[mission.level-1].brief;mission.nextEvent=mission.t+8;mission.events.push({t:mission.t,text:`Level ${mission.level} entered after paced recovery.`});mission.hunters.forEach(h=>{h.stun=0;h.mode='patrol';h.path=null;});tone(294,.5,.025,'triangle');return false;}return true;
+  if(q.remaining<=0){mission.level=q.nextLevel;mission.levelTitle=3.2;mission.interlude=null;mission.message=levels[mission.level-1].brief;mission.nextEvent=mission.t+8;mission.events.push({t:mission.t,text:`Level ${mission.level} entered after paced recovery.`});mission.hunters.forEach(h=>{h.stun=0;h.mode=mission.level===3?'investigate':'patrol';h.lastSeen=mission.level===3?{x:mission.player.x,y:mission.player.y}:null;h.alert=mission.level===3?8:0;h.path=null;});tone(294,.7,.028,'triangle',0,0,147);noiseBurst(.45,.018,540,0);setAudioCue(mission.level===2?'SECOND SIGNAL ONLINE':'LOCKDOWN / BOTH SIGNALS SEARCHING',3);return false;}return true;
 }
 function damagePlayer(h){
   if(mission.invulnerable>0)return;mission.health--;mission.invulnerable=2.8;mission.detections++;
@@ -231,7 +260,7 @@ function updateHunter(h,index,dt,intensity){
   if(target)moveHunter(h,target,speed,dt);
   if(dist<25)damagePlayer(h);
 }
-function recordFrame(fb,intensity,valid,recovery=false){if(!mission.nextFrame||mission.t>=mission.nextFrame){mission.frames.push({t:mission.t,bpm:fb.bpm||null,baseline:fb.baseline||null,intensity,radius:mission.radius,valid,level:mission.level,stage:mission.stage,recovery,hidden:mission.hidden,flashlight:mission.flashlight,health:mission.health,player:{x:Math.round(mission.player.x),y:Math.round(mission.player.y)},hunters:mission.hunters.map(h=>({x:Math.round(h.x),y:Math.round(h.y),mode:h.mode}))});mission.nextFrame=mission.t+.25;if(mission.frames.length>2400)mission.frames.shift();}}
+function recordFrame(fb,intensity,valid,recovery=false){if(!mission.nextFrame||mission.t>=mission.nextFrame){mission.frames.push({t:mission.t,bpm:fb.bpm||null,baseline:fb.baseline||null,intensity,radius:mission.radius,valid,level:mission.level,stage:mission.stage,recovery,hidden:mission.hidden,flashlight:mission.flashlight,grounding:mission.grounding,groundCharge:Math.round(mission.groundCharge),health:mission.health,player:{x:Math.round(mission.player.x),y:Math.round(mission.player.y)},hunters:mission.hunters.map(h=>({x:Math.round(h.x),y:Math.round(h.y),mode:h.mode}))});mission.nextFrame=mission.t+.25;if(mission.frames.length>2400)mission.frames.shift();}}
 function update(dt){
   if(phase!=='game'||paused||!mission)return;
   if(mission.mode==='briefing'){if(pressed.has('e')||pressed.has('enter'))startNight();pressed.clear();return;}
@@ -239,22 +268,26 @@ function update(dt){
   mission.t=(performance.now()-mission.start)/1000;
   const fb=state.feedback||{},valid=!!fb.valid,intensity=valid?fb.intensity||0:0,mode=$('#feedback-mode').value;
   mission.radius=mode==='fixed'?1:mode==='balance'?Math.max(.72,1-.28*intensity):1+.85*intensity;
+  mission.levelTitle=Math.max(0,mission.levelTitle-dt);mission.audioCueTime=Math.max(0,mission.audioCueTime-dt);
   updateSoundscape(intensity);
   if(mission.interlude){mission.scare=Math.max(0,mission.scare-dt);mission.blackout=Math.max(0,mission.blackout-dt);mission.flicker=Math.max(0,mission.flicker-dt);const recovering=updateInterlude(dt);recordFrame(fb,intensity,valid,recovering);pressed.clear();return;}
   if(pressed.has(' '))flare();if(pressed.has('f'))toggleFlashlight();if(pressed.has('e'))interact();
   const u=keys.has('w')||keys.has('arrowup'),d=keys.has('s')||keys.has('arrowdown'),l=keys.has('a')||keys.has('arrowleft'),r=keys.has('d')||keys.has('arrowright');
-  let dx=(r?1:0)-(l?1:0),dy=(d?1:0)-(u?1:0);const sprint=keys.has('shift')&&!mission.hidden,relay=nearbyRelay();
+  let dx=(r?1:0)-(l?1:0),dy=(d?1:0)-(u?1:0);const moving=!!(dx||dy)&&!mission.hidden,grounding=keys.has('q')&&!mission.hidden&&mission.groundCharge>0,sprint=keys.has('shift')&&!grounding&&!mission.hidden&&mission.stamina>4,relay=nearbyRelay();
+  mission.grounding=grounding;mission.groundCharge=Math.max(0,Math.min(100,mission.groundCharge+(grounding?-24:14)*dt));mission.stamina=Math.max(0,Math.min(100,mission.stamina+(sprint&&moving?-28:20)*dt));
   mission.player.moving=!!(dx||dy)&&!mission.hidden;
-  if(mission.player.moving){const q=Math.hypot(dx,dy);movePlayer(dx/q,dy/q,dt,(sprint?174:112)*(relay&&keys.has('e')?.42:1));}
+  if(mission.player.moving){const q=Math.hypot(dx,dy);movePlayer(dx/q,dy/q,dt,(sprint ? 174 : grounding ? 66 : 112)*(relay&&keys.has('e') ? .42 : 1));mission.footClock-=dt;if(mission.footClock<=0){playFootstep(sprint);mission.footClock=sprint ? .27 : grounding ? .62 : .43;}}else mission.footClock=0;
   if(sprint&&mission.player.moving)mission.hunters.forEach((h,i)=>{if((i===0||mission.stage>=1)&&distance(h,mission.player)<245*mission.radius){h.mode='investigate';h.lastSeen={x:mission.player.x,y:mission.player.y};h.alert=2.2;}});
-  if(relay&&keys.has('e')&&!mission.hidden){relay.progress=Math.min(1,relay.progress+dt/(1.65+mission.stage*.28));mission.message=`LINKING ${relay.name}  ${Math.round(relay.progress*100)}%`;if(relay.progress>=1)activateRelay(relay);}else mission.relays.filter(q=>!q.online).forEach(q=>q.progress=Math.max(0,q.progress-dt*.08));
+  if(relay&&keys.has('e')&&!mission.hidden){relay.progress=Math.min(1,relay.progress+dt/(1.65+mission.stage*.28));mission.message=`CALIBRATING ${relay.name}  ${Math.round(relay.progress*100)}%`;mission.relayClock-=dt;if(mission.relayClock<=0){playRelayPulse(relay.progress);mission.relayClock=.24-relay.progress*.08;}if(relay.progress>=1)activateRelay(relay);}else{mission.relayClock=0;mission.relays.filter(q=>!q.online).forEach(q=>q.progress=Math.max(0,q.progress-dt*.08));}
   mission.battery=Math.max(0,Math.min(100,mission.battery+(mission.flashlight?-.75:1.5)*dt));if(mission.battery<=0)mission.flashlight=false;
   mission.beatClock-=dt;const bpm=valid&&fb.bpm?fb.bpm:fb.baseline||72;if(mission.beatClock<=0){mission.beatClock+=60/Math.max(45,Math.min(180,bpm));emitHeartbeat(intensity,bpm);}
   mission.rings.forEach(ring=>{ring.r+=ring.speed*dt;mission.hunters.forEach(h=>{if(Math.abs(distance(h,ring)-ring.r)<25)h.revealed=Math.max(h.revealed,.35);});});mission.rings=mission.rings.filter(ring=>ring.r<ring.max);
   mission.hunters.forEach((h,i)=>updateHunter(h,i,dt,intensity));
+  const activeHunters=mission.hunters.filter((h,i)=>i===0||mission.stage>=1),nearestHunter=activeHunters.reduce((best,h)=>distance(h,mission.player)<distance(best,mission.player)?h:best,activeHunters[0]),threatDistance=nearestHunter?distance(nearestHunter,mission.player):999;mission.threatClock-=dt;if(threatDistance<240&&mission.threatClock<=0&&!mission.hidden){const pan=Math.max(-.85,Math.min(.85,(nearestHunter.x-mission.player.x)/220));tone(68,.09,.009+.008*(1-threatDistance/240),'triangle',0,pan,42);noiseBurst(.055,.005,950,pan);mission.threatClock=.24+.72*(threatDistance/240);}
   mission.invulnerable=Math.max(0,mission.invulnerable-dt);mission.scare=Math.max(0,mission.scare-dt);mission.blackout=Math.max(0,mission.blackout-dt);mission.flicker=Math.max(0,mission.flicker-dt);mission.beatFlash=Math.max(0,(mission.beatFlash||0)-dt);
   if(mission.apparition&&performance.now()>mission.apparition.end)mission.apparition=null;if(mission.flare&&performance.now()>mission.flare.end)mission.flare=null;
   if(mission.t>mission.nextEvent)directorEvent();
+  mission.ambientClock-=dt;if(mission.ambientClock<=0&&!mission.lastChase){const pan=Math.random()*1.6-.8;noiseBurst(.3,.009,260+Math.random()*900,pan);tone(42+Math.random()*36,.5,.009,'sine',0,pan,28);mission.ambientClock=7+Math.random()*12;}
   const exit={x:965,y:605};if(mission.stage===3&&distance(exit,mission.player)<36)finish(true);
   recordFrame(fb,intensity,valid);
   pressed.clear();
@@ -304,12 +337,7 @@ function drawScan(){
     text('ENTER NIGHT  >>',1231,746,13,'#092019','IBM Plex Mono','center');
   }
 }
-function background(){ctx.clearRect(0,0,W,H);rect(0,0,W,H,'#081119');ctx.strokeStyle='#10252a';ctx.lineWidth=1;for(let x=0;x<W;x+=32){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}for(let y=0;y<H;y+=32){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}}
-{
-function drawGame(){background();const gW=1040;rect(22,22,gW,656,'#081219','#38544e');text('02 / NIGHT SIGNAL',42,49,11,'#91f2ce');text(`SURVIVE  ${fmt(mission.t)}    ECHOES ${mission.echoes.filter(e=>e.got).length}/3`,770,49,10,'#8aa39e','IBM Plex Mono','right');walls.forEach(w=>{rect(w.x+22,w.y+22,w.w,w.h,'#152a31','#294846');});hidingSpots.forEach(s=>{rect(s.x+22,s.y+22,s.w,s.h,mission.hidden&&mission.player.x>s.x&&mission.player.x<s.x+s.w&&mission.player.y>s.y&&mission.player.y<s.y+s.h?'#365f58':'#1a393c','#47756c');});mission.echoes.forEach(e=>{if(e.got)return;ctx.save();ctx.translate(e.x+22,e.y+22);ctx.rotate(Math.PI/4);ctx.fillStyle='#efc66d';ctx.shadowColor='#efc66d';ctx.shadowBlur=16;ctx.fillRect(-10,-10,20,20);ctx.restore();});const exit={x:965,y:605};ctx.strokeStyle='#91f2ce';ctx.globalAlpha=.6+.25*Math.sin(performance.now()/250);ctx.strokeRect(exit.x+7,exit.y+7,36,36);ctx.globalAlpha=1;text('EXIT',exit.x+11,666,8,'#91f2ce');mission.hunters.forEach(h=>{ctx.save();ctx.translate(h.x+22,h.y+22);ctx.fillStyle='#ff695d';ctx.shadowColor='#ff695d';ctx.shadowBlur=18;ctx.beginPath();ctx.arc(0,0,15,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#170d17';ctx.fillRect(-8,-4,5,8);ctx.fillRect(3,-4,5,8);ctx.strokeStyle='#ff695d';ctx.globalAlpha=.19;ctx.beginPath();ctx.arc(0,0,150*mission.radius,0,Math.PI*2);ctx.stroke();ctx.restore();});ctx.fillStyle='#91f2ce';ctx.shadowColor='#91f2ce';ctx.shadowBlur=18;ctx.fillRect(mission.player.x+14,mission.player.y+14,16,16);ctx.shadowBlur=0;if(mission.hidden){ctx.strokeStyle='#91f2ce';ctx.beginPath();ctx.arc(mission.player.x+22,mission.player.y+22,20,0,Math.PI*2);ctx.stroke();}if(mission.flare){ctx.strokeStyle='#efc66d';ctx.beginPath();ctx.arc(mission.flare.x+22,mission.flare.y+22,18+Math.sin(performance.now()/80)*4,0,Math.PI*2);ctx.stroke();}if(mission.scare>0){rect(22,22,gW,656,`rgba(255,30,35,${Math.min(.48,mission.scare*.35)})`);ctx.fillStyle='#09040a';ctx.beginPath();ctx.arc(530,330,105,0,Math.PI*2);ctx.fill();ctx.fillStyle='#ff695d';ctx.shadowColor='#ff695d';ctx.shadowBlur=25;ctx.fillRect(480,300,28,18);ctx.fillRect(552,300,28,18);ctx.fillRect(500,370,60,10);ctx.shadowBlur=0;text('MOVE',530,455,24,'#fff1e8','Barlow Condensed','center');}
-  drawMonitor(1082,22,336,656);if(paused){rect(22,22,W-44,H-44,'rgba(0,0,0,.7)');text('SIGNAL PAUSED',W/2,350,48,'#91f2ce','Barlow Condensed','center');text('Press ESC or PAUSE to return.',W/2,386,12,'#b7c8c2','IBM Plex Mono','center');}}
-function drawMonitor(x,y,w,h){panel(x,y,w,h,'LIVE PHYSIOLOGY');const fb=state.feedback||{};text(fb.bpm?Math.round(fb.bpm):'--',x+18,y+94,78,fb.valid?'#91f2ce':'#70858a','Barlow Condensed');text('BPM',x+145,y+86,16,'#91aaa7');text(fb.baseline?`Δ ${fb.delta>=0?'+':''}${Math.round(fb.delta)} BPM`:'BASELINE ...',x+145,y+109,9,'#efc66d');text(fb.valid?'LINKED':'NO RELIABLE SIGNAL',x+18,y+126,9,fb.valid?'#91f2ce':'#efc66d');const meter=Math.min(1,Math.max(0,(fb.intensity||0)));rect(x+18,y+143,w-36,7,'#1c292e');rect(x+18,y+143,(w-36)*meter,7,'#ff695d');text('FEAR RESPONSE',x+18,y+168,8,'#7e9791');text(`FIELD ${mission.radius?.toFixed(2)||'1.00'}x`,x+w-18,y+168,9,'#efc66d','IBM Plex Mono','right');chart(x+18,y+184,w-36,145,graphForPulse(rppgHistory),'#91f2ce','rPPG / LIVE',40,140);chart(x+18,y+345,w-36,145,graphForPulse(bcgHistory),'#efc66d','rBCG / EXPERIMENTAL',40,140);text(`INTEGRITY  ${mission.health}/3`,x+18,y+525,10,mission.health===1?'#ff695d':'#dceae6');text(`FLARES  ${mission.flares}`,x+w-18,y+525,10,'#efc66d','IBM Plex Mono','right');text('A rise expands the watcher field.',x+18,y+560,9,'#8aa09b');text('A scare is not a diagnosis.',x+18,y+578,9,'#8aa09b');}
-}
+function background(){ctx.clearRect(0,0,W,H);const g=ctx.createRadialGradient(W*.25,H*.08,20,W*.45,H*.55,900);g.addColorStop(0,'#10232a');g.addColorStop(.45,'#071018');g.addColorStop(1,'#03070c');rect(0,0,W,H,g);ctx.strokeStyle='#10252a';ctx.lineWidth=1;for(let x=0;x<W;x+=32){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}for(let y=0;y<H;y+=32){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}}
 function drawRelay(r,index){
   const active=!r.online&&index===mission.stage,locked=index>mission.stage,glow=r.online?'#91f2ce':locked?'#41504f':'#efc66d';
   ctx.save();ctx.translate(r.x,r.y);ctx.shadowColor=glow;ctx.shadowBlur=active?13:r.online?22:0;ctx.strokeStyle=glow;ctx.lineWidth=2;ctx.strokeRect(-13,-13,26,26);ctx.fillStyle=r.online?'#173d35':locked?'#151e20':'#3a2d16';ctx.fillRect(-8,-8,16,16);ctx.shadowBlur=0;
@@ -326,21 +354,26 @@ function drawHunter(h,index,afterDark=false){
   ctx.restore();
 }
 function drawPlayer(){
-  const p=mission.player;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.facing);ctx.shadowColor=mission.invulnerable>0?'#ff695d':'#91f2ce';ctx.shadowBlur=16;ctx.fillStyle=mission.hidden?'#45645e':'#91f2ce';ctx.fillRect(-8,-8,16,16);ctx.fillStyle='#071018';ctx.fillRect(1,-5,5,10);if(mission.flashlight&&!mission.hidden){ctx.fillStyle='#efffd8';ctx.fillRect(8,-3,7,6);}ctx.restore();
-  if(mission.hidden){ctx.strokeStyle='#91f2ce';ctx.setLineDash([3,4]);ctx.beginPath();ctx.arc(p.x,p.y,21,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}
+  const p=mission.player;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.facing);ctx.shadowColor=mission.invulnerable>0?'#ff695d':mission.grounding?'#efc66d':'#91f2ce';ctx.shadowBlur=18;ctx.fillStyle=mission.hidden?'#45645e':'#d5eee6';ctx.beginPath();ctx.arc(-2,0,9,0,Math.PI*2);ctx.fill();ctx.fillStyle='#14332f';ctx.beginPath();ctx.arc(-4,0,5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#91f2ce';ctx.fillRect(3,-5,10,10);ctx.fillStyle='#071018';ctx.fillRect(5,-3,5,6);if(mission.flashlight&&!mission.hidden){ctx.fillStyle='#fff2b8';ctx.fillRect(12,-3,8,6);}ctx.restore();
+  if(mission.hidden||mission.grounding){ctx.strokeStyle=mission.grounding?'#efc66d':'#91f2ce';ctx.setLineDash([3,4]);ctx.beginPath();ctx.arc(p.x,p.y,21+Math.sin(performance.now()/100)*2,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}
 }
 function drawDarkness(){
-  const s=shadowCtx,p=mission.player;s.clearRect(0,0,MAP.w,MAP.h);let alpha=.86+Math.min(.1,mission.blackout*.16);if(mission.flicker>0&&Math.random()<.38)alpha=.96;s.fillStyle=`rgba(1,3,8,${alpha})`;s.fillRect(0,0,MAP.w,MAP.h);s.save();s.globalCompositeOperation='destination-out';
-  const halo=s.createRadialGradient(p.x,p.y,16,p.x,p.y,78);halo.addColorStop(0,'rgba(0,0,0,1)');halo.addColorStop(.55,'rgba(0,0,0,.82)');halo.addColorStop(1,'rgba(0,0,0,0)');s.fillStyle=halo;s.beginPath();s.arc(p.x,p.y,80,0,Math.PI*2);s.fill();
+  const s=shadowCtx,p=mission.player;s.clearRect(0,0,MAP.w,MAP.h);let alpha=[0,.67,.75,.8][mission.level]+Math.min(.1,mission.blackout*.14);if(mission.flicker>0&&Math.random()<.34)alpha=.94;s.fillStyle=`rgba(1,3,8,${alpha})`;s.fillRect(0,0,MAP.w,MAP.h);s.save();s.globalCompositeOperation='destination-out';
+  const halo=s.createRadialGradient(p.x,p.y,12,p.x,p.y,122);halo.addColorStop(0,'rgba(0,0,0,1)');halo.addColorStop(.5,'rgba(0,0,0,.9)');halo.addColorStop(1,'rgba(0,0,0,0)');s.fillStyle=halo;s.beginPath();s.arc(p.x,p.y,124,0,Math.PI*2);s.fill();
+  const lamps=[[120,175],[390,265],[660,165],[905,270],[650,535],[900,560]].slice(0,mission.level===1?6:mission.level===2?3:2);lamps.forEach(([x,y],i)=>{if(mission.flicker>0&&i%2===0)return;s.globalAlpha=mission.level===1?.24:mission.level===2?.14:.09;s.fillStyle='#000';s.beginPath();s.arc(x,y,78,0,Math.PI*2);s.fill();});
   if(mission.flashlight&&mission.battery>0&&!mission.hidden){const a=p.facing,len=260,width=.42;s.globalAlpha=.82;s.fillStyle='#000';s.beginPath();s.moveTo(p.x,p.y);s.arc(p.x,p.y,len,a-width,a+width);s.closePath();s.fill();s.globalAlpha=1;}
   mission.rings.forEach(r=>{s.globalAlpha=Math.max(0,1-r.r/r.max);s.strokeStyle='#000';s.lineWidth=r.flare?64:34;s.beginPath();s.arc(r.x,r.y,r.r,0,Math.PI*2);s.stroke();});
-  mission.relays.filter(r=>r.online).forEach(r=>{s.globalAlpha=.65;s.fillStyle='#000';s.beginPath();s.arc(r.x,r.y,48,0,Math.PI*2);s.fill();});s.restore();ctx.drawImage(shadowCanvas,0,0);
+  mission.relays.filter(r=>r.online).forEach(r=>{s.globalAlpha=.72;s.fillStyle='#000';s.beginPath();s.arc(r.x,r.y,62,0,Math.PI*2);s.fill();});if(mission.level===3){s.globalAlpha=.18+.12*Math.sin(performance.now()/260);s.fillStyle='#000';s.fillRect(0,0,MAP.w,MAP.h);}s.restore();ctx.drawImage(shadowCanvas,0,0);
 }
+function drawProp(p){ctx.save();ctx.translate(p.x+p.w/2,p.y+p.h/2);ctx.rotate(p.r||0);const x=-p.w/2,y=-p.h/2;if(p.type==='bed'||p.type==='gurney'){rect(x,y,p.w,p.h,'#101b20','#2d3e40');rect(x+5,y+5,p.w-10,p.h-10,p.type==='bed'?'#273436':'#1b292d');rect(x+8,y+7,24,p.h-14,'#58605a');rect(x+8,y+p.h,5,7,'#2f4242');rect(x+p.w-13,y+p.h,5,7,'#2f4242');}else if(p.type==='desk'){rect(x,y,p.w,p.h,'#17262a','#34484a');rect(x+8,y+8,p.w-16,3,'#51615f');}else if(p.type==='cabinet'){rect(x,y,p.w,p.h,'#122226','#385052');rect(x+p.w/2,y,1,p.h,'#385052');rect(x+p.w/2-8,y+p.h/2,4,2,'#74847d');rect(x+p.w/2+4,y+p.h/2,4,2,'#74847d');}else{ctx.fillStyle='#19282c';ctx.strokeStyle='#35484a';ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,p.w/2,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(-7,9);ctx.lineTo(-11,18);ctx.moveTo(7,9);ctx.lineTo(11,18);ctx.stroke();}ctx.restore();}
+function drawObjectiveCompass(){const target=mission.stage<3?mission.relays[mission.stage]:{x:965,y:605},p=mission.player,a=Math.atan2(target.y-p.y,target.x-p.x),d=Math.round(distance(p,target));ctx.save();ctx.translate(p.x,p.y);ctx.rotate(a);ctx.globalAlpha=.8;ctx.fillStyle=mission.stage<3?'#efc66d':'#91f2ce';ctx.beginPath();ctx.moveTo(31,0);ctx.lineTo(21,-6);ctx.lineTo(21,6);ctx.closePath();ctx.fill();ctx.restore();text(`${d}m`,p.x,p.y+34,7,'#93a49f','IBM Plex Mono','center');}
 function drawFacility(){
   const shake=mission.scare>0?mission.scare*7:0;ctx.save();ctx.translate(MAP.x+(Math.random()-.5)*shake,MAP.y+(Math.random()-.5)*shake);ctx.beginPath();ctx.rect(0,0,MAP.w,MAP.h);ctx.clip();
-  rect(0,0,MAP.w,MAP.h,'#071017','#38544e');ctx.strokeStyle='#0e2428';ctx.lineWidth=1;for(let x=20;x<MAP.w;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,MAP.h);ctx.stroke();}for(let y=20;y<MAP.h;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(MAP.w,y);ctx.stroke();}
-  text('MORGUE',55,665,9,'#203b3d');text('ARCHIVE',325,48,9,'#203b3d');text('WARD C',830,340,9,'#203b3d');text('OBSERVATION',585,665,9,'#203b3d');
-  hidingSpots.forEach((s,i)=>{rect(s.x,s.y,s.w,s.h,'#11282d','#355552');for(let q=12;q<s.w;q+=24)rect(s.x+q,s.y+9,2,s.h-18,'#29423f');text(`LOCKER ${i+1}`,s.x+8,s.y+s.h-8,7,'#54736d');});
+  const floor=['#071017','#090f13','#100b10'][mission.level-1];rect(0,0,MAP.w,MAP.h,floor,'#38544e');ctx.strokeStyle=mission.level===3?'#27151b':'#10282c';ctx.lineWidth=1;for(let x=0;x<MAP.w;x+=40){for(let y=0;y<MAP.h;y+=40){if((x/40+y/40)%2===0)rect(x,y,40,40,mission.level===3?'#130d12':'#09151a');ctx.strokeRect(x+.5,y+.5,39,39);}}
+  floorMarks.forEach(m=>{ctx.fillStyle=mission.level===3?`rgba(95,18,28,${m.a*2.2})`:`rgba(98,126,116,${m.a})`;ctx.beginPath();ctx.arc(m.x,m.y,m.r,0,Math.PI*2);ctx.fill();});
+  text('MORGUE / B1',55,665,9,'#294448');text('ARCHIVE / A2',325,48,9,'#294448');text('WARD C / ISOLATION',830,340,9,'#294448');text('OBSERVATION / EXIT',585,665,9,'#294448');
+  roomProps.forEach(drawProp);
+  hidingSpots.forEach((s,i)=>{const near=nearestLocker()&&Math.abs((nearestLocker().cx)-(s.x+s.w/2))<2;rect(s.x,s.y,s.w,s.h,near?'#183638':'#10262b',near?'#6a9088':'#355552');for(let q=12;q<s.w;q+=24)rect(s.x+q,s.y+9,2,s.h-18,'#29423f');text(`LOCKER ${String(i+1).padStart(2,'0')}`,s.x+8,s.y+s.h-8,7,'#54736d');});
   mission.relays.forEach(drawRelay);
   const exit={x:965,y:605},open=mission.stage===3;ctx.save();ctx.translate(exit.x,exit.y);ctx.shadowColor=open?'#91f2ce':'#ff695d';ctx.shadowBlur=open?24:8;ctx.strokeStyle=open?'#91f2ce':'#713c42';ctx.lineWidth=3;ctx.strokeRect(-22,-30,44,60);ctx.fillStyle=open?'#173d35':'#25151a';ctx.fillRect(-17,-25,34,50);ctx.shadowBlur=0;text(open?'EXTRACT':'NO POWER',0,46,7,open?'#91f2ce':'#8c555a','IBM Plex Mono','center');ctx.restore();
   walls.forEach(w=>{rect(w.x,w.y,w.w,w.h,'#172930','#33514f');if(w.w>w.h)rect(w.x,w.y+3,w.w,3,'#203a3e');else rect(w.x+3,w.y,3,w.h,'#203a3e');});
@@ -348,21 +381,32 @@ function drawFacility(){
   if(mission.apparition){const a=mission.apparition;ctx.globalAlpha=.55;ctx.fillStyle='#030207';ctx.beginPath();ctx.arc(a.x,a.y-17,12,0,Math.PI*2);ctx.fill();ctx.fillRect(a.x-8,a.y-5,16,38);ctx.fillStyle='#ff5960';ctx.fillRect(a.x-7,a.y-19,4,2);ctx.fillRect(a.x+3,a.y-19,4,2);ctx.globalAlpha=1;}
   mission.hunters.forEach((h,i)=>drawHunter(h,i));drawDarkness();mission.hunters.forEach((h,i)=>drawHunter(h,i,true));
   mission.rings.forEach(r=>{ctx.strokeStyle=r.flare?'#efc66d':'#91f2ce';ctx.globalAlpha=Math.max(.08,.72*(1-r.r/r.max));ctx.lineWidth=r.flare?3:2;ctx.beginPath();ctx.arc(r.x,r.y,r.r,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;});drawPlayer();
+  drawObjectiveCompass();
   const relay=nearbyRelay(),locker=nearestLocker();let prompt='';if(mission.hidden)prompt='[E] LEAVE HIDING PLACE';else if(relay)prompt=`HOLD [E] LINK ${relay.name}`;else if(locker)prompt='[E] HIDE IN LOCKER';else if(mission.stage===3)prompt='REACH THE GREEN EXTRACTION DOOR';if(prompt){rect(250,650,540,32,'rgba(4,10,14,.86)','#3f5d58');text(prompt,520,671,9,'#e8f4ef','IBM Plex Mono','center');}
   ctx.restore();
 }
 function drawJumpscare(){
-  if(mission.scare<=0)return;const a=Math.min(.92,.25+mission.scare*.58);rect(MAP.x,MAP.y,MAP.w,MAP.h,`rgba(90,0,8,${a})`);ctx.save();ctx.translate(MAP.x+MAP.w/2,MAP.y+MAP.h/2);const pulse=1+Math.sin(performance.now()/28)*.035;ctx.scale(pulse,pulse);ctx.fillStyle='#050307';ctx.shadowColor='#ff384b';ctx.shadowBlur=45;
-  if(mission.scareType==='hands'){for(const side of [-1,1]){ctx.save();ctx.scale(side,1);ctx.fillRect(120,-190,75,350);for(let i=0;i<5;i++){ctx.save();ctx.translate(130+i*14,-175);ctx.rotate((i-2)*.09);ctx.fillRect(-5,-105,11,115);ctx.restore();}ctx.restore();}text('DON\'T LET IT COUNT THEM',0,205,30,'#fff1e8','Barlow Condensed','center');}
-  else{ctx.beginPath();ctx.ellipse(0,-20,138,175,0,0,Math.PI*2);ctx.fill();ctx.shadowBlur=24;ctx.fillStyle='#ff5360';ctx.fillRect(-78,-72,42,13);ctx.fillRect(36,-72,42,13);ctx.fillStyle='#f7ddd7';for(let i=-4;i<=4;i++)ctx.fillRect(i*15-5,55+Math.abs(i)*2,10,30);text(mission.scareType==='hit'?'FOUND YOU':'I HEARD THAT BEAT',0,225,34,'#fff1e8','Barlow Condensed','center');}
-  ctx.restore();for(let y=MAP.y;y<MAP.y+MAP.h;y+=9)rect(MAP.x,y,MAP.w,2,'rgba(255,255,255,.035)');
+  if(mission.scare<=0)return;const a=Math.min(.94,.3+mission.scare*.6),cx=MAP.x+MAP.w/2,cy=MAP.y+MAP.h/2;rect(MAP.x,MAP.y,MAP.w,MAP.h,`rgba(38,0,7,${a})`);ctx.save();ctx.beginPath();ctx.rect(MAP.x,MAP.y,MAP.w,MAP.h);ctx.clip();ctx.translate(cx+(Math.random()-.5)*18,cy+(Math.random()-.5)*13);const pulse=1.06+Math.sin(performance.now()/25)*.025+mission.scare*.08;ctx.scale(pulse,pulse);ctx.shadowColor='#e52f46';ctx.shadowBlur=55;
+  if(listenerArt.complete&&listenerArt.naturalWidth){const h=690,w=h*listenerArt.naturalWidth/listenerArt.naturalHeight;ctx.globalAlpha=Math.min(1,.7+mission.scare*.28);ctx.filter=mission.scareType==='hit'?'contrast(1.35) saturate(.75)':'contrast(1.18) saturate(.72)';ctx.drawImage(listenerArt,-w/2,-h*.49,w,h);ctx.filter='none';}
+  else{ctx.fillStyle='#050307';ctx.beginPath();ctx.ellipse(0,-20,150,210,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#ff5360';ctx.fillRect(-65,-80,30,9);ctx.fillRect(35,-80,30,9);}
+  if(mission.scareType==='hands'){ctx.fillStyle='#030307';for(const side of [-1,1]){ctx.save();ctx.scale(side,1);ctx.rotate(-.18);ctx.fillRect(165,-205,82,410);for(let i=0;i<5;i++){ctx.save();ctx.translate(178+i*16,-195);ctx.rotate((i-2)*.09);ctx.fillRect(-6,-118,12,128);ctx.restore();}ctx.restore();}}
+  ctx.restore();rect(MAP.x,MAP.y+MAP.h-104,MAP.w,104,'rgba(2,3,7,.88)');text(mission.scareType==='hit'?'IT FOUND THE SIGNAL':mission.scareType==='hands'?'DO NOT LET IT COUNT THE BEATS':'IT HEARD YOUR HEART',cx,MAP.y+MAP.h-55,28,'#fff0ed','Barlow Condensed','center');for(let i=0;i<11;i++){const y=MAP.y+Math.random()*MAP.h;rect(MAP.x,y,MAP.w,1+Math.random()*3,`rgba(255,255,255,${.025+Math.random()*.05})`);}
+}
+function drawScreenEffects(){
+  ctx.save();const vg=ctx.createRadialGradient(MAP.x+MAP.w/2,MAP.y+MAP.h/2,230,MAP.x+MAP.w/2,MAP.y+MAP.h/2,690);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(.72,'rgba(0,0,0,.08)');vg.addColorStop(1,'rgba(0,0,0,.66)');ctx.fillStyle=vg;ctx.fillRect(MAP.x,MAP.y,MAP.w,MAP.h);
+  ctx.globalAlpha=.055;ctx.fillStyle='#d7fff0';for(let i=0;i<95;i++){const n=(i*97+Math.floor(performance.now()/90)*43)%997,m=(i*53+Math.floor(performance.now()/110)*31)%661;ctx.fillRect(MAP.x+n,MAP.y+m,1,1);}ctx.globalAlpha=1;
+  if(mission.beatFlash>0){ctx.strokeStyle=`rgba(145,242,206,${mission.beatFlash*1.8})`;ctx.lineWidth=6;ctx.strokeRect(MAP.x+4,MAP.y+4,MAP.w-8,MAP.h-8);}
+  const chasing=mission.hunters.some((h,i)=>(i===0||mission.stage>=1)&&h.mode==='hunt');if(chasing){rect(MAP.x+350,MAP.y+17,340,28,'rgba(90,7,18,.82)','#b52f43');text('SIGNAL PURSUIT / BREAK LINE OF SIGHT',MAP.x+520,MAP.y+36,9,'#ffe6df','IBM Plex Mono','center');}
+  if(mission.audioCueTime>0){rect(MAP.x+16,MAP.y+MAP.h-45,340,27,'rgba(3,8,12,.82)','#263e3d');text(`AUDIO / ${mission.audioCue}`,MAP.x+29,MAP.y+MAP.h-27,8,'#a4b9b4');}
+  if(mission.levelTitle>0&&mission.mode==='play'&&!mission.interlude){const alpha=Math.min(1,mission.levelTitle,.7*(3.4-mission.levelTitle));rect(MAP.x,MAP.y,MAP.w,MAP.h,`rgba(1,4,8,${.48*alpha})`);ctx.globalAlpha=alpha;text(`LEVEL ${levels[mission.level-1].roman}`,MAP.x+MAP.w/2,MAP.y+290,10,levels[mission.level-1].accent,'IBM Plex Mono','center');text(levels[mission.level-1].name,MAP.x+MAP.w/2,MAP.y+345,45,'#edf5f1','Barlow Condensed','center');text(levels[mission.level-1].brief,MAP.x+MAP.w/2,MAP.y+380,11,'#9bb0ab','IBM Plex Mono','center');ctx.globalAlpha=1;}
+  ctx.restore();
 }
 function drawInterlude(){const q=mission.interlude,phase=q.breathPhase||0,grow=phase<4?phase/4:1-(phase-4)/6,ease=.5-.5*Math.cos(Math.PI*Math.max(0,Math.min(1,grow))),radius=54+38*ease,fb=state.feedback||{},entry=q.startBpm?Math.round(q.startBpm):'--',now=fb.bpm?Math.round(fb.bpm):'--',next=levels[q.nextLevel-1];rect(235,145,970,520,'rgba(3,8,13,.97)','#3d665e');text(`LEVEL ${levels[mission.level-1].roman} COMPLETE`,720,195,10,'#91f2ce','IBM Plex Mono','center');text(`NEXT / ${next.name}`,720,250,39,'#e4efeb','Barlow Condensed','center');text('RECOVERY WINDOW / 6 BREATHS PER MINUTE',720,286,9,'#718984','IBM Plex Mono','center');ctx.save();ctx.translate(500,430);ctx.strokeStyle='#91f2ce';ctx.shadowColor='#91f2ce';ctx.shadowBlur=22;ctx.lineWidth=4;ctx.beginPath();ctx.arc(0,0,radius,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;text(q.segment||'INHALE',0,5,13,'#dceae6','IBM Plex Mono','center');ctx.restore();text(`${Math.ceil(q.remaining)} s`,500,555,11,'#718984','IBM Plex Mono','center');text('LIVE RESPONSE',835,376,9,'#718984');text(String(now),835,445,62,'#91f2ce','Barlow Condensed');text('BPM NOW',950,437,10,'#91aaa7');text(`ENTRY ${entry} BPM`,835,477,9,'#efc66d');text('Slow pacing can increase vagal rhythm and HRV.',835,525,9,'#809690');text('Your immediate BPM response may differ.',835,546,9,'#809690');}
 function drawBriefing(){rect(245,125,950,570,'rgba(4,8,13,.96)','#4c6962');text('SAINT ORISON / INCIDENT 06',285,170,10,'#efc66d');text('THE BUILDING CAN HEAR YOU.',285,230,46,'#e9f3ef','Barlow Condensed');text('Your measured heartbeat travels through the ward as a signal wave.',285,272,13,'#91aaa7');text('The wave reveals the stalker for a moment. It also tells the stalker where to search.',285,296,13,'#91aaa7');levels.forEach((level,i)=>{const x=285+i*285;rect(x,345,255,132,'#0b1820','#29443f');text(`LEVEL ${level.roman}`,x+18,375,10,'#efc66d');text(level.name.replace('THE ',''),x+18,409,18,'#dceae6','Barlow Condensed');text(level.brief,x+18,441,8,'#829895');});text('WASD MOVE   /   SHIFT SPRINT   /   F FLASHLIGHT   /   SPACE SIGNAL FLARE',720,530,9,'#78908c','IBM Plex Mono','center');rect(520,590,400,60,'#91f2ce','#91f2ce');text('ENTER SAINT ORISON  >>',720,627,13,'#071a17','IBM Plex Mono','center');text('PRESS E OR ENTER',720,674,8,'#607a75','IBM Plex Mono','center');}
 function drawEnd(){const won=mission.success;rect(315,120,810,590,'rgba(4,8,13,.97)',won?'#91f2ce':'#ff5960');text(won?'EXTRACTION COMPLETE':'SIGNAL CONSUMED',720,208,48,won?'#91f2ce':'#ff5960','Barlow Condensed','center');text(won?'You restored the ward and escaped with the recording.':'The stalker learned the rhythm before you found the exit.',720,245,11,'#99aaa6','IBM Plex Mono','center');const peak=Math.round(Math.max(...mission.frames.map(f=>f.bpm||0),0));[['SCORE',mission.score],['TIME',fmt(mission.t)],['PEAK',peak?`${peak} BPM`:'--'],['DETECTIONS',mission.detections]].forEach((s,i)=>{const x=390+i*170;text(s[0],x,345,8,'#718984','IBM Plex Mono','center');text(String(s[1]),x,385,25,'#e3eeea','Barlow Condensed','center');});text('RELAYS',410,470,9,'#718984');for(let i=0;i<3;i++)rect(410+i*58,490,42,8,i<mission.stage?'#91f2ce':'#26373a');text(`INTEGRITY  ${mission.health}/3`,1030,498,10,mission.health===0?'#ff5960':'#e3eeea','IBM Plex Mono','right');rect(425,590,280,60,'#91f2ce','#91f2ce');text('RUN AGAIN',565,627,12,'#071a17','IBM Plex Mono','center');rect(735,590,280,60,'#111e26','#45635c');text('EXPORT RUN JSON',875,627,11,'#b8cbc5','IBM Plex Mono','center');}
 function drawGame(){
   const level=levels[mission.level-1];background();text(`LEVEL ${level.roman} / ${level.name}`,22,35,11,'#91f2ce');text(`SAINT ORISON  /  ${fmt(mission.t)}`,400,35,9,'#607975');text(`RELAYS ${mission.stage}/3`,1048,35,10,mission.stage===3?'#91f2ce':'#efc66d','IBM Plex Mono','right');
-  drawFacility();drawMonitor(1082,70,336,700);drawJumpscare();text(mission.message||'',32,800,9,'#718984');
+  drawFacility();drawScreenEffects();drawMonitor(1082,70,336,700);drawJumpscare();text(mission.message||'',32,800,9,'#8aa09b');
   if(mission.mode==='briefing')drawBriefing();else if(mission.ended)drawEnd();else if(paused){rect(22,70,W-44,700,'rgba(0,0,0,.82)');text('NIGHT PAUSED',W/2,350,52,'#91f2ce','Barlow Condensed','center');text('Press ESC or PAUSE to return to Saint Orison.',W/2,390,11,'#b7c8c2','IBM Plex Mono','center');}else if(mission.interlude&&mission.interlude.delay<=0)drawInterlude();
 }
 function drawMonitor(x,y,w,h){
@@ -371,8 +415,9 @@ function drawMonitor(x,y,w,h){
   text(fb.valid?'PULSE LINKED':'NEUTRAL / SIGNAL LOST',x+18,y+126,8,fb.valid?'#91f2ce':'#efc66d');rect(x+18,y+141,w-36,7,'#1c292e');rect(x+18,y+141,(w-36)*meter,7,'#ff5960');text('DIRECTOR PRESSURE',x+18,y+164,8,'#718984');text(`${mission.radius.toFixed(2)}x HEARING`,x+w-18,y+164,8,'#efc66d','IBM Plex Mono','right');
   chart(x+18,y+180,w-36,125,graphForPulse(rppgHistory),'#91f2ce','rPPG / LIVE PULSE',40,140);chart(x+18,y+320,w-36,94,graphForPulse(bcgHistory),'#efc66d','rBCG / GUIDED MOTION',40,140);
   text(`LEVEL ${levels[mission.level-1].roman} / MISSION STATE`,x+18,y+444,8,'#718984');text(mission.stage===3?'REACH EXTRACTION':`RESTORE RELAY  ${mission.stage+1}/3`,x+18,y+468,13,mission.stage===3?'#91f2ce':'#dceae6','Barlow Condensed');
-  [['INTEGRITY',`${mission.health}/3`,mission.health===1?'#ff5960':'#dceae6'],['FLASHLIGHT',`${Math.round(mission.battery)}%`,mission.battery<20?'#ff5960':'#dceae6'],['FLARES',String(mission.flares),'#efc66d']].forEach((s,i)=>{const yy=y+500+i*31;text(s[0],x+18,yy,8,'#718984');text(s[1],x+w-18,yy,9,s[2],'IBM Plex Mono','right');});
-  rect(x+18,y+605,w-36,58,'#081118','#263e3d');text(soundOn&&fb.bpm?`AUDIO SYNC / ${Math.round(fb.bpm)} BPM`:'AUDIO MUTED',x+30,y+627,8,soundOn?'#91f2ce':'#718984');text('EACH BEAT REVEALS IT',x+30,y+645,8,'#899d98');text('AND REVEALS YOU',x+w-30,y+645,8,'#ff5960','IBM Plex Mono','right');
+  const stat=(label,value,fraction,yy,color='#91f2ce')=>{text(label,x+18,yy,7,'#718984');text(value,x+w-18,yy,8,color,'IBM Plex Mono','right');rect(x+96,yy-7,w-150,4,'#17262b');rect(x+96,yy-7,(w-150)*Math.max(0,Math.min(1,fraction)),4,color);};
+  stat('INTEGRITY',`${mission.health}/3`,mission.health/3,y+496,mission.health===1?'#ff5960':'#91f2ce');stat('BATTERY',`${Math.round(mission.battery)}%`,mission.battery/100,y+519,mission.battery<20?'#ff5960':'#efc66d');stat('STAMINA',`${Math.round(mission.stamina)}%`,mission.stamina/100,y+542,'#91f2ce');stat('GROUND',`${Math.round(mission.groundCharge)}%`,mission.groundCharge/100,y+565,mission.grounding?'#efc66d':'#829590');text(`SIGNAL FLARES  ${mission.flares}`,x+18,y+590,8,'#efc66d');
+  rect(x+18,y+608,w-36,55,'#081118','#263e3d');text(soundOn&&fb.bpm?`AUDIO SYNC / ${Math.round(fb.bpm)} BPM`:'AUDIO MUTED',x+30,y+629,8,soundOn?'#91f2ce':'#718984');text(mission.grounding?'PULSE FIELD MASKED':'EACH BEAT REVEALS IT',x+30,y+647,8,mission.grounding?'#efc66d':'#899d98');text('AND REVEALS YOU',x+w-30,y+647,8,'#ff5960','IBM Plex Mono','right');
 }
 function fmt(v){return`${String(Math.floor(v/60)).padStart(2,'0')}:${String(Math.floor(v%60)).padStart(2,'0')}`}
 function draw(){if(phase==='game')drawGame();else if(phase==='scan')drawScan();else{background();text('TRACE / NIGHT SIGNAL',42,65,13,'#91f2ce');text('A camera sees the pulse in your face.',42,155,50,'#e4eeeb','Barlow Condensed');text('Then the pulse becomes part of the horror.',42,210,50,'#91aaa7','Barlow Condensed');text('Start with a live camera to see three rPPG methods and experimental camera BCG in one monitor.',42,270,13,'#8d9eaa');panel(42,345,570,260,'#0b151e');text('THE FLOW',67,380,10,'#91f2ce');[['01','CAMERA ACQUISITION','colour pulse + facial motion'],['02','SIGNAL CHECK','live BPM and graphs'],['03','NIGHT RUN','your measured response changes the danger']].forEach((a,i)=>{const yy=430+i*52;text(a[0],67,yy,11,'#efc66d');text(a[1],115,yy,11,'#dceae6');text(a[2],115,yy+17,9,'#7e9692');});text('Use simulation if a camera is unavailable.',42,658,10,'#687f7d');}}
