@@ -888,3 +888,18 @@ table.glance tr.empty td { color: var(--ink-3); }
   40% { transform: translate(2px, 1px); } 50% { transform: none; } 60% { transform: translate(-2px, -1px); } 70% { transform: translate(2px, 1px); } 80% { transform: translate(-1px, 0); }
 }
 @media (prefers-reduced-motion: reduce) { .live-readout.buzzing .ring-wrap { animation: none; } }
+
+/* Appendix: references in the right column instead of a drawing. */
+.slide.appendix { grid-template-columns: minmax(0, .62fr) minmax(0, 1.38fr); }
+.credits { margin: .4cqw 0 0; display: grid; gap: 1cqw; }
+.credits dt { font-family: var(--f-mono); font-size: .8cqw; letter-spacing: .16em; color: var(--soft); }
+.credits dd { margin: .2cqw 0 0; font-family: "Caveat", var(--f-sans); font-weight: 700; font-size: 2.2cqw; line-height: 1.05; color: var(--ink-d); }
+.refs { align-self: center; font-size: .9cqw; line-height: 1.4; color: #333; columns: 2; column-gap: 2cqw; }
+.refs h3 { margin: 0 0 .3cqw; font-family: var(--f-mono); font-size: .85cqw; font-weight: 500; letter-spacing: .16em; color: var(--orange); break-after: avoid; }
+.refs ol { margin: 0 0 .9cqw; padding-left: 1.4cqw; }
+.refs li { margin-bottom: .35cqw; break-inside: avoid; }
+.refs p { margin: 0; }
+@media (max-width: 900px) {
+  .slide.appendix { grid-template-columns: 1fr; }
+  .refs { columns: 1; font-size: 12px; } .refs h3 { font-size: 11px; } .credits dd { font-size: 24px; } .credits dt { font-size: 11px; }
+}
