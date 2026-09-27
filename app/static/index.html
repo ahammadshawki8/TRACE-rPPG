@@ -3,251 +3,155 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TRACE Research Console</title>
+<title>TRACE Pulse</title>
 <meta name="description" content="Contactless heart rate from face video with quality-weighted fusion of Green, CHROM and POS.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23101116'/%3E%3Cpath d='M4 17h6l3-8 5 15 3-9 2 2h5' fill='none' stroke='%23B8FF3D' stroke-width='2.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Hind+Siliguri:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/static/styles.css?v=3">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/static/styles.css?v=4">
 </head>
 <body>
 
-<!-- Icon sprite: Lucide outlines (ISC licence), inlined so the console works offline. -->
+<!-- Icon sprite: Lucide outlines (ISC licence), inlined so the app works offline. -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
-    <symbol id="i-overview" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
     <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/></symbol>
     <symbol id="i-merge" viewBox="0 0 24 24"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></symbol>
-    <symbol id="i-compress" viewBox="0 0 24 24"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="m14 10 7-7"/><path d="m3 21 7-7"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
     <symbol id="i-waves" viewBox="0 0 24 24"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></symbol>
-    <symbol id="i-flask" viewBox="0 0 24 24"><path d="M10 2v7.53a2 2 0 0 1-.21.9L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.07-10.12a2 2 0 0 1-.21-.9V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></symbol>
     <symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></symbol>
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
-    <symbol id="i-lang" viewBox="0 0 24 24"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></symbol>
     <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
     <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></symbol>
     <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
-    <symbol id="i-face" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/></symbol>
-    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
-    <symbol id="i-move" viewBox="0 0 24 24"><path d="M12 2v20"/><path d="m15 19-3 3-3-3"/><path d="m19 9 3 3-3 3"/><path d="M2 12h20"/><path d="m5 9-3 3 3 3"/><path d="m9 5 3-3 3 3"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
     <symbol id="i-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
-    <symbol id="i-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
     <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
     <symbol id="i-restart" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
-    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
     <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
     <symbol id="i-timer" viewBox="0 0 24 24"><path d="M10 2h4"/><path d="M12 14l3-3"/><circle cx="12" cy="14" r="8"/></symbol>
-    <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></symbol>
     <symbol id="i-play" viewBox="0 0 24 24"><path d="m6 3 14 9-14 9V3z"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></symbol>
   </defs>
 </svg>
 
 <a class="skip" href="#views">Skip to content</a>
 
-<aside class="rail" id="rail" aria-label="Console navigation">
+<aside class="rail" id="rail" aria-label="Navigation">
   <div class="brand">
     <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M3 17h6l3-8 5 15 3-9 2 2h7"/></svg>
-    <span class="brand-text"><b>TRACE</b><small>research console</small></span>
   </div>
   <nav class="nav" id="nav">
     <span class="nav-indicator" id="nav-indicator" aria-hidden="true"></span>
-    <button type="button" data-view="overview"><svg><use href="#i-overview"/></svg><span data-i18n="nav.overview">Overview</span></button>
-    <button type="button" data-view="live"><svg><use href="#i-pulse"/></svg><span data-i18n="nav.live">Live Pulse</span></button>
-    <button type="button" data-view="methods"><svg><use href="#i-merge"/></svg><span data-i18n="nav.methods">Methods</span></button>
-    <button type="button" data-view="compression"><svg><use href="#i-compress"/></svg><span data-i18n="nav.compression">Compression</span></button>
-    <button type="button" data-view="hrv"><svg><use href="#i-waves"/></svg><span data-i18n="nav.hrv">HRV</span></button>
-    <button type="button" data-view="experiments"><svg><use href="#i-flask"/></svg><span data-i18n="nav.experiments">Experiments</span></button>
-    <button type="button" data-view="results"><svg><use href="#i-clipboard"/></svg><span data-i18n="nav.results">Results</span></button>
+    <button type="button" data-view="measure" title="Measure"><svg><use href="#i-pulse"/></svg><span>Measure</span></button>
+    <button type="button" data-view="methods" title="Methods"><svg><use href="#i-merge"/></svg><span>Methods</span></button>
+    <button type="button" data-view="signal" title="How it works"><svg><use href="#i-book"/></svg><span>How it works</span></button>
+    <button type="button" data-view="hrv" title="Heart rhythm"><svg><use href="#i-waves"/></svg><span>Heart rhythm</span></button>
+    <button type="button" data-view="summary" title="Summary"><svg><use href="#i-clipboard"/></svg><span>Summary</span></button>
   </nav>
   <div class="rail-foot">
-    <button type="button" id="expand" aria-label="Expand navigation"><svg><use href="#i-panel"/></svg><span data-i18n="nav.collapse">Collapse</span></button>
-    <button type="button" id="lang" aria-label="Switch language"><svg><use href="#i-lang"/></svg><span id="lang-label">বাংলা</span></button>
-    <button type="button" id="theme" aria-label="Switch light or dark theme"><svg><use href="#i-moon"/></svg><span data-i18n="nav.theme">Theme</span></button>
-    <button type="button" id="about-btn" aria-label="About and privacy" aria-expanded="false" aria-controls="about"><svg><use href="#i-shield"/></svg><span data-i18n="nav.about">Privacy</span></button>
+    <button type="button" id="theme" title="Theme" aria-label="Switch light or dark theme"><svg><use href="#i-moon"/></svg><span>Theme</span></button>
+    <button type="button" id="about-btn" title="Privacy" aria-label="Privacy" aria-expanded="false" aria-controls="about"><svg><use href="#i-shield"/></svg><span>Privacy</span></button>
   </div>
 </aside>
 
 <div class="about" id="about" role="dialog" aria-labelledby="about-h" hidden>
-  <h2 id="about-h" data-i18n="about.title">About this console</h2>
+  <h2 id="about-h">Privacy and scope</h2>
   <ul>
-    <li><svg><use href="#i-shield"/></svg><span data-i18n="about.p1">Video is processed on this computer. The page receives only numbers and a small preview.</span></li>
-    <li><svg><use href="#i-flask"/></svg><span data-i18n="about.p2">No trained model is in the estimation path. Every number comes from a convolution or a Fourier transform.</span></li>
-    <li><svg><use href="#i-alert"/></svg><span data-i18n="about.p3">A research and wellness tool, not a medical device. It does not diagnose anything.</span></li>
+    <li><svg><use href="#i-shield"/></svg><span>Video is processed on this computer. The page receives only numbers and a small preview.</span></li>
+    <li><svg><use href="#i-book"/></svg><span>No trained model is used. Every number comes from a convolution or a Fourier transform.</span></li>
+    <li><svg><use href="#i-alert"/></svg><span>An academic project, not a medical device. It does not diagnose anything.</span></li>
   </ul>
-  <button class="btn ghost" type="button" id="about-close" data-i18n="about.close">Close</button>
+  <button class="btn ghost" type="button" id="about-close">Close</button>
 </div>
 
 <div class="shell">
   <header class="context">
     <div class="ctx-title">
-      <span class="ctx-kicker mono">TRACE / <span id="ctx-view">OVERVIEW</span></span>
-      <h1 id="view-title">Research session</h1>
+      <span class="ctx-kicker mono">TRACE / <span id="ctx-view">MEASURE</span></span>
+      <h1 id="view-title">Measure</h1>
     </div>
-    <ol class="stages" id="stages" aria-label="Session progress"></ol>
     <div class="ctx-pills">
       <span class="pill" id="pill-live"><i class="dot"></i><span>IDLE</span></span>
       <span class="pill" id="pill-source" hidden></span>
       <span class="pill mono muted" id="pill-timer" hidden><svg><use href="#i-timer"/></svg><span>00:00</span></span>
+      <button class="btn ghost small" type="button" id="stop" hidden><svg><use href="#i-stop"/></svg><span>Stop</span></button>
     </div>
   </header>
 
   <main id="views" tabindex="-1">
 
-    <!-- ============================================================ OVERVIEW -->
-    <section class="view" data-view="overview" aria-labelledby="view-title">
-      <div class="bento">
-        <article class="card hero span-8 row-2" id="hero">
-          <canvas class="hero-wave" id="c-hero" aria-hidden="true"></canvas>
-          <div class="hero-top">
-            <span class="label mono" data-i18n="hero.kicker">TRACE LIVE SESSION</span>
-            <span class="pill" id="hero-state">IDLE</span>
+    <!-- ============================================================ MEASURE -->
+    <section class="view" data-view="measure" aria-labelledby="view-title">
+      <div class="bento" id="measure-idle">
+        <article class="card hero span-12">
+          <div class="hero-top"><span class="label mono">NEW MEASUREMENT</span></div>
+          <h2 class="hero-h">Heart rate from the colour of a face, measured three ways and fused.</h2>
+          <div class="sources" role="radiogroup" aria-label="Video source">
+            <label class="source"><input type="radio" name="source" value="sim2" checked>
+              <span class="src-body"><svg><use href="#i-user"/></svg><b>Simulated volunteer</b><small class="mono">LIGHTER SKIN / TRUE RATE KNOWN</small></span></label>
+            <label class="source"><input type="radio" name="source" value="sim5">
+              <span class="src-body"><svg><use href="#i-user"/></svg><b>Simulated volunteer</b><small class="mono">DARKER SKIN / TRUE RATE KNOWN</small></span></label>
+            <label class="source"><input type="radio" name="source" value="webcam">
+              <span class="src-body"><svg><use href="#i-camera"/></svg><b>Webcam</b><small class="mono">YOUR FACE / NO REFERENCE</small></span></label>
           </div>
-
-          <div class="hero-idle" id="hero-idle">
-            <h2 class="hero-h" data-i18n="hero.idle">Heart rate from the colour of a face, measured three ways and fused.</h2>
-            <div class="sources" role="radiogroup" aria-label="Video source">
-              <label class="source"><input type="radio" name="source" value="sim2" checked>
-                <span class="src-body"><svg><use href="#i-user"/></svg><b data-i18n="src.sim2">Simulated volunteer</b><small class="mono">FITZPATRICK II / TRUTH KNOWN</small></span></label>
-              <label class="source"><input type="radio" name="source" value="sim5">
-                <span class="src-body"><svg><use href="#i-user"/></svg><b data-i18n="src.sim5">Simulated volunteer</b><small class="mono">FITZPATRICK V / TRUTH KNOWN</small></span></label>
-              <label class="source"><input type="radio" name="source" value="webcam">
-                <span class="src-body"><svg><use href="#i-camera"/></svg><b data-i18n="src.cam">Webcam</b><small class="mono">REAL RECORDING / NO TRUTH</small></span></label>
-            </div>
-          </div>
-
-          <div class="hero-live" id="hero-live" hidden>
-            <div class="readout">
-              <span class="big mono" id="hero-bpm">--</span>
-              <span class="unit mono">BPM</span>
-            </div>
-            <div class="hero-stats">
-              <div><span class="label mono" data-i18n="k.confidence">CONFIDENCE</span><b class="mono" id="hero-conf">--</b></div>
-              <div><span class="label mono" data-i18n="k.dominant">DOMINANT CONTRIBUTION</span><b class="mono" id="hero-dom">--</b></div>
-              <div><span class="label mono" data-i18n="k.signal">SIGNAL</span><b class="mono" id="hero-signal">--</b></div>
-              <div id="hero-truth-wrap" hidden><span class="label mono" data-i18n="k.truth">SIMULATOR TRUTH</span><b class="mono" id="hero-truth">--</b></div>
-            </div>
+          <div class="hero-foot">
+            <button class="btn primary" type="button" id="start"><svg><use href="#i-play"/></svg><span>Start measuring</span></button>
+            <span class="pill quiet"><svg><use href="#i-shield"/></svg>PROCESSED LOCALLY</span>
+            <span class="pill quiet">NOT A DIAGNOSIS</span>
           </div>
         </article>
-
-        <article class="card span-4 row-2 pipeline-card">
-          <header class="card-h"><span class="label mono" data-i18n="pipe.title">SIGNAL PATH</span><span class="pill small" id="pipe-state">LOCKED</span></header>
-          <ol class="pipeline" id="pipeline"></ol>
-        </article>
-
-        <article class="card span-8 fusion-host" data-fusion="compact"></article>
-
-        <article class="card span-4 evidence lift" data-goto="experiments" tabindex="0" role="link" aria-label="Open experiments">
-          <header class="card-h"><span class="label mono" data-i18n="ev.title">HELD-OUT EVIDENCE</span><span class="pill small sim" data-i18n="simulated">SIMULATED</span></header>
-          <div class="ev-bars" id="ev-bars"></div>
-          <p class="foot mono" id="ev-foot"></p>
-        </article>
-
-        <article class="card span-7 lift" data-goto="experiments" tabindex="0" role="link" aria-label="Open research progress">
-          <header class="card-h"><span class="label mono" data-i18n="prog.title">RESEARCH PROGRESS</span><span class="mono muted" id="prog-count"></span></header>
-          <div class="tier-strip" id="tier-strip"></div>
-        </article>
-
-        <article class="card span-5 compress-mini lift" data-goto="compression" tabindex="0" role="link" aria-label="Open compression lab">
-          <header class="card-h"><span class="label mono" data-i18n="cm.title">COMPRESSION STATE</span><span class="pill small" id="cm-cond">H.264 / LOSSLESS</span></header>
-          <div class="integrity" id="cm-integrity"></div>
-        </article>
-
-        <div class="strip span-12">
-          <span class="pill quiet"><svg><use href="#i-shield"/></svg><span data-i18n="strip.local">LOCAL PROCESSING</span></span>
-          <span class="pill quiet"><span data-i18n="strip.frames">CAMERA FRAMES NOT UPLOADED</span></span>
-          <span class="pill quiet"><span data-i18n="strip.model">NO TRAINED MODEL IN PATH</span></span>
-          <span class="pill quiet"><span data-i18n="strip.diag">NOT A DIAGNOSIS</span></span>
-        </div>
       </div>
-    </section>
 
-    <!-- ============================================================ SETUP -->
-    <section class="view" data-view="setup" aria-labelledby="view-title">
-      <div class="bento">
-        <article class="card span-7 row-2 camera-card">
-          <div class="camera"><img class="feed" alt="Camera preview with the tracked face and skin regions marked"><div class="cam-empty mono" data-i18n="cam.waiting">NO SOURCE</div>
-            <span class="cam-tag mono" data-i18n="cam.tag">FACE BOX / FOREHEAD + CHEEKS</span></div>
-        </article>
-        <article class="card span-5 row-2">
-          <header class="card-h"><span class="label mono" data-i18n="setup.checks">INSTRUMENT CHECKS</span><span class="pill small" id="ready-pill">CHECKING</span></header>
-          <ul class="checks" id="checks">
-            <li data-check="face"><svg class="ci"><use href="#i-face"/></svg><div><b class="mono">FACE TRACK</b><span class="fix" data-i18n="fix.face">Fit your whole face inside the frame.</span></div><span class="val mono" data-val="face"></span><span class="light" aria-hidden="true"></span><span class="st mono"></span></li>
-            <li data-check="light"><svg class="ci"><use href="#i-sun"/></svg><div><b class="mono">LIGHT LEVEL</b><span class="fix" data-i18n="fix.light">Face a window or lamp. Avoid bright light behind you.</span></div><span class="val mono" data-val="light"></span><span class="light" aria-hidden="true"></span><span class="st mono"></span></li>
-            <li data-check="still"><svg class="ci"><use href="#i-move"/></svg><div><b class="mono">MOTION</b><span class="fix" data-i18n="fix.still">Rest your head. Small movements are fine.</span></div><span class="val mono" data-val="still"></span><span class="light" aria-hidden="true"></span><span class="st mono"></span></li>
+      <div class="bento" id="measure-live" hidden>
+        <article class="card span-5 row-2 camera-card">
+          <div class="camera"><img class="feed" alt="Camera preview with the tracked face and skin regions marked"><div class="cam-empty mono">STARTING</div></div>
+          <ul class="chips" id="checks">
+            <li data-check="face"><i></i><span class="mono">FACE</span></li>
+            <li data-check="light"><i></i><span class="mono">LIGHT</span></li>
+            <li data-check="still"><i></i><span class="mono">STILL</span></li>
           </ul>
-          <div class="ready-bar"><i id="ready-fill"></i></div>
-          <p class="foot mono" id="ready-text">WAITING FOR SOURCE</p>
+          <p class="foot" id="check-help">Red box: tracked face. Green boxes: forehead and cheeks, where the pulse is read.</p>
         </article>
-      </div>
-    </section>
 
-    <!-- ============================================================ LIVE -->
-    <section class="view" data-view="live" aria-labelledby="view-title">
-      <div class="bento">
         <article class="card span-4 row-2 live-readout" aria-live="polite">
-          <header class="card-h"><span class="label mono" data-i18n="live.hr">HEART RATE / TRACE</span><span class="pill small" id="live-state">COLLECTING</span></header>
+          <header class="card-h"><span class="label mono">HEART RATE</span><span class="pill small" id="live-state">COLLECTING</span></header>
           <div class="ring-wrap">
             <svg class="ring" viewBox="0 0 200 200" role="img" aria-labelledby="ring-desc">
-              <desc id="ring-desc">Probability the reading is within 5 BPM, from the frozen logistic fit</desc>
+              <desc id="ring-desc">Estimated probability the reading is within 5 BPM</desc>
               <circle class="ring-bg" cx="100" cy="100" r="86"/>
               <circle class="ring-fg" id="ring-fg" cx="100" cy="100" r="86" pathLength="100" stroke-dasharray="0 100"/>
               <line class="ring-thr" x1="6" y1="100" x2="22" y2="100"/>
             </svg>
-            <div class="ring-center">
-              <span class="big mono" id="live-bpm">--</span>
-              <span class="unit mono">BPM</span>
-            </div>
+            <div class="ring-center"><span class="big mono" id="live-bpm">--</span><span class="unit mono">BPM</span></div>
           </div>
           <dl class="kv">
-            <div><dt class="mono">P(WITHIN 5 BPM)</dt><dd class="mono" id="live-p">--</dd></div>
-            <div><dt class="mono" data-i18n="k.quality">FUSED QUALITY</dt><dd class="mono" id="live-q">--</dd></div>
-            <div><dt class="mono" data-i18n="k.buffer">BUFFER</dt><dd class="mono" id="live-buf">--</dd></div>
-            <div id="live-truth-wrap" hidden><dt class="mono" data-i18n="k.truth">SIMULATOR TRUTH</dt><dd class="mono" id="live-truth">--</dd></div>
+            <div><dt class="mono">CONFIDENCE</dt><dd class="mono" id="live-p">--</dd></div>
+            <div><dt class="mono">SIGNAL QUALITY</dt><dd class="mono" id="live-q">--</dd></div>
+            <div id="live-truth-wrap" hidden><dt class="mono">TRUE RATE</dt><dd class="mono" id="live-truth">--</dd></div>
           </dl>
-          <p class="foot mono" data-i18n="live.pnote">Ring tick marks the frozen threshold (P = 0.5). Calibrated on the simulated tuning cohort.</p>
+          <p class="foot">The ring shows confidence. Below the tick at half, the reading is marked low confidence.</p>
         </article>
 
-        <article class="card span-5 camera-card">
-          <div class="camera"><img class="feed" alt="Camera preview"><div class="cam-empty mono" data-i18n="cam.waiting">NO SOURCE</div></div>
+        <article class="card span-3 lift" data-goto="methods" tabindex="0" role="link" aria-label="Open methods">
+          <header class="card-h"><span class="label mono">METHOD WEIGHTS</span><svg class="muted"><use href="#i-right"/></svg></header>
+          <div class="wbars" id="mini-weights"></div>
+          <p class="foot">TRACE trusts each method by its signal quality, window by window.</p>
         </article>
-        <article class="card span-3 telemetry">
-          <header class="card-h"><span class="label mono" data-i18n="live.telemetry">TELEMETRY</span></header>
+        <article class="card span-3">
+          <header class="card-h"><span class="label mono">SESSION</span></header>
           <dl class="kv">
-            <div><dt class="mono">FACE TRACK</dt><dd class="mono" id="tm-face">--</dd></div>
-            <div><dt class="mono">LUMINANCE</dt><dd class="mono" id="tm-lum">--</dd></div>
-            <div><dt class="mono">MOTION</dt><dd class="mono" id="tm-motion">--</dd></div>
             <div><dt class="mono">SOURCE</dt><dd class="mono" id="tm-src">--</dd></div>
-            <div><dt class="mono">SAMPLE RATE</dt><dd class="mono">30 HZ</dd></div>
-            <div><dt class="mono">WINDOW</dt><dd class="mono">20 S</dd></div>
+            <div><dt class="mono">SIGNAL BUFFER</dt><dd class="mono" id="tm-buf">--</dd></div>
+            <div><dt class="mono">HEAD MOTION</dt><dd class="mono" id="tm-motion">--</dd></div>
           </dl>
         </article>
 
-        <article class="card span-8 flow-card">
-          <ol class="flow" id="flow">
-            <li data-f="raw">RAW</li><li data-f="detrend">DETREND</li><li data-f="bandpass">BANDPASS</li><li data-f="fft">FFT</li><li data-f="trace">TRACE</li><li data-f="bpm">BPM</li>
-          </ol>
+        <article class="card span-12 chart-card">
+          <header class="card-h"><span class="label mono">PULSE WAVE / LAST 10 S</span><span class="mono muted" id="pulse-best"></span></header>
+          <canvas class="chart" id="c-pulse" style="--h:130px" aria-label="Filtered pulse waveform"></canvas>
         </article>
-
-        <article class="card span-6 chart-card">
-          <header class="card-h"><span class="label mono" data-i18n="chart.raw">RAW / GREEN CHANNEL, 10 S</span><span class="mono muted">G / mean(G) - 1</span></header>
-          <canvas class="chart" id="c-raw" style="--h:120px" aria-label="Raw green channel over the last 10 seconds"></canvas>
-        </article>
-        <article class="card span-6 chart-card">
-          <header class="card-h"><span class="label mono" data-i18n="chart.pulse">FILTERED PULSE / 0.7 TO 4 HZ</span><span class="mono muted" id="pulse-best">--</span></header>
-          <canvas class="chart" id="c-pulse" style="--h:120px" aria-label="Band-limited pulse waveform"></canvas>
-        </article>
-        <article class="card span-12 chart-card fourier">
-          <header class="card-h"><span class="label mono" data-i18n="chart.spec">FUSED SPECTRUM / FFT, ARTIFACT-MASKED</span><span class="mono muted" id="spec-peak">PEAK --</span></header>
-          <canvas class="chart" id="c-spec" style="--h:180px" aria-label="Fused power spectrum with the heart-rate peak marked"></canvas>
-        </article>
-
-        <details class="card span-12 how">
-          <summary><svg><use href="#i-info"/></svg><span data-i18n="how.summary">How this works</span></summary>
-          <p data-i18n="how.p1">The mean colour of the forehead and cheeks is sampled thirty times a second. Slow lighting drift is removed by convolution with a moving average, and a windowed-sinc FIR bandpass keeps 42 to 240 beats per minute.</p>
-          <p data-i18n="how.p2">The Fourier transform measures how much of each candidate rhythm the signal holds. Green, CHROM and POS each produce a spectrum; TRACE weights them by spectral quality, suppresses frequencies a pulse-blind reference says are motion, and reads the heart rate from the fused peak.</p>
-        </details>
       </div>
     </section>
 
@@ -256,62 +160,74 @@
       <div class="bento">
         <article class="card span-12 fusion-host fusion-hero" data-fusion="full"></article>
 
-        <article class="card span-8 chart-card">
-          <header class="card-h"><span class="label mono" data-i18n="hist.title">CONTRIBUTION TIMELINE / LAST 60 S</span><span class="legend mono" id="hist-legend"></span></header>
-          <canvas class="chart" id="c-hist" style="--h:170px" aria-label="Share of each method in the fusion over time"></canvas>
+        <article class="card span-4 theory" style="--c:var(--m-green)">
+          <header class="card-h"><span class="label mono"><i class="sw"></i>GREEN</span><span class="mono muted">VERKRUYSSE 2008</span></header>
+          <p class="formula mono">S = G / mean(G) - 1</p>
+          <p>Blood absorbs green light most, so the green channel alone carries the pulse. Simple, but any change in brightness from motion or lighting looks like a pulse too.</p>
         </article>
-        <article class="card span-4 events-card">
-          <header class="card-h"><span class="label mono" data-i18n="ev.log">STATUS EVENTS</span></header>
-          <ol class="events" id="events"><li class="muted mono" data-i18n="ev.none">No events yet</li></ol>
-          <div class="motion-ctl" id="sim-motion" hidden>
-            <span class="label mono" data-i18n="sim.ctl">VOLUNTEER MOTION</span>
-            <div class="seg">
-              <button type="button" class="btn ghost small" id="less-motion" data-i18n="sim.calm">Calm</button>
-              <button type="button" class="btn ghost small" id="more-motion" data-i18n="sim.restless">Restless</button>
+        <article class="card span-4 theory" style="--c:var(--m-chrom)">
+          <header class="card-h"><span class="label mono"><i class="sw"></i>CHROM</span><span class="mono muted">DE HAAN 2013</span></header>
+          <p class="formula mono">X = 3R - 2G,  Y = 1.5R + G - 1.5B<br>S = X - (std X / std Y) Y</p>
+          <p>Two colour differences that both cancel white light. Subtracting one from the other removes brightness changes and keeps the colour change caused by blood.</p>
+        </article>
+        <article class="card span-4 theory" style="--c:var(--m-pos)">
+          <header class="card-h"><span class="label mono"><i class="sw"></i>POS</span><span class="mono muted">WANG 2017</span></header>
+          <p class="formula mono">S1 = G - B,  S2 = G + B - 2R<br>h = S1 + (std S1 / std S2) S2</p>
+          <p>Projects the colour onto a plane orthogonal to skin tone, re-tuned every 1.6 s, so the pulse survives slow changes in lighting and skin colour.</p>
+        </article>
+
+        <article class="card span-8 chart-card">
+          <header class="card-h"><span class="label mono">WEIGHTS OVER THE LAST 60 S</span>
+            <div class="seg small" id="sim-motion" hidden>
+              <button type="button" id="less-motion">Calm</button>
+              <button type="button" id="more-motion">Restless</button>
             </div>
-          </div>
+          </header>
+          <canvas class="chart" id="c-hist" style="--h:170px" aria-label="Share of each method in the fusion over time"></canvas>
+          <p class="foot">Make the simulated volunteer restless and watch the weights move away from the method that motion corrupts.</p>
+        </article>
+        <article class="card span-4">
+          <header class="card-h"><span class="label mono">HOW WELL IT WORKS</span><span class="pill small sim">SIMULATED</span></header>
+          <div class="wbars" id="eval-bars"></div>
+          <p class="foot" id="eval-foot"></p>
         </article>
       </div>
     </section>
 
-    <!-- ============================================================ COMPRESSION -->
-    <section class="view" data-view="compression" aria-labelledby="view-title">
-      <div class="bento">
-        <article class="card span-12 lab-controls">
-          <div class="seg" role="radiogroup" aria-label="Codec" id="codec-seg"></div>
-          <div class="slider">
-            <label for="rate" class="label mono" data-i18n="lab.bitrate">BITRATE</label>
-            <input type="range" id="rate" min="0" max="5" step="1" value="0">
-            <div class="ticks mono" id="rate-ticks"></div>
-          </div>
-          <span class="pill sim" data-i18n="simulated">SIMULATED</span>
+    <!-- ============================================================ HOW IT WORKS -->
+    <section class="view" data-view="signal" aria-labelledby="view-title">
+      <div class="steps">
+        <article class="card step">
+          <div class="step-n mono">01</div>
+          <div class="step-t"><h3>Raw colour</h3><p class="formula mono">g[n] = mean green of the skin in frame n</p>
+            <p>Thirty times a second the forehead and cheeks are averaged. The pulse is under 1 percent of this signal, buried under slow lighting drift.</p></div>
+          <canvas class="chart" id="c-s1" style="--h:110px" aria-label="Raw green channel"></canvas>
         </article>
-
-        <article class="card span-8 row-2 chart-card fourier">
-          <header class="card-h"><span class="label mono" data-i18n="lab.chart">MEAN ABSOLUTE ERROR VS BITRATE</span><span class="mono muted" id="lab-n"></span></header>
-          <div class="chart-wrap"><canvas class="chart" id="c-lab" style="--h:340px" aria-label="Error in BPM against bitrate for each method"></canvas><div class="tip mono" id="lab-tip" hidden></div></div>
-          <p class="foot mono" data-i18n="lab.foot">Per-subject MAE, then averaged. Dashed lines are neural baselines (H.264 only).</p>
+        <article class="card step conv">
+          <div class="step-n mono">02</div>
+          <div class="step-t"><h3>Detrend <span class="tag">CONVOLUTION</span></h3><p class="formula mono">d[n] = g[n] - (g * h)[n],  h = 2 s moving average</p>
+            <p>Convolving with a moving average gives the slow trend. Subtracting it removes the drift and leaves the fast part.</p></div>
+          <canvas class="chart" id="c-s2" style="--h:110px" aria-label="Detrended green channel"></canvas>
         </article>
-
-        <article class="card span-4">
-          <header class="card-h"><span class="label mono" data-i18n="lab.integrity">SIGNAL INTEGRITY</span></header>
-          <div class="integrity" id="lab-integrity"></div>
-          <p class="foot mono" data-i18n="lab.integrityNote">Correlation of the decoded green trace with the true pulse, still face.</p>
+        <article class="card step conv">
+          <div class="step-n mono">03</div>
+          <div class="step-t"><h3>Bandpass <span class="tag">CONVOLUTION</span></h3><p class="formula mono">y[n] = sum h[k] d[n - k],  pass 0.7 to 4 Hz</p>
+            <p>A windowed-sinc FIR filter keeps only rhythms a heart can have: 42 to 240 beats per minute.</p></div>
+          <canvas class="chart" id="c-s3" style="--h:110px" aria-label="Band-pass filtered green channel"></canvas>
         </article>
-        <article class="card span-4">
-          <header class="card-h"><span class="label mono" data-i18n="lab.weights">TRACE WEIGHTS AT THIS CONDITION</span></header>
-          <div class="wbars" id="lab-weights"></div>
-          <p class="foot mono" id="lab-sel"></p>
+        <article class="card step ft">
+          <div class="step-n mono">04</div>
+          <div class="step-t"><h3>Spectrum <span class="tag ft">FOURIER TRANSFORM</span></h3><p class="formula mono">Y(f) = sum y[n] e^(-j 2 pi f n / fs)</p>
+            <p>The FFT measures how much of each rhythm the signal holds. Green, CHROM and POS each give one spectrum, and TRACE adds them, weighted by quality.</p></div>
+          <canvas class="chart" id="c-s4" style="--h:150px" aria-label="Fused spectrum with the peak marked"></canvas>
         </article>
-
-        <article class="card span-7">
-          <header class="card-h"><span class="label mono" data-i18n="lab.tone">SKIN-TONE SPLIT / MAE BPM, 95% CI</span></header>
-          <div class="table-scroll"><table class="data" id="lab-table"></table></div>
+        <article class="card step result">
+          <div class="step-n mono">05</div>
+          <div class="step-t"><h3>Heart rate</h3><p class="formula mono">BPM = 60 x f_peak</p>
+            <p>The tallest peak is the heart rate. A check at half the frequency stops a strong harmonic being read as double the rate.</p></div>
+          <div class="step-out"><span class="big mono" id="s5-bpm">--</span><span class="unit mono">BPM</span><span class="mono muted" id="s5-f"></span></div>
         </article>
-        <article class="card span-5">
-          <header class="card-h"><span class="label mono" data-i18n="lab.frames">WHAT THE CODEC LEAVES</span></header>
-          <div class="thumbs" id="thumbs"></div>
-        </article>
+        <p class="foot">Steps 1 to 3 show the green channel, the easiest to follow. CHROM and POS go through the same detrend and bandpass. Start a measurement to see live signals.</p>
       </div>
     </section>
 
@@ -319,7 +235,7 @@
     <section class="view" data-view="hrv" aria-labelledby="view-title">
       <div class="bento">
         <article class="card span-4 row-2 hrv-ctl">
-          <header class="card-h"><span class="label mono" data-i18n="hrv.capture">HRV CAPTURE</span><span class="pill small" id="hrv-state">READY</span></header>
+          <header class="card-h"><span class="label mono">RECORDING</span><span class="pill small" id="hrv-state">READY</span></header>
           <div class="ring-wrap small">
             <svg class="ring" viewBox="0 0 200 200" role="img" aria-label="Recording progress toward two minutes">
               <circle class="ring-bg" cx="100" cy="100" r="86"/>
@@ -327,92 +243,45 @@
             </svg>
             <div class="ring-center"><span class="big mono" id="hrv-time">0:00</span><span class="unit mono">/ 2:00</span></div>
           </div>
-          <p class="foot" data-i18n="hrv.need">LF/HF needs at least two minutes of steady video. Five is the clinical standard.</p>
+          <p class="foot">The time between beats varies. A second Fourier transform of those gaps shows two rhythms: LF (0.04 to 0.15 Hz) and HF, which follows breathing. LF/HF needs at least two minutes.</p>
           <div class="btn-row">
-            <button class="btn" type="button" id="hrv-go"><svg><use href="#i-play"/></svg><span data-i18n="hrv.start">Start reading</span></button>
-            <button class="btn ghost" type="button" id="hrv-done" disabled><span data-i18n="hrv.finish">Finish and analyse</span></button>
+            <button class="btn" type="button" id="hrv-go"><svg><use href="#i-play"/></svg><span>Start recording</span></button>
+            <button class="btn ghost" type="button" id="hrv-done" disabled><span>Finish and analyse</span></button>
           </div>
         </article>
         <div class="span-8 row-2 hrv-out" id="hrv-out"></div>
       </div>
     </section>
 
-    <!-- ============================================================ EXPERIMENTS -->
-    <section class="view" data-view="experiments" aria-labelledby="view-title">
+    <!-- ============================================================ SUMMARY -->
+    <section class="view" data-view="summary" aria-labelledby="view-title">
       <div class="bento">
-        <article class="card span-7">
-          <header class="card-h"><span class="label mono" data-i18n="x.q1">DOES PER-WINDOW WEIGHTING BEAT A FIXED METHOD?</span><span class="pill small sim" data-i18n="simulated">SIMULATED</span></header>
-          <div class="xbars" id="x-mae"></div>
-          <p class="foot mono" id="x-mae-foot"></p>
-        </article>
-        <article class="card span-5">
-          <header class="card-h"><span class="label mono" data-i18n="x.q2">DOES THE TOP WEIGHT POINT AT THE BEST METHOD?</span></header>
-          <div class="xbars compact" id="x-dom"></div>
-          <p class="foot" id="x-dom-foot"></p>
-        </article>
-        <article class="card span-5">
-          <header class="card-h"><span class="label mono" data-i18n="x.q3">HELD-OUT ABLATION / SEEDS 5000+</span></header>
-          <div class="xbars compact" id="x-held"></div>
-          <p class="foot" id="x-held-foot"></p>
-        </article>
-
-        <article class="card span-7 tree-card">
-          <header class="card-h"><span class="label mono" data-i18n="prog.title">RESEARCH PROGRESS</span><span class="legend mono"><i class="lg done"></i>COMPLETE <i class="lg focus"></i>FOCUS <i class="lg pend"></i>NEEDS DATA</span></header>
-          <div class="tree" id="tree" role="list"></div>
-          <div class="tier-detail" id="tier-detail" aria-live="polite"></div>
-        </article>
-        <article class="card span-12">
-          <header class="card-h"><span class="label mono" data-i18n="x.cond">EVERY CONDITION / MAE BPM AND MEAN TRACE WEIGHTS</span><div class="seg small" id="x-codec"></div></header>
-          <div class="table-scroll"><table class="data" id="x-table"></table></div>
-        </article>
-
-      </div>
-    </section>
-
-    <!-- ============================================================ RESULTS -->
-    <section class="view" data-view="results" aria-labelledby="view-title">
-      <div class="bento">
-        <article class="card hero span-8" id="res-hero">
-          <div class="hero-top"><span class="label mono" data-i18n="res.kicker">SESSION RESULT</span><span class="pill" id="res-state">NO READING</span></div>
+        <article class="card hero span-8">
+          <div class="hero-top"><span class="label mono">RESULT</span><span class="pill" id="res-state">NO READING</span></div>
           <div class="readout"><span class="big mono" id="res-bpm">--</span><span class="unit mono">BPM</span></div>
           <div class="hero-stats" id="res-stats"></div>
         </article>
-        <article class="card span-4 row-2">
-          <header class="card-h"><span class="label mono" data-i18n="res.timeline">SESSION TIMELINE</span></header>
-          <ol class="timeline" id="res-timeline"></ol>
-        </article>
         <article class="card span-4">
-          <header class="card-h"><span class="label mono" data-i18n="res.weights">TRACE WEIGHTS AT READING</span></header>
+          <header class="card-h"><span class="label mono">METHOD WEIGHTS</span></header>
           <div class="wbars" id="res-weights"></div>
         </article>
-        <article class="card span-4">
-          <header class="card-h"><span class="label mono" data-i18n="res.methods">METHOD ESTIMATES AT READING</span></header>
+        <article class="card span-6">
+          <header class="card-h"><span class="label mono">EACH METHOD</span></header>
           <dl class="kv" id="res-methods"></dl>
         </article>
         <article class="card span-6">
-          <header class="card-h"><span class="label mono" data-i18n="res.context">CONDITIONS</span></header>
-          <dl class="kv" id="res-context"></dl>
-        </article>
-        <article class="card span-6">
-          <header class="card-h"><span class="label mono" data-i18n="res.warn">QUALITY NOTES</span></header>
+          <header class="card-h"><span class="label mono">NOTES</span></header>
           <ul class="warns" id="res-warns"></ul>
         </article>
         <div class="strip span-12">
-          <button class="btn" type="button" id="export"><svg><use href="#i-download"/></svg><span data-i18n="res.export">Export data</span></button>
-          <button class="btn ghost" type="button" id="new-session"><svg><use href="#i-restart"/></svg><span data-i18n="res.new">New session</span></button>
-          <span class="pill quiet"><span data-i18n="strip.diag">NOT A DIAGNOSIS</span></span>
+          <button class="btn" type="button" id="export"><svg><use href="#i-download"/></svg><span>Export as JSON</span></button>
+          <button class="btn ghost" type="button" id="new-session"><svg><use href="#i-restart"/></svg><span>New measurement</span></button>
         </div>
       </div>
     </section>
   </main>
-
-  <footer class="flowbar">
-    <button class="btn ghost" type="button" id="back"><svg><use href="#i-left"/></svg><span data-i18n="back">Back</span></button>
-    <p class="status mono" id="status" aria-live="polite"></p>
-    <button class="btn primary" type="button" id="next"><span id="next-label">Begin session</span><svg><use href="#i-right"/></svg></button>
-  </footer>
 </div>
 
-<script src="/static/app.js?v=3"></script>
+<script src="/static/app.js?v=4"></script>
 </body>
 </html>

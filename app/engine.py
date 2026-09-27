@@ -25,6 +25,7 @@ from tracerppg.fusion import artifact_reference, band_limited_pulses, fuse
 from tracerppg.hrv import DISCLAIMER, HRV_METHOD, MIN_HRV_SECONDS, clean_rr, hrv_from_pulse
 from tracerppg.roi import REGIONS, FaceTracker, skin_mean
 from tracerppg.spectral import HR_BAND, estimate_bpm
+from tracerppg.preprocess import default_detrend_window, detrend
 
 ROOT = Path(__file__).resolve().parents[1]
 FS = 30.0
@@ -326,6 +327,10 @@ class LiveEngine:
                 "method_traces": {k: _thin(pulses[k][show] / (np.std(pulses[k][show]) + 1e-12))
                                   for k in ("green", "chrom", "pos")},
                 "naive_green": round(estimate_bpm(pulses["green"], FS).bpm, 1),
+                # The green channel at each theory step, for the "How it works" view.
+                "stages": {"raw": _thin(green_raw[show]),
+                           "detrended": _thin(detrend(green_raw, default_detrend_window(FS))[show]),
+                           "filtered": _thin(pulses["green"][show])},
                 "trace": {"raw": _thin(green_raw[show]), "pulse": _thin(pulses[best][show] / (np.std(pulses[best][show]) + 1e-12)),
                           "best": best},
                 "spectrum": {"f": _thin(fr.freqs[band] * 60, 240), "p": _thin(fp, 240), "peak": round(fr.bpm, 1)},
