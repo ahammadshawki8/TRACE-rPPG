@@ -24,6 +24,7 @@ from fastapi.staticfiles import StaticFiles  # noqa: E402
 
 from engine import LiveEngine  # noqa: E402
 import collect  # noqa: E402
+import results  # noqa: E402
 from fastapi import Body, HTTPException  # noqa: E402
 from fastapi.responses import PlainTextResponse  # noqa: E402
 
@@ -47,6 +48,12 @@ def lab():
         return JSONResponse({"available": False,
                              "message": "Run the grid and scripts/build_app_assets.py to fill the compression lab."})
     return JSONResponse({"available": True, **json.loads(p.read_text())})
+
+
+@app.get("/api/results")
+def all_results():
+    """Simulated, UBFC and volunteer results in one shape, for the Scenarios screen."""
+    return results.everything()
 
 
 @app.get("/api/collect")

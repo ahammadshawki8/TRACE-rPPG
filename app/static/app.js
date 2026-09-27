@@ -14,7 +14,7 @@ const $$ = s => Array.from(document.querySelectorAll(s));
 function localGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
 function localSet(k, v) { try { localStorage.setItem(k, v); } catch { /* storage unavailable */ } }
 
-let view = "measure", state = {}, ws = null, simSource = null, scenarios = null, hrv = null, scnSkin = "all";
+let view = "measure", state = {}, ws = null, simSource = null, scenarios = null, hrv = null;
 let lastT = null;
 const wHistory = []; // {t, w: {green, chrom, pos}}
 
@@ -62,6 +62,7 @@ function go(v) {
   $$(".rail button[data-view]").forEach(b => b.classList.toggle("active", b.dataset.view === v));
   $("#view-title").textContent = TITLES[v];
   $("#ctx-view").textContent = TITLES[v].toUpperCase();
+  if (v === "scenarios") loadHub();
   moveIndicator(); renderAll();
   window.scrollTo({ top: 0 });
 }
@@ -139,7 +140,7 @@ function renderAll() {
   renderPip();
   if (view === "measure") renderMeasure();
   if (view === "methods") { renderFusion(); drawHistory(); renderEval(); }
-  if (view === "scenarios" && scnDirty()) renderScenarios();
+  if (view === "scenarios" && hubDirty()) renderScenarios();
   if (view === "signal") renderSignal();
   if (view === "next") { updateHrvRing(); renderLiveness(); renderUses(); }
   if (view === "collect" && window.renderCollect) window.renderCollect();
@@ -451,52 +452,112 @@ function renderSimPanel() {
   });
 }
 
-/* ================================================================== scenarios */
-let scnKey = "";
-function scnDirty() {
-  const k = [scnSkin, !!scenarios, !!(state.running && state.source === "sim"), document.documentElement.dataset.theme].join("|");
-  if (k === scnKey) return false;
-  scnKey = k;
-  return true;
+/* ================================================================== scenarios: the results hub */
+// Everything here is read from /api/results (app/results.py). Three sources,
+// each against its own reference; the page never recomputes a number.
+const SOURCES = [
+  ["simulated", "Simulated", "RUNS"],
+  ["ubfc", "UBFC-rPPG dataset", "SUBJECTS"],
+  ["volunteers", "Real volunteers", "VOLUNTEERS"],
+];
+let hub = null, hubTab = localGet("res-tab") || "simulated", hubKey = "", scnSkin = "all";
+async function loadHub() {
+  try { hub = await (await fetch("/api/results", { cache: "no-store" })).json(); } catch { hub = null; }
+  hubKey = ""; renderAll();
 }
-function tryScenario(i) {
-  const s = scenarios.scenarios[i];
-  pushSim({ ...BASE_SIM, ...s.settings, ...(scnSkin !== "all" ? { fitzpatrick: +scnSkin } : {}) });
-  go("methods");
+function hubDirty() {
+  const k = [hubTab, scnSkin, !!hub, !!(state.running && state.source === "sim"), document.documentElement.dataset.theme].join("|");
+  if (k === hubKey) return false;
+  hubKey = k; return true;
+}
+const COLS = ["green", "chrom", "pos", "trace"];
+const COLNAME = { green: "GREEN", chrom: "CHROM", pos: "POS", trace: "TRACE" };
+function maeCells(mae) {
+  if (!mae) return COLS.map(() => "<td>--</td>").join("");
+  const best = Math.min(...COLS.map(m => mae[m] ?? Infinity));
+  return COLS.map(m => `<td class="${mae[m] === best ? "best" : ""}">${fmt(mae[m], 1)}</td>`).join("");
+}
+function renderGlance() {
+  $("#res-glance").innerHTML = `<thead><tr><th>SOURCE</th><th>REFERENCE</th><th>SIZE</th>${COLS.map(m => `<th>${COLNAME[m]}</th>`).join("")}<th>TRACE WITHIN 5</th></tr></thead><tbody>${
+    SOURCES.map(([k, name, unit]) => { const s = hub?.[k] || {};
+      return `<tr class="${s.available ? "" : "empty"}"><td><button type="button" class="linkish" data-tab="${k}">${name}</button></td>
+        <td class="how">${s.available ? esc(s.reference) : "not yet collected"}</td>
+        <td>${s.available ? `${s.subjects} ${unit} / ${s.readings}` : "--"}</td>
+        ${maeCells(s.available ? s.overall.mae : null)}<td>${s.available ? pct(s.overall.within5?.trace) : "--"}</td></tr>`; }).join("")}</tbody>`;
+  $$("#res-glance [data-tab]").forEach(b => b.addEventListener("click", () => { hubTab = b.dataset.tab; localSet("res-tab", hubTab); renderScenarios(); }));
 }
 function renderScenarios() {
-  const seg = $("#scn-skin");
-  if (!seg.children.length) {
-    seg.innerHTML = ["all", 1, 2, 3, 4, 5, 6].map(k => `<button type="button" role="radio" data-skin="${k}">${k === "all" ? "All skin" : ROMAN[k]}</button>`).join("");
-    seg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => { scnSkin = b.dataset.skin; scnDirty(); renderScenarios(); }));
+  if (!hub) { $("#res-body").innerHTML = `<div class="empty-state small"><p>Loading results.</p></div>`; return; }
+  renderGlance();
+  $("#res-tabs").innerHTML = SOURCES.map(([k, name]) => `<button type="button" role="tab" aria-selected="${k === hubTab}" data-tab="${k}">
+    <i class="avail ${hub[k]?.available ? "on" : ""}"></i>${name}</button>`).join("");
+  $$("#res-tabs [data-tab]").forEach(b => b.addEventListener("click", () => { hubTab = b.dataset.tab; localSet("res-tab", hubTab); renderScenarios(); }));
+  const s = hub[hubTab] || {}, unit = SOURCES.find(x => x[0] === hubTab)[2];
+  $("#res-note").textContent = s.available ? s.note || "" : "";
+  const body = $("#res-body");
+  if (!s.available) {
+    body.innerHTML = `<div class="card"><div class="empty-state"><div><svg><use href="#i-grid"/></svg><p class="t">No ${SOURCES.find(x => x[0] === hubTab)[1].toLowerCase()} results yet.</p><p class="mono how-to"></p></div></div></div>`;
+    body.querySelector(".how-to").textContent = s.how_to || "";
+    return;
   }
-  seg.querySelectorAll("button").forEach(b => b.setAttribute("aria-checked", String(b.dataset.skin === String(scnSkin))));
-  if (!scenarios) { $("#scn-foot").textContent = "Run scripts/sim_scenarios.py to measure the scenarios."; return; }
-  const C = MCOL(), canTry = state.running && state.source === "sim", cols = [...METHODS, "trace"];
-  $("#scn-table").innerHTML = `<thead><tr><th>CONDITION</th><th>HOW TO CAUSE IT</th>${cols.map(m => `<th>${m === "trace" ? "TRACE" : MNAME[m]}</th>`).join("")}<th>SELECTED MOST</th><th>CONFIDENT</th><th></th></tr></thead><tbody>${
-    scenarios.scenarios.map((s, i) => {
-      const a = scnSkin === "all" ? s.all : s.by_skin[scnSkin];
-      const best = Math.min(...cols.map(m => a.mae[m]));
-      const top = METHODS.reduce((x, m) => a.dominant[m] > a.dominant[x] ? m : x, "green");
-      return `<tr><td>${s.label}</td><td class="how">${s.how}</td>${cols.map(m => `<td class="${a.mae[m] === best ? "best" : ""}">${fmt(a.mae[m], 1)}</td>`).join("")}
-        <td><span class="who" style="--c:${C[top]}"><i></i>${MNAME[top]} ${pct(a.dominant[top])}</span></td><td>${pct(a.confident)}</td>
-        <td><button type="button" class="btn ghost small" data-try="${i}" ${canTry ? "" : "disabled"} title="${canTry ? "Apply to the live volunteer" : "Start a simulated volunteer first"}">Try it</button></td></tr>`;
-    }).join("")}</tbody>`;
-  $("#scn-table").querySelectorAll("[data-try]").forEach(b => b.addEventListener("click", () => tryScenario(+b.dataset.try)));
-  $("#scn-foot").textContent = `Mean absolute error in BPM against the true rate: ${scenarios.seeds} volunteers x ${scenarios.seconds} s per skin type and condition, one reading every 2.5 s. Best of the four in green. Selected most: the method TRACE picked most often.`;
-  const skins = [1, 2, 3, 4, 5, 6];
+  const O = s.overall, C = MCOL(), mx = Math.max(...COLS.map(m => O.mae[m])) * 1.05;
+  let html = `<div class="bento">
+    <article class="card span-7">
+      <header class="card-h"><span class="label mono">MEAN ERROR / BPM</span><span class="mono muted">AGAINST: ${esc(s.reference).toUpperCase()}</span></header>
+      <div class="wbars">${COLS.map(m => wbar(COLNAME[m], O.mae[m], mx, m === "trace" ? css("--lime") : C[m], fmt(O.mae[m], 1), m === "trace" ? "trace" : "")).join("")}</div>
+      ${O.v2_mae != null ? `<p class="foot">TRACE v2 (the older blend) on the same data: ${fmt(O.v2_mae, 1)} BPM.</p>` : ""}
+    </article>
+    <article class="card span-5">
+      <header class="card-h"><span class="label mono">SUMMARY</span></header>
+      <dl class="kv">
+        <div><dt class="mono">${unit}</dt><dd class="mono">${s.subjects}</dd></div>
+        <div><dt class="mono">READINGS</dt><dd class="mono">${s.readings.toLocaleString()}</dd></div>
+        <div><dt class="mono">TRACE WITHIN 5 BPM</dt><dd class="mono">${pct(O.within5?.trace)}</dd></div>
+        <div><dt class="mono">MARKED CONFIDENT</dt><dd class="mono">${pct(O.confident)}</dd></div>
+        <div><dt class="mono">ERROR WHEN CONFIDENT</dt><dd class="mono">${O.mae_confident == null ? "--" : fmt(O.mae_confident, 1) + " BPM"}</dd></div>
+        <div><dt class="mono">ERROR WHEN FLAGGED</dt><dd class="mono">${O.mae_flagged == null ? "--" : fmt(O.mae_flagged, 1) + " BPM"}</dd></div>
+      </dl>
+    </article>`;
+  if (hubTab === "simulated") html += simulatedSection(s);
+  for (const b of s.breakdowns || []) html += breakdownCard(b);
+  body.innerHTML = html + "</div>";
+  body.querySelectorAll("[data-try]").forEach(b => b.addEventListener("click", () => tryScenario(+b.dataset.try)));
+  body.querySelectorAll("[data-skin]").forEach(b => b.addEventListener("click", () => { scnSkin = b.dataset.skin; hubKey = ""; renderScenarios(); }));
+}
+function breakdownCard(b) {
+  const selCol = b.rows.some(r => r.selected);
+  return `<article class="card span-12"><header class="card-h"><span class="label mono">${b.title}</span></header>
+    <div class="table-scroll"><table class="data"><thead><tr><th>${b.title.replace("BY ", "")}</th><th>READINGS</th>${b.rows.some(r => r.people) ? "<th>PEOPLE</th>" : ""}${COLS.map(m => `<th>${COLNAME[m]}</th>`).join("")}<th>TRACE WITHIN 5</th>${selCol ? "<th>SELECTED G / C / P (%)</th>" : ""}</tr></thead><tbody>${
+      b.rows.map(r => `<tr><td>${esc(r.label)}</td><td>${r.n}</td>${b.rows.some(x => x.people) ? `<td>${r.people ?? "--"}</td>` : ""}${maeCells(r.mae)}<td>${pct(r.within5?.trace)}</td>${selCol ? `<td>${r.selected ? METHODS.map(m => fmt(r.selected[m] * 100)).join(" / ") : "--"}</td>` : ""}</tr>`).join("")}</tbody></table></div></article>`;
+}
+function simulatedSection(s) {
+  const C = MCOL(), canTry = state.running && state.source === "sim";
+  const skins = ["all", 1, 2, 3, 4, 5, 6];
+  const rows = s.scenarios.map((sc, i) => {
+    const a = scnSkin === "all" ? sc.all : sc.by_skin[scnSkin];
+    const top = METHODS.reduce((x, m) => a.dominant[m] > a.dominant[x] ? m : x, "green");
+    return `<tr><td>${sc.label}</td><td class="how">${sc.how}</td>${maeCells(a.mae)}
+      <td><span class="who" style="--c:${C[top]}"><i></i>${MNAME[top]} ${pct(a.dominant[top])}</span></td><td>${pct(a.confident)}</td>
+      <td><button type="button" class="btn ghost small" data-try="${i}" ${canTry ? "" : "disabled"} title="${canTry ? "Apply to the live volunteer" : "Start a simulated volunteer first"}">Try it</button></td></tr>`;
+  }).join("");
   const heat = v => `rgba(255, 107, 120, ${Math.min(0.85, v / 30).toFixed(2)})`;
-  $("#scn-heat").innerHTML = `<thead><tr><th>CONDITION</th>${skins.map(k => `<th>${ROMAN[k]}</th>`).join("")}</tr></thead><tbody>${
-    scenarios.scenarios.map(s => `<tr><td>${s.label}</td>${skins.map(k => { const v = s.by_skin[k].mae.trace; return `<td style="background:${heat(v)}">${fmt(v, 1)}</td>`; }).join("")}</tr>`).join("")}</tbody>`;
-  const O = scenarios.overall;
-  $("#scn-conf").innerHTML = [
-    ["READINGS MARKED CONFIDENT", pct(O.confident)],
-    ["ERROR WHEN CONFIDENT", `${fmt(O.mae_confident, 1)} BPM`],
-    ["WITHIN 5 BPM WHEN CONFIDENT", pct(O.within5_confident)],
-    ["ERROR WHEN FLAGGED LOW", `${fmt(O.mae_flagged, 1)} BPM`],
-    ["DOUBLE OR HALF THE TRUE RATE", pct(O.harmonic)],
-  ].map(([k, v]) => `<div><dt class="mono">${k}</dt><dd class="mono">${v}</dd></div>`).join("");
-  $("#scn-conf-foot").textContent = "The confidence is useful if the readings it keeps are much more accurate than the ones it flags. Double or half: the peak search picked a harmonic of the true rate.";
+  return `<article class="card span-12">
+      <header class="card-h"><span class="label mono">WHICH METHOD WINS WHERE</span>
+        <div class="seg small">${skins.map(k => `<button type="button" data-skin="${k}" aria-checked="${String(k) === String(scnSkin)}">${k === "all" ? "All skin" : ROMAN[k]}</button>`).join("")}</div></header>
+      <div class="table-scroll"><table class="data scn"><thead><tr><th>CONDITION</th><th>HOW TO CAUSE IT</th>${COLS.map(m => `<th>${COLNAME[m]}</th>`).join("")}<th>SELECTED MOST</th><th>CONFIDENT</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+      <p class="foot">${s.seeds} volunteers x ${s.seconds} s per skin type and condition, one reading every 2.5 s. Best of the four in green.</p>
+    </article>
+    <article class="card span-12">
+      <header class="card-h"><span class="label mono">TRACE ERROR BY SKIN TYPE AND CONDITION / BPM</span></header>
+      <div class="table-scroll"><table class="data heat"><thead><tr><th>CONDITION</th>${[1, 2, 3, 4, 5, 6].map(k => `<th>${ROMAN[k]}</th>`).join("")}</tr></thead><tbody>${
+        s.scenarios.map(sc => `<tr><td>${sc.label}</td>${[1, 2, 3, 4, 5, 6].map(k => { const v = sc.by_skin[k].mae.trace; return `<td style="background:${heat(v)}">${fmt(v, 1)}</td>`; }).join("")}</tr>`).join("")}</tbody></table></div>
+      <p class="foot">Redder cells are worse.</p>
+    </article>`;
+}
+function tryScenario(i) {
+  const sc = hub.simulated.scenarios[i];
+  pushSim({ ...BASE_SIM, ...sc.settings, ...(scnSkin !== "all" ? { fitzpatrick: +scnSkin } : {}) });
+  go("methods");
 }
 
 /* ================================================================== how it works */

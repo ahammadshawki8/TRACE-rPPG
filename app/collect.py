@@ -35,7 +35,9 @@ import numpy as np
 from tracerppg.simeval import WINDOW_S, analyse, frozen_params
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "data" / "own"
+import os
+# TRACE_COLLECT_DIR lets a test run use a scratch folder instead of the real data/own.
+DATA = Path(os.environ.get("TRACE_COLLECT_DIR", str(ROOT / "data" / "own")))
 METHODS = ("green", "chrom", "pos")
 AGE_GROUPS = ("under 18", "18-29", "30-44", "45-59", "60+")
 LIGHTING = ("room light", "bright lamp", "dim room", "daylight window", "screen lit")

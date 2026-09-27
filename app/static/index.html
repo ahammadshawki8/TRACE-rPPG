@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/static/styles.css?v=15">
+<link rel="stylesheet" href="/static/styles.css?v=16">
 </head>
 <body>
 
@@ -261,26 +261,20 @@
       </div>
     </section>
 
-    <!-- ============================================================ SCENARIOS -->
+    <!-- ============================================================ SCENARIOS (results hub) -->
     <section class="view" data-view="scenarios" aria-labelledby="view-title">
       <div class="bento">
         <article class="card span-12">
-          <header class="card-h"><span class="label mono">WHICH METHOD WINS WHERE</span>
-            <div class="seg small" id="scn-skin" role="radiogroup" aria-label="Skin type"></div>
-          </header>
-          <div class="table-scroll"><table class="data scn" id="scn-table"></table></div>
-          <p class="foot" id="scn-foot"></p>
+          <header class="card-h"><span class="label mono">AT A GLANCE / MEAN ERROR IN BPM AGAINST EACH SOURCE'S REFERENCE</span><span class="mono muted">LOWER IS BETTER</span></header>
+          <div class="table-scroll"><table class="data glance" id="res-glance"></table></div>
         </article>
-        <article class="card span-7">
-          <header class="card-h"><span class="label mono">TRACE ERROR BY SKIN TYPE / BPM</span><span class="pill small sim">SIMULATED</span></header>
-          <div class="table-scroll"><table class="data heat" id="scn-heat"></table></div>
-          <p class="foot">Mean absolute error of TRACE against the true rate. Redder cells are worse.</p>
+
+        <article class="card span-12 res-head">
+          <div class="seg res-tabs" id="res-tabs" role="tablist" aria-label="Results source"></div>
+          <p class="foot" id="res-note"></p>
         </article>
-        <article class="card span-5">
-          <header class="card-h"><span class="label mono">CAN THE CONFIDENCE BE TRUSTED?</span></header>
-          <dl class="kv" id="scn-conf"></dl>
-          <p class="foot" id="scn-conf-foot"></p>
-        </article>
+
+        <div class="span-12" id="res-body"></div>
       </div>
     </section>
 
@@ -391,7 +385,7 @@
   <img id="pip-img" alt="Live camera preview">
 </div>
 
-<script src="/static/app.js?v=14"></script>
+<script src="/static/app.js?v=15"></script>
 <script src="/static/collect.js?v=3"></script>
 </body>
 </html>

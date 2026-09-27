@@ -17,6 +17,7 @@ import argparse
 import json
 
 import numpy as np
+from pathlib import Path
 
 from _common import ROOT, UBFC_DIR
 from tracerppg.datasets import load_dataset, reference_hr, resample_uniform
@@ -71,6 +72,7 @@ def summary(rows: list[dict]) -> dict:
         c = np.array([r[f"{v}_conf"] for r in rows])
         e = np.array([abs(r[v] - r["ref"]) for r in rows])
         out[f"{v}_confident"] = {"share": float(c.mean()), "mae": float(e[c].mean()) if c.any() else None}
+        out[f"{v}_flagged_mae"] = float(e[~c].mean()) if (~c).any() else None
     out["mean_weights_v3"] = {k: float(np.mean([r[f"w_{k}"] for r in rows])) for k in METHODS}
     return out
 
@@ -82,7 +84,9 @@ def main(root, tag: str) -> None:
     recs = load_dataset(root)
     if not recs:
         raise SystemExit(f"No recordings found under {root}")
-    cache = ROOT / "data" / "cache" / "real"
+    # Keyed by the dataset folder too: two datasets can both have a "subject1".
+    import hashlib
+    cache = ROOT / "data" / "cache" / "real" / hashlib.sha1(str(Path(root).resolve()).encode()).hexdigest()[:10]
     cache.mkdir(parents=True, exist_ok=True)
     per, allrows = {}, []
     for rec in recs:
