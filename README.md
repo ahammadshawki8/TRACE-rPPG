@@ -186,5 +186,5 @@ domain, via scikit-image); fonts Caveat, Archivo and IBM Plex Mono; Lucide icons
 
 ## Credits
 
-Developed by **Ahammad Shawki** and **S. M. Abu Fayeem**, supervised by
+Developed by **Ahammad Shawki** (2305067) and **S. M. Abu Fayeem** (2305070), supervised by
 **Anik Saha**.

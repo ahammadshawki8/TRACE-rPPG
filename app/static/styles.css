@@ -899,6 +899,9 @@ table.glance tr.empty td { color: var(--ink-3); }
 .refs ol { margin: 0 0 .9cqw; padding-left: 1.4cqw; }
 .refs li { margin-bottom: .35cqw; break-inside: avoid; }
 .refs p { margin: 0; }
+.refs a { color: inherit; text-decoration: underline dotted rgba(0, 0, 0, .35); text-underline-offset: 2px; }
+.refs a:hover, .refs a:focus-visible { color: var(--blue); text-decoration-color: currentColor; }
+.credits .sid { font-family: var(--f-mono); font-weight: 400; font-size: .85cqw; letter-spacing: .08em; color: var(--soft); vertical-align: middle; }
 @media (max-width: 900px) {
   .slide.appendix { grid-template-columns: 1fr; }
   .refs { columns: 1; font-size: 12px; } .refs h3 { font-size: 11px; } .credits dd { font-size: 24px; } .credits dt { font-size: 11px; }
