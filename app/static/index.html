@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/static/styles.css?v=9">
+<link rel="stylesheet" href="/static/styles.css?v=12">
 </head>
 <body>
 
@@ -100,22 +100,69 @@
 
     <!-- ============================================================ MEASURE -->
     <section class="view" data-view="measure" aria-labelledby="view-title">
-      <div class="bento" id="measure-idle">
-        <article class="card hero span-12">
-          <div class="hero-top"><span class="label mono">NEW MEASUREMENT</span></div>
-          <h2 class="hero-h">Heart rate from the colour of a face, measured three ways and fused.</h2>
-          <div class="sources two" role="radiogroup" aria-label="Video source">
-            <label class="source"><input type="radio" name="source" value="sim" checked>
-              <span class="src-body"><svg><use href="#i-sliders"/></svg><b>Simulated volunteer</b><small class="mono">ADJUST SKIN, HEART, MOTION, LIGHT / TRUE RATE KNOWN</small></span></label>
-            <label class="source"><input type="radio" name="source" value="webcam">
-              <span class="src-body"><svg><use href="#i-camera"/></svg><b>Webcam</b><small class="mono">YOUR FACE / NO REFERENCE</small></span></label>
+      <div class="landing" id="measure-idle">
+        <article class="land-hero">
+          <div class="land-glow" aria-hidden="true"></div>
+          <div class="land-copy">
+            <span class="land-kicker mono"><i class="dot"></i>CONTACTLESS HEART RATE</span>
+            <h2>See your heartbeat<br>in a camera.</h2>
+            <p>Every beat tints your skin by less than one percent. Three classical methods read it, and TRACE picks the one it trusts, every half second.</p>
+            <div class="land-cta">
+              <button class="btn primary btn-lg" type="button" id="start"><svg><use href="#i-play"/></svg><span>Start measuring</span></button>
+              <button class="btn ghost btn-lg" type="button" data-goto="signal"><svg><use href="#i-book"/></svg><span>How it works</span></button>
+            </div>
+            <div class="land-chips">
+              <span class="pill quiet"><svg><use href="#i-shield"/></svg>PROCESSED LOCALLY</span>
+              <span class="pill quiet">NO TRAINED MODEL</span>
+              <span class="pill quiet">NOT A DIAGNOSIS</span>
+            </div>
           </div>
-          <div class="hero-foot">
-            <button class="btn primary" type="button" id="start"><svg><use href="#i-play"/></svg><span>Start measuring</span></button>
-            <span class="pill quiet"><svg><use href="#i-shield"/></svg>PROCESSED LOCALLY</span>
-            <span class="pill quiet">NOT A DIAGNOSIS</span>
+
+          <div class="scanner" aria-hidden="true">
+            <div class="scan-card">
+              <div class="scan-faces" id="scan-faces">
+                <img src="/static/img/face_1.jpg" alt=""><img src="/static/img/face_2.jpg" alt=""><img src="/static/img/face_3.jpg" alt="">
+                <img src="/static/img/face_4.jpg" alt=""><img src="/static/img/face_5.jpg" alt=""><img src="/static/img/face_6.jpg" alt="">
+              </div>
+              <div class="scan-box"><i></i><i></i><i></i><i></i></div>
+              <div class="scan-roi" style="left:35.8%;top:18.4%;width:28.4%;height:11.6%"></div>
+              <div class="scan-roi" style="left:28%;top:46.8%;width:15.5%;height:14.2%"></div>
+              <div class="scan-roi" style="left:56.5%;top:46.8%;width:15.5%;height:14.2%"></div>
+              <div class="scan-line"></div>
+              <span class="scan-tag mono" id="scan-tag">SKIN TYPE I</span>
+            </div>
+            <div class="scan-wave">
+              <svg viewBox="0 0 400 60" preserveAspectRatio="none"><path id="land-wave" d=""/></svg>
+            </div>
           </div>
         </article>
+
+        <div class="land-sources" role="radiogroup" aria-label="Video source">
+          <label class="source-card"><input type="radio" name="source" value="sim" checked>
+            <span class="sc-body">
+              <span class="sc-icon"><svg><use href="#i-sliders"/></svg></span>
+              <span class="sc-text"><b>Simulated volunteer</b><small>Change skin, heart rate, motion and light live. The true rate is always known.</small></span>
+              <span class="sc-avatars"><i style="background-image:url(/static/img/face_1.jpg);--ring:rgb(214, 183, 168)"></i><i style="background-image:url(/static/img/face_2.jpg);--ring:rgb(201, 167, 143)"></i><i style="background-image:url(/static/img/face_3.jpg);--ring:rgb(177, 139, 104)"></i><i style="background-image:url(/static/img/face_4.jpg);--ring:rgb(149, 109, 69)"></i><i style="background-image:url(/static/img/face_5.jpg);--ring:rgb(119, 80, 43)"></i><i style="background-image:url(/static/img/face_6.jpg);--ring:rgb(91, 56, 27)"></i><em class="mono">6 SKIN TYPES</em></span>
+            </span></label>
+          <label class="source-card"><input type="radio" name="source" value="webcam">
+            <span class="sc-body">
+              <span class="sc-icon"><svg><use href="#i-camera"/></svg></span>
+              <span class="sc-text"><b>Your webcam</b><small>Your own face. Sit facing a lamp or window and keep still.</small></span>
+              <span class="sc-avatars"><em class="mono">REAL RECORDING</em></span>
+            </span></label>
+        </div>
+
+        <div class="land-highlights">
+          <button type="button" class="hl hl-violet" data-goto="methods">
+            <span class="hl-icon"><svg><use href="#i-merge"/></svg></span>
+            <b>Three methods, one choice</b><small>Watch TRACE switch between Green, CHROM and POS.</small><span class="hl-go mono">METHODS <svg><use href="#i-right"/></svg></span></button>
+          <button type="button" class="hl hl-coral" data-goto="scenarios">
+            <span class="hl-icon"><svg><use href="#i-grid"/></svg></span>
+            <b>Six skin types, ten conditions</b><small>Motion, dim light, flicker: see which method wins.</small><span class="hl-go mono">SCENARIOS <svg><use href="#i-right"/></svg></span></button>
+          <button type="button" class="hl hl-teal" data-goto="next">
+            <span class="hl-icon"><svg><use href="#i-spark"/></svg></span>
+            <b>More than a heart rate</b><small>Real-face check, heart rhythm and guided breathing.</small><span class="hl-go mono">WHAT'S NEXT <svg><use href="#i-right"/></svg></span></button>
+        </div>
       </div>
 
       <div class="bento" id="measure-live" hidden>
@@ -373,7 +420,7 @@
   <img id="pip-img" alt="Live camera preview">
 </div>
 
-<script src="/static/app.js?v=11"></script>
+<script src="/static/app.js?v=12"></script>
 <script src="/static/collect.js?v=3"></script>
 </body>
 </html>

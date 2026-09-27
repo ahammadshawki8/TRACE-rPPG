@@ -703,6 +703,33 @@ $("#pip-show").addEventListener("click", () => { pipClosed = false; renderPip();
   window.addEventListener("resize", () => { if (!pip.hidden) { const r = pip.getBoundingClientRect(); pipPlace(r.left, r.top); } });
 })();
 
+/* ================================================================== landing */
+// Decorative only: the idle landing shows the simulator's own renders of the
+// six skin types and a stylised pulse wave. No number is shown, so nothing
+// here can be mistaken for a measurement.
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+(function landing() {
+  // A pulse-shaped wave: sharp systolic peak, smaller dicrotic bump, two copies side by side so it can scroll.
+  const pts = [];
+  for (let x = 0; x <= 400; x += 2) {
+    const ph = (x % 100) / 100;
+    const y = Math.exp(-((ph - 0.22) ** 2) / 0.004) + 0.35 * Math.exp(-((ph - 0.5) ** 2) / 0.01);
+    pts.push(`${x},${(52 - y * 40).toFixed(1)}`);
+  }
+  $("#land-wave").setAttribute("d", "M" + pts.join(" L"));
+  const imgs = $$("#scan-faces img"), tag = $("#scan-tag");
+  let k = 0;
+  imgs[0].classList.add("on");
+  if (REDUCED) return;
+  setInterval(() => {
+    if (view !== "measure" || $("#measure-idle").hidden) return;
+    imgs[k].classList.remove("on");
+    k = (k + 1) % imgs.length;
+    imgs[k].classList.add("on");
+    tag.textContent = `SKIN TYPE ${["I", "II", "III", "IV", "V", "VI"][k]}`;
+  }, 2600);
+})();
+
 /* ================================================================== boot */
 let resizeTimer = null;
 window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { moveIndicator(); renderAll(); drawHrvCharts(); }, 120); });
