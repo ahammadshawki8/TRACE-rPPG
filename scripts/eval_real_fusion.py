@@ -82,6 +82,12 @@ def main(root, tag: str) -> None:
     p3 = ROOT / "results" / "fusion_params_v3.json"
     v3 = json.loads(p3.read_text()) if p3.exists() else {**v2, "continuity_rho": None}
     recs = load_dataset(root)
+    # A subject still downloading has its ground truth but no finished video
+    # yet; skip it now and it is picked up (and cached) on the next run.
+    waiting = [r.subject for r in recs if not r.video_path.exists()]
+    if waiting:
+        print(f"  skipping (video not finished): {', '.join(waiting)}")
+    recs = [r for r in recs if r.video_path.exists()]
     if not recs:
         raise SystemExit(f"No recordings found under {root}")
     # Keyed by the dataset folder too: two datasets can both have a "subject1".

@@ -118,17 +118,15 @@ function audioCtx() {
   return actx;
 }
 function buzz() {
-  try { navigator.vibrate?.([140, 70, 140]); } catch { /* not a phone */ }
+  try { navigator.vibrate?.(220); } catch { /* not a phone */ }
   const a = audioCtx(); if (!a) return;
   const lp = a.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 900; lp.connect(a.destination);
-  [0, 0.21].forEach(d => {
-    const t0 = a.currentTime + d, o = a.createOscillator(), g = a.createGain(), am = a.createOscillator(), ag = a.createGain();
-    o.type = "sawtooth"; o.frequency.value = 118; am.type = "square"; am.frequency.value = 34; ag.gain.value = 0.07;
-    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.12, t0 + 0.012);
-    g.gain.setValueAtTime(0.12, t0 + 0.12); g.gain.linearRampToValueAtTime(0, t0 + 0.15);
-    am.connect(ag); ag.connect(g.gain); o.connect(g); g.connect(lp);
-    o.start(t0); am.start(t0); o.stop(t0 + 0.17); am.stop(t0 + 0.17);
-  });
+  const t0 = a.currentTime, o = a.createOscillator(), g = a.createGain(), am = a.createOscillator(), ag = a.createGain();
+  o.type = "sawtooth"; o.frequency.value = 118; am.type = "square"; am.frequency.value = 34; ag.gain.value = 0.07;
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.12, t0 + 0.012);
+  g.gain.setValueAtTime(0.12, t0 + 0.2); g.gain.linearRampToValueAtTime(0, t0 + 0.24);
+  am.connect(ag); ag.connect(g.gain); o.connect(g); g.connect(lp);
+  o.start(t0); am.start(t0); o.stop(t0 + 0.26); am.stop(t0 + 0.26);
 }
 function updateLock(s, have) {
   const now = performance.now();
