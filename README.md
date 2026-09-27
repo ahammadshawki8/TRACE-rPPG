@@ -157,9 +157,8 @@ live sweep; v3 is the version that holds up).
 ## Data and licences
 
 UBFC-rPPG (Bobbia et al., "Unsupervised skin tissue segmentation for remote
-photoplethysmography", Pattern Recognition Letters 124, 2019) and UBFC-Phys
-(Meziati Sabour et al., IEEE Transactions on Affective Computing, 2021) are
-used for research only under their terms and never redistributed. Volunteer
+photoplethysmography", Pattern Recognition Letters 124, 2019) is used for
+research only under its terms and never redistributed. Volunteer
 data stays on the recording computer, is stored under a code rather than a
 name, and is deleted on request or when the project ends.
 
@@ -172,15 +171,14 @@ name, and is deleted on request or when the project ends.
 5. de Haan, van Leest. Improved motion robustness of remote-PPG by using the blood volume pulse signature. Physiological Measurement 35(9), 2014. (motion reference)
 6. Viola, Jones. Rapid object detection using a boosted cascade of simple features. CVPR 2001. Kuglin, Hines. The phase correlation image alignment method, 1975. (face tracking)
 7. Bobbia et al. Unsupervised skin tissue segmentation for remote photoplethysmography. Pattern Recognition Letters 124, 2019. (UBFC-rPPG)
-8. Meziati Sabour et al. UBFC-Phys: a multimodal database for psychophysiological studies of social stress. IEEE Transactions on Affective Computing, 2021.
-9. Dasari, Prakash, Jeni, Tucker. Evaluation of biases in remote photoplethysmography methods. npj Digital Medicine 4:91, 2021.
-10. Nowara, McDuff, Veeraraghavan. A meta-analysis of the impact of skin type and gender on non-contact photoplethysmography measurements. CVPR Workshops 2020.
-11. Fitzpatrick. The validity and practicality of sun-reactive skin types I through VI. Archives of Dermatology 124(6), 1988.
-12. Task Force of the ESC and NASPE. Heart rate variability: standards of measurement, physiological interpretation and clinical use. Circulation 93(5), 1996. Bland, Altman. The Lancet, 1986.
-13. Neural baselines, for comparison only: rPPG-Toolbox (Liu et al., NeurIPS 2023), PhysNet (Yu et al., BMVC 2019), FactorizePhys (Joshi et al., NeurIPS 2024).
+8. Dasari, Prakash, Jeni, Tucker. Evaluation of biases in remote photoplethysmography methods. npj Digital Medicine 4:91, 2021.
+9. Nowara, McDuff, Veeraraghavan. A meta-analysis of the impact of skin type and gender on non-contact photoplethysmography measurements. CVPR Workshops 2020.
+10. Fitzpatrick. The validity and practicality of sun-reactive skin types I through VI. Archives of Dermatology 124(6), 1988.
+11. Task Force of the ESC and NASPE. Heart rate variability: standards of measurement, physiological interpretation and clinical use. Circulation 93(5), 1996. Bland, Altman. The Lancet, 1986.
+12. Neural baselines, for comparison only: rPPG-Toolbox (Liu et al., NeurIPS 2023), PhysNet (Yu et al., BMVC 2019), FactorizePhys (Joshi et al., NeurIPS 2024).
 
-Tools and media: NumPy, SciPy, OpenCV, FFmpeg, FastAPI; Kaggle mirrors of
-UBFC-rPPG (malekdinarito) and UBFC-Phys (phanquythinh); landing photo by Tony
+Tools and media: NumPy, SciPy, OpenCV, FFmpeg, FastAPI; Kaggle mirror of
+UBFC-rPPG (malekdinarito); landing photo by Tony
 Chen on Unsplash; simulator face from the NASA astronaut portrait (public
 domain, via scikit-image); fonts Caveat, Archivo and IBM Plex Mono; Lucide icons.
 

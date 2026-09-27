@@ -607,7 +607,7 @@
             <div class="s-text">
               <span class="s-step">HOW WE KNOW</span>
               <h2>Proof from three sources.</h2>
-              <p>Every decision TRACE makes is checked against three kinds of truth: simulated faces where the answer is exact, public recordings of people sitting still and talking with a finger or wrist sensor, and our own volunteers with a smartwatch.</p>
+              <p>Every decision TRACE makes is checked against three kinds of truth: simulated faces where the answer is exact, a public dataset with a clip-on finger sensor, and our own volunteers with a smartwatch.</p>
               <div class="evidence" id="deck-evidence"></div>
               <div class="jump"><button type="button" class="btn ghost small" data-goto="collect"><svg><use href="#i-users"/></svg>Collect</button><button type="button" class="btn ghost small" data-goto="scenarios"><svg><use href="#i-grid"/></svg>All results: Scenarios</button></div>
             </div>
@@ -691,7 +691,6 @@
               <h3>Data and evaluation</h3>
               <ol start="7">
                 <li><a href="https://doi.org/10.1016/j.patrec.2017.10.017" target="_blank" rel="noopener">Bobbia et al. Unsupervised skin tissue segmentation for remote photoplethysmography. <i>Pattern Recognition Letters</i> 124, 2019.</a> (UBFC-rPPG)</li>
-                <li><a href="https://doi.org/10.1109/TAFFC.2021.3056960" target="_blank" rel="noopener">Meziati Sabour et al. UBFC-Phys: a multimodal database for psychophysiological studies of social stress. <i>IEEE Trans. Affective Computing</i>, 2021.</a></li>
                 <li><a href="https://doi.org/10.1038/s41746-021-00462-z" target="_blank" rel="noopener">Dasari, Prakash, Jeni, Tucker. Evaluation of biases in remote photoplethysmography methods. <i>npj Digital Medicine</i> 4:91, 2021.</a></li>
                 <li><a href="https://doi.org/10.1109/CVPRW50498.2020.00150" target="_blank" rel="noopener">Nowara, McDuff, Veeraraghavan. A meta-analysis of the impact of skin type and gender on non-contact photoplethysmography measurements. <i>CVPR Workshops</i> 2020.</a></li>
                 <li><a href="https://doi.org/10.1001/archderm.1988.01670060015008" target="_blank" rel="noopener">Fitzpatrick. The validity and practicality of sun-reactive skin types I through VI. <i>Arch. Dermatology</i> 124(6), 1988.</a></li>
@@ -699,7 +698,7 @@
                 <li>Neural baselines for comparison only: <a href="https://arxiv.org/abs/2210.00716" target="_blank" rel="noopener">rPPG-Toolbox (Liu et al., <i>NeurIPS</i> 2023)</a>, <a href="https://arxiv.org/abs/1905.02419" target="_blank" rel="noopener">PhysNet (Yu et al., <i>BMVC</i> 2019)</a>, <a href="https://arxiv.org/abs/2411.01542" target="_blank" rel="noopener">FactorizePhys (Joshi et al., <i>NeurIPS</i> 2024)</a>.</li>
               </ol>
               <h3>Tools and media</h3>
-              <p><a href="https://numpy.org" target="_blank" rel="noopener">NumPy</a>, <a href="https://scipy.org" target="_blank" rel="noopener">SciPy</a>, <a href="https://opencv.org" target="_blank" rel="noopener">OpenCV</a>, <a href="https://ffmpeg.org" target="_blank" rel="noopener">FFmpeg</a>, <a href="https://fastapi.tiangolo.com" target="_blank" rel="noopener">FastAPI</a>. Kaggle mirrors of <a href="https://www.kaggle.com/datasets/malekdinarito/ubfc-rppg-dataset" target="_blank" rel="noopener">UBFC-rPPG</a> and <a href="https://www.kaggle.com/datasets/phanquythinh/ubfc-phys-s1-s14" target="_blank" rel="noopener">UBFC-Phys</a>. Landing photo: Tony Chen on <a href="https://unsplash.com" target="_blank" rel="noopener">Unsplash</a>. Simulator face: NASA astronaut portrait (public domain, via <a href="https://scikit-image.org" target="_blank" rel="noopener">scikit-image</a>). Fonts: <a href="https://fonts.google.com/specimen/Caveat" target="_blank" rel="noopener">Caveat</a>, <a href="https://fonts.google.com/specimen/Archivo" target="_blank" rel="noopener">Archivo</a>, <a href="https://fonts.google.com/specimen/IBM+Plex+Mono" target="_blank" rel="noopener">IBM Plex Mono</a>. Icons: <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a>.</p>
+              <p><a href="https://numpy.org" target="_blank" rel="noopener">NumPy</a>, <a href="https://scipy.org" target="_blank" rel="noopener">SciPy</a>, <a href="https://opencv.org" target="_blank" rel="noopener">OpenCV</a>, <a href="https://ffmpeg.org" target="_blank" rel="noopener">FFmpeg</a>, <a href="https://fastapi.tiangolo.com" target="_blank" rel="noopener">FastAPI</a>. Kaggle mirror of <a href="https://www.kaggle.com/datasets/malekdinarito/ubfc-rppg-dataset" target="_blank" rel="noopener">UBFC-rPPG</a>. Landing photo: Tony Chen on <a href="https://unsplash.com" target="_blank" rel="noopener">Unsplash</a>. Simulator face: NASA astronaut portrait (public domain, via <a href="https://scikit-image.org" target="_blank" rel="noopener">scikit-image</a>). Fonts: <a href="https://fonts.google.com/specimen/Caveat" target="_blank" rel="noopener">Caveat</a>, <a href="https://fonts.google.com/specimen/Archivo" target="_blank" rel="noopener">Archivo</a>, <a href="https://fonts.google.com/specimen/IBM+Plex+Mono" target="_blank" rel="noopener">IBM Plex Mono</a>. Icons: <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a>.</p>
             </div>
           </section>
         </div>
@@ -838,7 +837,7 @@
   <img id="pip-img" alt="Live camera preview">
 </div>
 
-<script src="/static/app.js?v=22"></script>
+<script src="/static/app.js?v=23"></script>
 <script src="/static/collect.js?v=3"></script>
 </body>
 </html>

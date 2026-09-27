@@ -503,7 +503,6 @@ function renderSimPanel() {
 const SOURCES = [
   ["simulated", "Simulated", "RUNS"],
   ["ubfc", "UBFC-rPPG dataset", "SUBJECTS"],
-  ["ubfcphys", "UBFC-Phys (talking)", "RECORDINGS"],
   ["volunteers", "Real volunteers", "VOLUNTEERS"],
 ];
 let hub = null, hubTab = localGet("res-tab") || "simulated", hubKey = "", scnSkin = "all";
@@ -867,10 +866,6 @@ function renderDeckTables() {
       const s = pick(id); if (!s) return "";
       return `<div class="ev"><b>${name}</b><span class="mono">simulated</span><em class="mono">GREEN ${fmt(s.all.mae.green, 1)}  /  TRACE ${fmt(s.all.mae.trace, 1)} BPM error</em></div>`;
     }).join("");
-    // Real faces, when UBFC-Phys has been scored: the same people at rest and talking.
-    const task = (hub?.ubfcphys?.available && hub.ubfcphys.breakdowns.find(b => b.title === "BY TASK")?.rows) || [];
-    const talk = task.find(r => r.label === "talking");
-    if (talk) mot.innerHTML += `<div class="ev"><b>Talking, real</b><span class="mono">UBFC-Phys</span><em class="mono">GREEN ${fmt(talk.mae.green, 1)}  /  POS ${fmt(talk.mae.pos, 1)}  /  TRACE ${fmt(talk.mae.trace, 1)} BPM error</em></div>`;
   }
   if (skin) {
     const rows = (sim.breakdowns.find(b => b.title === "BY SKIN TYPE") || {}).rows || [];
@@ -882,8 +877,7 @@ function renderDeckEvidence() {
   renderDeckTables();
   const box = $("#deck-evidence");
   if (!box) return;
-  const rows = [["simulated", "Simulated faces", "exact truth"], ["ubfc", "Public dataset, still", "clip-on sensor"],
-    ["ubfcphys", "Public dataset, talking", "wrist sensor"], ["volunteers", "Our volunteers", "smartwatch"]];
+  const rows = [["simulated", "Simulated faces", "exact truth"], ["ubfc", "Public dataset", "clip-on sensor"], ["volunteers", "Our volunteers", "smartwatch"]];
   box.innerHTML = rows.map(([k, name, ref]) => {
     const s = hub?.[k];
     if (!s?.available) return `<div class="ev"><b>${name}</b><span class="mono">${ref}</span><em class="mono muted">COMING SOON</em></div>`;

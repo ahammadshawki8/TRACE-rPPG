@@ -503,7 +503,7 @@ All operate on RGB traces over a sliding window, each channel normalised by its 
 | **Own recordings** | Self-collected | Fallback / supplement for Fitzpatrick IV to V | Webcam + finger pulse oximeter (about 10 to 15 USD); informed consent and ethics statement required; recruiting lead time means preparation must start well before week 9 |
 | **PURE** | Short academic request form | Motion-robustness supplement | 10 subjects, 6 motion scenarios, lossless PNG, 60 Hz ground truth |
 | **MMPD** | Via GitHub | Skin-tone reference only, not primary | Already compressed to 320x240: no clean high-bitrate control |
-| **UBFC-Phys, MAHNOB-HCI** | Free | Optional extensions | MAHNOB has ECG ground truth and natural head motion |
+| **MAHNOB-HCI** | Free | Optional extension | ECG ground truth and natural head motion |
 
 ### 11.1 Simulated pilot data (`src/tracerppg/simulate.py`)
 

@@ -1,13 +1,11 @@
 """The results hub: every evaluation the project has, in one common shape.
 
-Four sources, each against its own reference:
+Three sources, each against its own reference:
     simulated    the live simulator's scenario sweep; reference = the exact
                  simulated heart rate (app/static/lab/scenarios.json)
     ubfc         UBFC-rPPG recordings; reference = a contact pulse oximeter
                  recorded in sync with the video (results/real_fusion_ubfc.json,
                  written by scripts/eval_real_fusion.py)
-    ubfcphys     UBFC-Phys rest and talking tasks; reference = a wrist BVP
-                 sensor (results/real_fusion_ubfcphys.json)
     volunteers   real volunteers from the Collect screen; reference = a
                  smartwatch reading per 20 s window (collect.study())
 
@@ -94,33 +92,6 @@ def ubfc() -> dict:
     return out
 
 
-TASKS = {"T1": "rest", "T2": "talking", "T3": "arithmetic"}
-
-
-def ubfcphys() -> dict:
-    """UBFC-Phys: the same people at rest (T1) and giving a speech (T2), so the
-    task breakdown is a paired, real-data view of what motion does to each method."""
-    p = ROOT / "results" / "real_fusion_ubfcphys.json"
-    if not p.exists():
-        return {"available": False, "how_to": "Run scripts/download_ubfc_phys.py, then: "
-                                              ".venv/Scripts/python.exe scripts/eval_real_fusion.py --dataset D:/datasets/ubfcphys --tag ubfcphys"}
-    out = _real(p, "wrist pulse sensor (Empatica E4 BVP), synchronised",
-                "UBFC-Phys, Meziati Sabour et al. 2021. The same people at rest and while giving a speech "
-                "(talking, head motion, expressions). The wrist reference is noisier than a finger clip.")
-    subs = out.pop("_raw")["subjects"]
-    by_task = []
-    for code, name in TASKS.items():
-        group = {k: a for k, a in subs.items() if k.endswith("_" + code)}
-        if not group:
-            continue
-        n = sum(a["n"] for a in group.values())
-        mae = {m: sum(_pick(a)[m] * a["n"] for a in group.values()) / n for m in METHODS}
-        w5 = sum(a["v3"]["within5"] * a["n"] for a in group.values()) / n
-        by_task.append(_row(name, n, mae, {"trace": w5}, extra={"people": len(group)}))
-    out["breakdowns"].insert(0, {"title": "BY TASK", "rows": by_task})
-    return out
-
-
 def volunteers() -> dict:
     s = collect.study()
     if not s["n_readings"]:
@@ -148,7 +119,7 @@ def volunteers() -> dict:
 
 def everything() -> dict:
     out = {}
-    for key, fn in (("simulated", simulated), ("ubfc", ubfc), ("ubfcphys", ubfcphys), ("volunteers", volunteers)):
+    for key, fn in (("simulated", simulated), ("ubfc", ubfc), ("volunteers", volunteers)):
         try:
             out[key] = fn()
         except Exception as exc:  # one broken source must not hide the others
