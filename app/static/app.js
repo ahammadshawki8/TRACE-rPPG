@@ -135,6 +135,7 @@ function onState() {
 
 function renderAll() {
   renderSimPanel();
+  renderPip();
   if (view === "measure") renderMeasure();
   if (view === "methods") { renderFusion(); drawHistory(); renderEval(); }
   if (view === "scenarios" && scnDirty()) renderScenarios();
@@ -517,7 +518,7 @@ function renderLiveness() {
   if (!L) { setPill(pill, "COLLECTING SIGNAL", "info"); return; }
   const v = { pulse: ["PULSE FOUND: LIVING FACE", "good"], none: ["NO PULSE: PHOTO OR SCREEN?", "warn"], checking: ["CHECKING", "info"] }[L.verdict];
   setPill(pill, v[0], v[1]);
-  $("#live-share").textContent = `${pct(L.share)} (${L.n}/${L.of})`;
+  $("#live-share").textContent = pct(L.share);
   $("#live-dial").style.setProperty("--share", L.share);
   $("#live-dial").dataset.verdict = L.verdict;
 }
@@ -598,41 +599,109 @@ function drawHrvCharts() {
 
 /* ================================================================== what's next: guided breathing */
 let hrvPaced = false, paceTimer = null;
-$("#pace-on").addEventListener("change", e => {
-  hrvPaced = e.target.checked;
-  $("#pacer").hidden = !hrvPaced;
+function setPacing(on) {
+  hrvPaced = on;
+  const b = $("#pace-btn");
+  b.setAttribute("aria-pressed", String(on));
+  b.querySelector("span").textContent = on ? "Stop pacing" : "Start pacing";
+  setPill($("#pace-state"), on ? "BREATHE WITH THE CIRCLE" : "OFF", on ? "coral" : "");
+  $("#pacer").classList.toggle("on", on);
   clearInterval(paceTimer);
-  if (hrvPaced) {
-    const t0 = performance.now();
-    paceTimer = setInterval(() => {
-      const ph = ((performance.now() - t0) / 1000) % 10;
-      const inhale = ph < 5;
-      $("#pace-text").textContent = `${inhale ? "BREATHE IN" : "BREATHE OUT"} ${Math.ceil(inhale ? 5 - ph : 10 - ph)}`;
-      $("#pace-circle").style.setProperty("--s", (inhale ? 0.55 + 0.45 * (ph / 5) : 1 - 0.45 * ((ph - 5) / 5)).toFixed(3));
-    }, 100);
-  }
-});
+  if (!on) { $("#pace-text").textContent = "6 / MIN"; $("#pace-circle").style.setProperty("--s", "0.55"); return; }
+  const t0 = performance.now();
+  paceTimer = setInterval(() => {
+    const ph = ((performance.now() - t0) / 1000) % 10, inhale = ph < 5;
+    $("#pace-text").textContent = `${inhale ? "IN" : "OUT"} ${Math.ceil(inhale ? 5 - ph : 10 - ph)}`;
+    $("#pace-circle").style.setProperty("--s", (inhale ? 0.55 + 0.45 * (ph / 5) : 1 - 0.45 * ((ph - 5) / 5)).toFixed(3));
+  }, 100);
+}
+$("#pace-btn").addEventListener("click", () => setPacing(!hrvPaced));
 
 /* ================================================================== what's next: applications */
 const USES = [
-  ["done", "Telehealth check-in", "A doctor on a video call sees the patient's pulse with no device in the patient's home.", "HEART RATE", "Accuracy drops on heavily compressed calls, which this project measured."],
-  ["done", "Stress and relaxation", "Heart-rate variability falls under stress and rises with rest: a wellness signal for study breaks or work.", "HRV", "Wellness indicator, not a diagnosis."],
-  ["done", "Breathing coach", "Slow paced breathing makes the heart rate swing with each breath. The camera can show the user that it is working.", "BEAT TIMING", "Try it with the circle above."],
-  ["focus", "Real face check", "A photo, screen or mask has no pulse. Face login and video-call deepfake detection can ask: is blood flowing?", "PULSE PRESENCE", "Prototype above; not a security product."],
-  ["pend", "Driver fatigue", "Heart rate and its variability change as a driver gets drowsy; a dashboard camera already faces them.", "HR + HRV", "Needs infrared light at night and strong motion handling."],
-  ["pend", "Newborn monitoring", "Adhesive sensors can hurt fragile skin. A camera over the cot measures without touching.", "HEART RATE, BREATHING", "Needs clinical validation."],
-  ["pend", "Fitness recovery", "How fast the heart rate falls in the minute after exercise is a known fitness marker.", "BEAT TIMING", "Needs tracking through heavy motion."],
-  ["pend", "Sleep and elder care", "A bedside camera could watch heart rate and breathing overnight without wearables.", "HR, BREATHING", "Needs low light and privacy safeguards."],
-  ["pend", "Irregular rhythm screening", "Irregular gaps between beats can hint at rhythm problems such as atrial fibrillation, a research topic for camera screening.", "BEAT TIMING", "Research only; any screening needs a clinician and clinical trials."],
+  ["done", "i-video", "Telehealth check-in", "Pulse during a video call, no device at home.", "HEART RATE"],
+  ["done", "i-gauge", "Stress and relaxation", "Variability falls under stress and rises with rest.", "HRV"],
+  ["done", "i-wind", "Breathing coach", "Shows paced breathing working, beat by beat.", "BEAT TIMING"],
+  ["focus", "i-face", "Real face check", "Spot photos, masks and deepfakes: no blood, no pulse.", "PULSE PRESENCE"],
+  ["pend", "i-car", "Driver fatigue", "A dashboard camera watching for drowsiness.", "HR + HRV"],
+  ["pend", "i-baby", "Newborn care", "Monitoring without sensors on fragile skin.", "HR + BREATHING"],
+  ["pend", "i-activity", "Fitness recovery", "How fast the heart settles after exercise.", "BEAT TIMING"],
+  ["pend", "i-moon", "Sleep and elder care", "Overnight vitals with no wearable.", "HR + BREATHING"],
+  ["pend", "i-pulse", "Rhythm screening", "Irregular beats as an early hint, for clinicians.", "BEAT TIMING"],
 ];
 function renderUses() {
   const box = $("#uses");
   if (box.children.length) return;
-  const tag = { done: "IN THIS APP", focus: "PROTOTYPE HERE", pend: "FUTURE WORK" };
-  box.innerHTML = USES.map(([st, title, what, sig, note]) => `
-    <div class="use ${st}"><span class="tag ${st === "done" ? "lead" : st === "focus" ? "ft" : ""}">${tag[st]}</span>
-      <h3>${title}</h3><p>${what}</p><span class="mono sig">NEEDS ${sig}</span><p class="note">${note}</p></div>`).join("");
+  const tag = { done: ["lead", "IN THIS APP"], focus: ["ft", "PROTOTYPE"], pend: ["", "FUTURE"] };
+  box.innerHTML = USES.map(([st, icon, title, line, sig]) => `
+    <div class="use ${st}">
+      <div class="use-top"><span class="use-icon"><svg><use href="#${icon}"/></svg></span><span class="tag ${tag[st][0]}">${tag[st][1]}</span></div>
+      <h4>${title}</h4><p>${line}</p><span class="mono sig">${sig}</span>
+    </div>`).join("");
 }
+
+/* ================================================================== floating camera (picture in picture) */
+// Screens that already show the camera do not need the floating copy.
+const HAS_CAMERA = new Set(["measure", "collect"]);
+let pipClosed = false, pipWasRunning = false;
+const pip = $("#pip"), pipImg = $("#pip-img");
+function pipPlace(x, y) {
+  const r = pip.getBoundingClientRect(), m = 12;
+  const bottomBar = window.innerWidth <= 760 ? 76 : 0; // keep clear of the phone navigation bar
+  x = Math.min(Math.max(m, x), window.innerWidth - r.width - m);
+  y = Math.min(Math.max(m, y), window.innerHeight - r.height - m - bottomBar);
+  pip.style.left = `${x}px`; pip.style.top = `${y}px`; pip.style.right = "auto"; pip.style.bottom = "auto";
+  return [x, y];
+}
+function renderPip() {
+  const s = state, running = !!s.running;
+  if (running && !pipWasRunning) pipClosed = false; // a new session brings it back
+  pipWasRunning = running;
+  const show = running && !HAS_CAMERA.has(view) && !pipClosed;
+  if (show && pip.hidden) {
+    pip.hidden = false;
+    pipImg.src = `/video.mjpg?pip=${Date.now()}`;
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem("pip-pos") || "null"); } catch { /* storage unavailable */ }
+    requestAnimationFrame(() => {
+      const r = pip.getBoundingClientRect();
+      pipPlace(saved ? saved[0] : window.innerWidth - r.width - 20, saved ? saved[1] : window.innerHeight - r.height - (window.innerWidth <= 760 ? 88 : 20));
+    });
+  } else if (!show && !pip.hidden) {
+    pip.hidden = true;
+    pipImg.removeAttribute("src"); // stop the stream while hidden
+  }
+  $("#pip-show").hidden = !(running && pipClosed && !HAS_CAMERA.has(view));
+  if (show) {
+    $("#pip-label").textContent = s.source === "sim" ? "SIMULATED" : "WEBCAM";
+    $("#pip-bpm").textContent = haveBpm() ? `${fmt(s.bpm)} BPM${s.confident ? "" : "?"}` : "--";
+    $("#pip-bpm").classList.toggle("low", haveBpm() && !s.confident);
+  }
+}
+$("#pip-close").addEventListener("click", e => { e.stopPropagation(); pipClosed = true; renderPip(); });
+$("#pip-show").addEventListener("click", () => { pipClosed = false; renderPip(); });
+(() => {
+  let drag = null;
+  const bar = $("#pip-bar");
+  bar.addEventListener("pointerdown", e => {
+    if (e.target.closest("button")) return;
+    const r = pip.getBoundingClientRect();
+    drag = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+    try { bar.setPointerCapture(e.pointerId); } catch { /* capture unavailable: move still tracks the bar */ }
+    pip.classList.add("dragging");
+  });
+  bar.addEventListener("pointermove", e => { if (drag) pipPlace(e.clientX - drag.dx, e.clientY - drag.dy); });
+  const end = () => {
+    if (!drag) return;
+    drag = null;
+    pip.classList.remove("dragging");
+    const r = pip.getBoundingClientRect();
+    try { localStorage.setItem("pip-pos", JSON.stringify([r.left, r.top])); } catch { /* storage unavailable */ }
+  };
+  bar.addEventListener("pointerup", end);
+  bar.addEventListener("pointercancel", end);
+  window.addEventListener("resize", () => { if (!pip.hidden) { const r = pip.getBoundingClientRect(); pipPlace(r.left, r.top); } });
+})();
 
 /* ================================================================== boot */
 let resizeTimer = null;
