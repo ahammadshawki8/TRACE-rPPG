@@ -20,8 +20,9 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-URL = "https://www.kaggle.com/api/v1/datasets/download/malekdinarito/ubfc-rppg-dataset?fileName={}"
-LIST = "https://www.kaggle.com/api/v1/datasets/list/malekdinarito/ubfc-rppg-dataset?pageSize=200"
+KAGGLE = "malekdinarito/ubfc-rppg-dataset"
+URL = "https://www.kaggle.com/api/v1/datasets/download/{ds}?fileName={name}"
+LIST = "https://www.kaggle.com/api/v1/datasets/list/{ds}?pageSize=200"
 
 
 class Progress:
@@ -47,10 +48,10 @@ class Progress:
             self.next_step += 10
 
 
-def sizes() -> dict[str, int]:
+def sizes(ds: str = KAGGLE) -> dict[str, int]:
     out, tok = {}, None
     while True:
-        u = LIST + (f"&pageToken={urllib.parse.quote(tok)}" if tok else "")
+        u = LIST.format(ds=ds) + (f"&pageToken={urllib.parse.quote(tok)}" if tok else "")
         d = json.load(urllib.request.urlopen(u, timeout=30))
         out.update({f["name"]: f["totalBytes"] for f in d["datasetFiles"]})
         tok = d.get("nextPageTokenNullable") or d.get("nextPageToken")
@@ -62,13 +63,13 @@ PROG: Progress | None = None
 DEFAULT = (1, 3, 5, 8, 10, 12, 14, 17, 20, 23, 26, 31, 38, 45)
 
 
-def fetch(name: str, out: Path) -> None:
+def fetch(name: str, out: Path, ds: str = KAGGLE) -> None:
     if out.exists():
         print(f"  have {name}")
         return
     part = out.with_name(out.name + ".part")
     have = part.stat().st_size if part.exists() else 0
-    req = urllib.request.Request(URL.format(name), headers={"Range": f"bytes={have}-"} if have else {})
+    req = urllib.request.Request(URL.format(ds=ds, name=name), headers={"Range": f"bytes={have}-"} if have else {})
     with urllib.request.urlopen(req, timeout=60) as r:
         if have and r.status != 206:  # server ignored the range: start over
             have = 0
