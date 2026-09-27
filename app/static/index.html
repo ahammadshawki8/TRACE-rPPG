@@ -8,8 +8,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23101116'/%3E%3Cpath d='M4 17h6l3-8 5 15 3-9 2 2h5' fill='none' stroke='%23B8FF3D' stroke-width='2.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/static/styles.css?v=16">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Caveat:wght@500;700&display=swap">
+<link rel="stylesheet" href="/static/styles.css?v=20">
 </head>
 <body>
 
@@ -46,6 +46,7 @@
     <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
     <symbol id="i-face" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
     <symbol id="i-stop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></symbol>
   </defs>
 </svg>
@@ -224,40 +225,316 @@
       </div>
     </section>
 
-    <!-- ============================================================ HOW IT WORKS -->
+    <!-- ============================================================ HOW IT WORKS (slide deck) -->
     <section class="view" data-view="signal" aria-labelledby="view-title">
-      <div class="steps">
-        <article class="card step">
-          <div class="step-n mono">01</div>
-          <div class="step-t"><h3>Raw colour</h3><p class="formula mono">g[n] = mean green of the skin in frame n</p>
-            <p>Thirty times a second the forehead and cheeks are averaged. The pulse is under 1 percent of this signal, buried under slow lighting drift.</p></div>
-          <canvas class="chart" id="c-s1" style="--h:110px" aria-label="Raw green channel"></canvas>
-        </article>
-        <article class="card step conv">
-          <div class="step-n mono">02</div>
-          <div class="step-t"><h3>Detrend <span class="tag">CONVOLUTION</span></h3><p class="formula mono">d[n] = g[n] - (g * h)[n],  h = 2 s moving average</p>
-            <p>Convolving with a moving average gives the slow trend. Subtracting it removes the drift and leaves the fast part.</p></div>
-          <canvas class="chart" id="c-s2" style="--h:110px" aria-label="Detrended green channel"></canvas>
-        </article>
-        <article class="card step conv">
-          <div class="step-n mono">03</div>
-          <div class="step-t"><h3>Bandpass <span class="tag">CONVOLUTION</span></h3><p class="formula mono">y[n] = sum h[k] d[n - k],  pass 0.7 to 4 Hz</p>
-            <p>A windowed-sinc FIR filter keeps only rhythms a heart can have: 42 to 240 beats per minute.</p></div>
-          <canvas class="chart" id="c-s3" style="--h:110px" aria-label="Band-pass filtered green channel"></canvas>
-        </article>
-        <article class="card step ft">
-          <div class="step-n mono">04</div>
-          <div class="step-t"><h3>Spectrum <span class="tag ft">FOURIER TRANSFORM</span></h3><p class="formula mono">Y(f) = sum y[n] e^(-j 2 pi f n / fs)</p>
-            <p>The FFT measures how much of each rhythm the signal holds. Green, CHROM and POS each give one spectrum, and TRACE selects the one with the sharpest peak after removing motion frequencies.</p></div>
-          <canvas class="chart" id="c-s4" style="--h:150px" aria-label="Fused spectrum with the peak marked"></canvas>
-        </article>
-        <article class="card step result">
-          <div class="step-n mono">05</div>
-          <div class="step-t"><h3>Heart rate</h3><p class="formula mono">BPM = 60 x f_peak</p>
-            <p>The tallest peak is the heart rate. A check at half the frequency stops a strong harmonic being read as double the rate.</p></div>
-          <div class="step-out"><span class="big mono" id="s5-bpm">--</span><span class="unit mono">BPM</span><span class="mono muted" id="s5-f"></span></div>
-        </article>
-        <p class="foot">Steps 1 to 3 show the green channel, the easiest to follow. CHROM and POS go through the same detrend and bandpass. Start a measurement to see live signals.</p>
+      <div class="deck" id="deck" tabindex="-1" aria-roledescription="slide deck">
+        <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+          <defs>
+            <!-- hand-drawn wobble for every line on the paper -->
+            <filter id="wobble"><feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="2.6"/></filter>
+            <!-- Beat, the character: a small black blob with white-dot eyes and thin legs, centred on its feet line -->
+            <g id="beat">
+              <path class="blob" d="M-17,4 C-21,-22 -9,-36 0,-36 C11,-36 21,-22 17,4 C15,14 -15,14 -17,4Z"/>
+              <circle class="eye" cx="-6" cy="-18" r="2.8"/><circle class="eye" cx="6" cy="-18" r="2.8"/>
+              <path class="ink" d="M-7,11 L-9,24 M7,11 L9,24"/>
+            </g>
+          </defs>
+        </svg>
+
+        <div class="stage" id="stage">
+
+          <!-- 1 -->
+          <section class="slide" data-n="1" aria-label="A camera can feel your pulse">
+            <div class="s-text">
+              <span class="s-step">TRACE rPPG</span>
+              <h2>A camera can feel your pulse.</h2>
+              <p>Every heartbeat makes your face a tiny bit redder. Too small for eyes, big enough for maths.</p>
+            </div>
+            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat holds a magnifying glass over a face whose cheek pulses">
+              <g filter="url(#wobble)">
+                <circle class="ink draw" pathLength="1" cx="170" cy="140" r="82"/>
+                <path class="ink draw" pathLength="1" d="M95,110 C120,60 220,55 248,112"/>
+                <path class="ink" d="M140,128 q8,-6 16,0 M186,128 q8,-6 16,0"/>
+                <path class="ink" d="M150,178 q20,16 40,0"/>
+                <ellipse class="cheek" cx="137" cy="160" rx="16" ry="10"/><ellipse class="cheek" cx="205" cy="160" rx="16" ry="10"/>
+                <path class="ink draw" pathLength="1" d="M150,222 L150,262 M190,222 L190,262"/>
+                <circle class="ink" cx="298" cy="150" r="30"/>
+                <path class="ink" d="M318,172 L342,200"/>
+                <g class="bob" transform="translate(372,222) scale(1.7)"><use href="#beat"/><path class="ink" d="M-13,-10 L-18,-13"/></g>
+                <path class="orange-ink" d="M110,160 q-20,-6 -26,-22 M232,160 q20,-6 26,-22"/>
+                
+              </g>
+                <g class="labels"><text class="hand orange" x="18" y="290">1% redder, every beat</text></g>
+            </svg>
+          </section>
+
+          <!-- 2 -->
+          <section class="slide" data-n="2" aria-label="Blood drinks green light">
+            <div class="s-text">
+              <span class="s-step">THE PHYSICS</span>
+              <h2>Blood drinks green light.</h2>
+              <p>Each beat pushes a little more blood into the skin. More blood soaks up more green light, so less bounces back to the camera.</p>
+              <details class="deeper"><summary>Go deeper</summary>
+                <p>Haemoglobin absorbs green (about 540 nm) most strongly. The camera's green channel therefore carries the strongest pulse, under 1 percent of the pixel value. Melanin absorbs light too, which is why darker skin gives a weaker signal.</p></details>
+            </div>
+            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="A lamp shines on skin; Beat pumps blood into a vessel under the skin">
+              <g filter="url(#wobble)">
+                <circle class="ink" cx="64" cy="52" r="18"/>
+                <path class="ink" d="M64,22 L64,14 M36,52 L28,52 M44,32 L38,26 M84,32 L90,26"/>
+                <path class="ink draw" pathLength="1" d="M82,72 L160,188"/><path class="ink" d="M148,186 L160,188 L158,176"/>
+                <path class="ink dash" d="M176,188 L214,134"/>
+                
+                
+                <path class="ink draw" pathLength="1" d="M20,202 C80,194 140,210 200,200 C260,190 320,208 380,200 C420,194 450,204 470,200"/>
+                <rect class="vessel" x="40" y="232" width="330" height="26" rx="13"/>
+                
+                <rect class="ink" x="398" y="150" width="24" height="70" rx="4"/>
+                <path class="ink" d="M410,222 C410,240 400,246 372,246"/>
+                <g class="pump"><path class="ink" d="M410,150 L410,118 M394,118 L426,118"/></g>
+                <g class="bob" transform="translate(348,180) scale(1.45)"><use href="#beat"/><path class="ink" d="M10,-14 L32,-36"/></g>
+                
+              </g>
+                <g class="labels"><text class="hand" x="26" y="124">green light</text><text class="hand" x="196" y="170">less comes back</text><text class="hand red" x="60" y="290">blood soaks it up</text><text class="hand red" x="316" y="92">each beat pumps</text></g>
+            </svg>
+          </section>
+
+          <!-- 3 -->
+          <section class="slide" data-n="3" aria-label="Grab the colour, 30 times a second">
+            <div class="s-text">
+              <span class="s-step">STEP 1 / CAPTURE</span>
+              <h2>Grab the colour, 30 times a second.</h2>
+              <p>We find the face, then average the forehead and both cheeks in every frame. One colour per frame becomes a signal over time.</p>
+              <span class="topic ft">FOURIER SHIFT THEOREM, FOR TRACKING</span>
+              <details class="deeper"><summary>Go deeper</summary>
+                <p>A Haar detector finds the face once. After that, phase correlation tracks it: a shift in the image is a linear phase in its Fourier transform, so the peak of the inverse FFT gives the movement to a fraction of a pixel.</p>
+                <p class="formula mono">g[n] = mean green of the skin in frame n</p>
+                <div class="live-chart"><span class="mono">LIVE: RAW GREEN, 10 S</span><canvas class="chart" id="c-s1" style="--h:90px"></canvas></div></details>
+            </div>
+            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat scoops colour from the forehead and cheeks of a face frame into a row of jars">
+              <g filter="url(#wobble)">
+                <rect class="ink draw" pathLength="1" x="24" y="40" width="160" height="190" rx="12"/>
+                <circle class="ink" cx="104" cy="128" r="56"/>
+                <rect class="orange-ink" x="80" y="88" width="48" height="16" rx="4"/>
+                <rect class="orange-ink" x="66" y="134" width="22" height="18" rx="4"/><rect class="orange-ink" x="120" y="134" width="22" height="18" rx="4"/>
+                
+                <g class="bob" transform="translate(236,210) scale(1.5)"><use href="#beat"/><path class="ink" d="M-12,-14 L-34,-40 M12,-14 L28,-34"/></g>
+                <path class="ink" d="M180,152 q10,-16 22,-8"/>
+                <g class="jars">
+                  <path class="ink" d="M300,230 l0,-40 l24,0 l0,40 Z M334,230 l0,-40 l24,0 l0,40 Z M368,230 l0,-40 l24,0 l0,40 Z M402,230 l0,-40 l24,0 l0,40 Z M436,230 l0,-40 l24,0 l0,40 Z"/>
+                  <path class="fill" d="M302,228 l0,-16 l20,0 l0,16Z M336,228 l0,-22 l20,0 l0,22Z M370,228 l0,-14 l20,0 l0,14Z M404,228 l0,-24 l20,0 l0,24Z M438,228 l0,-18 l20,0 l0,18Z"/>
+                  <path class="blue-ink draw" pathLength="1" d="M312,212 L346,206 L380,214 L414,204 L448,210"/>
+                </g>
+                
+                
+              </g>
+                <g class="labels"><text class="hand orange" x="36" y="262">forehead + cheeks</text><text class="hand blue" x="300" y="262">one colour per frame</text><text class="hand" x="318" y="170">30 / second</text></g>
+            </svg>
+          </section>
+
+          <!-- 4 -->
+          <section class="slide" data-n="4" aria-label="Flatten the slow hills">
+            <div class="s-text">
+              <span class="s-step">STEP 2 / DETREND</span>
+              <h2>Flatten the slow hills.</h2>
+              <p>Lighting drifts slowly and hides the pulse. We slide a 2 second average along the signal and subtract it: the hills go, the heartbeat ripples stay.</p>
+              <span class="topic conv">CONVOLUTION</span>
+              <details class="deeper"><summary>Go deeper</summary>
+                <p class="formula mono">d[n] = g[n] - (g * h)[n],  h = 2 s moving average</p>
+                <p>Convolving with a moving average is a low-pass filter. Subtracting it leaves a high-pass. Its first null sits at 0.49 Hz, safely below the slowest heart rate we look for (0.7 Hz).</p>
+                <div class="live-chart"><span class="mono">LIVE: AFTER DETREND</span><canvas class="chart" id="c-s2" style="--h:90px"></canvas></div></details>
+            </div>
+            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat pushes a sliding window along a hilly signal; behind it the signal is flat with small ripples">
+              <g filter="url(#wobble)">
+                <path class="orange-ink" d="M20,200 q8,-10 16,0 q8,10 16,0 q8,-10 16,0 q8,10 16,0 q8,-10 16,0 q8,10 16,0 q8,-10 16,0 q8,10 16,0 q8,-10 16,0 q8,10 16,0 q8,-10 16,0"/>
+                <path class="ink" d="M200,200 C240,120 290,110 330,170 C360,214 400,230 460,140"/>
+                <path class="orange-ink" d="M300,122 q6,-8 12,0 q6,8 12,0 M390,214 q6,-8 12,0 q6,8 12,0"/>
+                <rect class="win" x="196" y="96" width="62" height="140" rx="8"/>
+                <g class="bob" transform="translate(150,266) scale(1.3)"><use href="#beat"/><path class="ink" d="M12,-16 L35,-29 M12,-8 L35,-20"/></g>
+                
+                
+                
+              </g>
+                <g class="labels"><text class="hand red" x="330" y="96">lighting drift</text><text class="hand orange" x="194" y="84">moving average</text><text class="hand orange" x="30" y="170">pulse left behind</text></g>
+            </svg>
+          </section>
+
+          <!-- 5 -->
+          <section class="slide" data-n="5" aria-label="Only heart speeds get in">
+            <div class="s-text">
+              <span class="s-step">STEP 3 / BAND-PASS</span>
+              <h2>Only heart speeds get in.</h2>
+              <p>A filter lets through rhythms between 42 and 240 beats per minute. Breathing is too slow, sensor noise is too fast: both are turned away.</p>
+              <span class="topic conv">CONVOLUTION</span>
+              <details class="deeper"><summary>Go deeper</summary>
+                <p class="formula mono">y[n] = sum h[k] d[n - k],  pass 0.7 to 4 Hz</p>
+                <p>A windowed-sinc FIR filter, built by hand. It runs forwards and backwards (zero phase) so beats are not delayed, which matters when we time them.</p>
+                <div class="live-chart"><span class="mono">LIVE: AFTER BAND-PASS</span><canvas class="chart" id="c-s3" style="--h:90px"></canvas></div></details>
+            </div>
+            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat guards a gate: slow waves and fast jitter are turned away, medium waves pass">
+              <g filter="url(#wobble)">
+                <path class="ink" d="M250,70 L250,250 M290,70 L290,250 M244,70 L296,70"/>
+                <path class="ink" d="M24,110 C60,70 100,70 136,110 C170,150 200,150 226,120"/>
+                
+                <path class="red-ink" d="M200,96 l14,14 m0,-14 l-14,14"/>
+                <path class="ink" d="M24,230 l6,-10 l6,10 l6,-10 l6,10 l6,-10 l6,10 l6,-10 l6,10 l6,-10 l6,10 l6,-10 l6,10 l6,-10 l6,10 l6,-10 l6,10 l6,-10 l6,10 l6,-10 l6,10 l6,-10 l6,10 l6,-10 l6,10"/>
+                
+                <path class="red-ink" d="M184,206 l14,14 m0,-14 l-14,14"/>
+                <path class="orange-ink draw" pathLength="1" d="M30,170 q14,-22 28,0 q14,22 28,0 q14,-22 28,0 q14,22 28,0 q14,-22 28,0 q14,22 28,0 q14,-22 28,0 q14,22 28,0 q14,-22 28,0 q14,22 28,0 q14,-22 28,0 q14,22 28,0 q14,-22 28,0 q14,22 28,0 q14,-22 28,0"/>
+                
+                
+                <g class="bob" transform="translate(270,62) scale(1.2)"><use href="#beat"/><path class="ink" d="M-12,-12 L-28,-26"/></g>
+              </g>
+                <g class="labels"><text class="hand red" x="30" y="56">too slow: breathing</text><text class="hand red" x="30" y="266">too fast: noise</text><text class="hand orange" x="316" y="140">heart speeds</text><text class="hand" x="318" y="220">42 to 240 BPM</text></g>
+            </svg>
+          </section>
+
+          <!-- 6 -->
+          <section class="slide" data-n="6" aria-label="Three pairs of glasses">
+            <div class="s-text">
+              <span class="s-step">STEP 4 / THREE METHODS</span>
+              <h2>Three pairs of glasses.</h2>
+              <p>Green looks at one colour and is fooled when light or motion changes brightness. CHROM and POS mix colours so that brightness cancels out and the pulse stays.</p>
+              <div class="jump"><button type="button" class="btn ghost small" data-goto="methods"><svg><use href="#i-merge"/></svg>See them live: Methods</button></div>
+              <details class="deeper"><summary>Go deeper</summary>
+                <p class="formula mono">GREEN  S = G / mean(G) - 1</p>
+                <p class="formula mono">CHROM  X = 3R - 2G,  Y = 1.5R + G - 1.5B,  S = X - (std X / std Y) Y</p>
+                <p class="formula mono">POS    S1 = G - B,  S2 = G + B - 2R,  h = S1 + (std S1 / std S2) S2</p>
+                <p>Both CHROM and POS are fixed projections from the physics of skin reflection, not learned from data.</p></details>
+            </div>
+            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="A torch shines on three pairs of glasses; the green pair sees a messy signal, CHROM and POS see a clean pulse">
+              <g filter="url(#wobble)">
+                <path class="ink" d="M40,60 q16,-14 32,0 M72,60 l14,0 M86,60 q16,-14 32,0 M24,60 l16,0 M118,60 l16,0"/>
+                <path class="ink" d="M190,60 q16,-14 32,0 M222,60 l14,0 M236,60 q16,-14 32,0 M174,60 l16,0 M268,60 l16,0"/>
+                <path class="ink" d="M340,60 q16,-14 32,0 M372,60 l14,0 M386,60 q16,-14 32,0 M324,60 l16,0 M418,60 l16,0"/>
+                
+                <path class="red-ink" d="M28,150 l10,-26 l8,40 l10,-30 l8,18 l10,-34 l8,44 l10,-22 l8,16 l10,-12 l8,6 l10,-20"/>
+                
+                <path class="orange-ink" d="M178,146 q12,-20 24,0 q12,20 24,0 q12,-20 24,0 q12,20 24,0"/>
+                <path class="orange-ink" d="M328,146 q12,-20 24,0 q12,20 24,0 q12,-20 24,0 q12,20 24,0"/>
+                <path class="blue-ink" d="M214,186 l8,8 l16,-18 M364,186 l8,8 l16,-18"/>
+                <path class="ink" d="M456,240 l-26,-14 l0,-14 l26,-14 Z"/>
+                <path class="orange-ink dash" d="M428,220 L300,250 M428,214 L160,234"/>
+                <g class="bob" transform="translate(70,262) scale(1.2)"><use href="#beat"/><path class="ink" d="M-11,-18 l22,0" /></g>
+                
+              </g>
+                <g class="labels"><text class="hand" x="56" y="98">GREEN</text><text class="hand" x="206" y="98">CHROM</text><text class="hand" x="364" y="98">POS</text><text class="hand red" x="34" y="196">fooled</text><text class="hand orange" x="330" y="286">light and motion</text></g>
+            </svg>
+          </section>
+
+          <!-- 7 -->
+          <section class="slide" data-n="7" aria-label="A prism for rhythms">
+            <div class="s-text">
+              <span class="s-step">STEP 5 / FIND THE BEAT</span>
+              <h2>A prism for rhythms.</h2>
+              <p>The Fourier transform splits the wiggle into its rhythms, like a prism splits light. The tallest bar is the heartbeat.</p>
+              <span class="topic ft">FOURIER TRANSFORM</span> <span class="topic fs">FOURIER SERIES</span>
+              <details class="deeper"><summary>Go deeper</summary>
+                <p class="formula mono">Y(f) = sum y[n] e^(-j 2 pi f n / fs),   BPM = 60 x f_peak</p>
+                <p>A sharp pulse is a Fourier series: a fundamental plus harmonics at 2f, 3f. If the harmonic ever looks taller, we check half the frequency before trusting it, so we never report double the real rate.</p>
+                <div class="live-chart"><span class="mono">LIVE: SPECTRUM</span><canvas class="chart" id="c-s4" style="--h:110px"></canvas></div>
+                <p class="mono live-bpm"><span id="s5-bpm">--</span> BPM <span class="muted" id="s5-f"></span></p></details>
+            </div>
+            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="A wiggly beam enters a prism and comes out as bars; Beat plants a flag on the tallest bar">
+              <g filter="url(#wobble)">
+                <path class="ink" d="M10,150 q10,-26 20,0 q10,26 20,0 q10,-26 20,0 q10,26 20,0 q10,-26 20,0 q10,26 20,0"/>
+                <path class="ink draw" pathLength="1" d="M140,210 L190,90 L240,210 Z"/>
+                <path class="ink dash" d="M240,150 L282,110 M240,160 L282,160 M240,170 L282,210"/>
+                <rect class="ink" x="290" y="230" width="22" height="20"/><rect class="bar-hot" x="322" y="120" width="22" height="130"/>
+                <rect class="ink" x="354" y="214" width="22" height="36"/><rect class="ink" x="386" y="196" width="22" height="54"/>
+                <rect class="ink" x="418" y="236" width="22" height="14"/>
+                <path class="ink" d="M284,250 L460,250"/>
+                
+                
+                <g class="bob" transform="translate(333,93) scale(1.1)"><use href="#beat"/><path class="ink" d="M12,-14 L22,-40 L40,-34 L22,-28"/></g>
+                
+              </g>
+                <g class="labels"><text class="hand orange" x="362" y="126">the heartbeat</text><text class="hand" x="372" y="184">echo (harmonic)</text><text class="hand" x="120" y="270">BPM = 60 x the tallest</text></g>
+            </svg>
+          </section>
+
+          <!-- 8 -->
+          <section class="slide" data-n="8" aria-label="TRACE picks the sharpest peak">
+            <div class="s-text">
+              <span class="s-step">STEP 6 / TRACE DECIDES</span>
+              <h2>TRACE picks the sharpest peak.</h2>
+              <p>Every half second each method's spectrum is scored: one clean peak scores high, a mess scores low. Frequencies that match head motion are masked first. The winner gives the heart rate.</p>
+              <div class="jump"><button type="button" class="btn ghost small" data-goto="methods"><svg><use href="#i-merge"/></svg>Watch it choose: Methods</button></div>
+              <details class="deeper"><summary>Go deeper</summary>
+                <p>Quality = power in the peak and its harmonic divided by all power in the heart band (Parseval: power in the spectrum equals energy in time). A motion reference, blind to blood, marks the frequencies to suppress. On 3,060 simulated readings never used for tuning, selecting per window beat every single method.</p></details>
+            </div>
+            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat judges three spectrum cards and gives a ribbon to the one with a single sharp peak; a red stencil covers a motion peak">
+              <g filter="url(#wobble)">
+                <rect class="ink" x="20" y="60" width="120" height="120" rx="10"/><rect class="ink" x="180" y="60" width="120" height="120" rx="10"/><rect class="ink" x="340" y="60" width="120" height="120" rx="10"/>
+                <path class="ink" d="M30,166 l18,-2 l8,-60 l8,56 l14,-4 l8,-48 l8,50 l20,-2 l10,4"/>
+                <rect class="mask" x="70" y="96" width="30" height="74"/>
+                
+                <path class="ink" d="M190,166 l30,-4 l10,-50 l10,48 l30,-10 l8,-20 l10,26"/>
+                <path class="orange-ink" d="M350,166 l40,0 l12,-90 l12,90 l36,0"/>
+                
+                <path class="blue-ink" d="M440,70 l0,40 l-10,-8 l-10,8 l0,-40 Z"/>
+                
+                <g class="bob" transform="translate(240,262) scale(1.3)"><use href="#beat"/><path class="ink" d="M12,-16 L30,-30 M30,-30 l8,-12 l6,4"/></g>
+                
+              </g>
+                <g class="labels"><text class="hand red" x="30" y="206">motion masked</text><text class="hand" x="36" y="50">GREEN</text><text class="hand" x="200" y="50">CHROM</text><text class="hand" x="370" y="50">POS</text><text class="hand blue" x="352" y="206">sharpest: chosen</text><text class="hand" x="270" y="252">every half second</text></g>
+            </svg>
+          </section>
+
+          <!-- 9 -->
+          <section class="slide" data-n="9" aria-label="Proof from three sources">
+            <div class="s-text">
+              <span class="s-step">HOW WE KNOW</span>
+              <h2>Proof from three sources.</h2>
+              <p>Every decision TRACE makes is checked against three kinds of truth: simulated faces where the answer is exact, a public dataset with a clip-on sensor, and our own volunteers with a smartwatch.</p>
+              <div class="evidence" id="deck-evidence"></div>
+              <div class="jump"><button type="button" class="btn ghost small" data-goto="collect"><svg><use href="#i-users"/></svg>Collect</button><button type="button" class="btn ghost small" data-goto="scenarios"><svg><use href="#i-grid"/></svg>All results: Scenarios</button></div>
+            </div>
+            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat carries a heart across a gap on a bridge made of three planks: simulated, dataset, volunteers">
+              <g filter="url(#wobble)">
+                <path class="ink" d="M10,200 L110,200 L110,290 M470,200 L370,200 L370,290"/>
+                <rect class="plank" x="112" y="190" width="84" height="16" rx="3"/><rect class="plank" x="198" y="190" width="84" height="16" rx="3"/><rect class="plank" x="284" y="190" width="84" height="16" rx="3"/>
+                
+                
+                <g class="walk" transform="translate(236,190) scale(1.3)"><use href="#beat"/><path class="ink" d="M10,-14 L20,-30"/></g>
+                <path class="heart" d="M263,146 c-8,-12 -24,-4 -14,10 l14,14 l14,-14 c10,-14 -6,-22 -14,-10Z"/>
+              </g>
+                <g class="labels"><text class="hand blue" x="112" y="236">simulated</text><text class="hand blue" x="208" y="236">dataset</text><text class="hand blue" x="286" y="236">volunteers</text><text class="hand" x="20" y="186">a claim</text><text class="hand" x="392" y="186">proof</text></g>
+            </svg>
+          </section>
+
+          <!-- 10 -->
+          <section class="slide" data-n="10" aria-label="Where our syllabus lives">
+            <div class="s-text">
+              <span class="s-step">THE COURSE, IN ONE PICTURE</span>
+              <h2>Where our syllabus lives.</h2>
+              <ul class="syllabus">
+                <li><span class="topic conv">CONVOLUTION</span> removing drift, and the band-pass filter</li>
+                <li><span class="topic ft">FOURIER TRANSFORM</span> the spectrum and the heart rate, face tracking, and heart rhythm (used twice)</li>
+                <li><span class="topic fs">FOURIER SERIES</span> harmonics, so we never report double</li>
+              </ul>
+              <p>No trained model anywhere: every number comes from a convolution or a Fourier transform.</p>
+            </div>
+            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat stands at a signpost with three arrows: convolution, Fourier transform, Fourier series">
+              <g filter="url(#wobble)">
+                <path class="ink draw" pathLength="1" d="M250,280 L250,40"/>
+                <path class="ink" d="M250,60 L400,60 L424,78 L400,96 L250,96"/>
+                <path class="ink" d="M250,116 L90,116 L66,134 L90,152 L250,152"/>
+                <path class="ink" d="M250,172 L390,172 L414,190 L390,208 L250,208"/>
+                <g class="bob" transform="translate(160,262) scale(1.6)"><use href="#beat"/><path class="ink" d="M12,-14 L34,-26"/></g>
+                <path class="heart" d="M58,236 c-6,-9 -18,-3 -10,7 l10,10 l10,-10 c8,-10 -4,-16 -10,-7Z"/>
+              </g>
+                <g class="labels"><text class="hand orange" x="262" y="86">convolution</text><text class="hand orange" x="84" y="142">Fourier transform</text><text class="hand orange" x="260" y="198">Fourier series</text></g>
+            </svg>
+          </section>
+        </div>
+
+        <nav class="deck-bar" aria-label="Slides">
+          <button class="btn ghost small" type="button" id="deck-prev" aria-label="Previous slide"><svg><use href="#i-left"/></svg></button>
+          <ol class="deck-dots" id="deck-dots"></ol>
+          <button class="btn ghost small" type="button" id="deck-next" aria-label="Next slide"><svg><use href="#i-right"/></svg></button>
+          <span class="mono deck-count" id="deck-count">1 / 10</span>
+          <button class="btn ghost small" type="button" id="deck-full"><svg><use href="#i-play"/></svg><span>Present</span></button>
+        </nav>
       </div>
     </section>
 
@@ -385,7 +662,7 @@
   <img id="pip-img" alt="Live camera preview">
 </div>
 
-<script src="/static/app.js?v=15"></script>
+<script src="/static/app.js?v=17"></script>
 <script src="/static/collect.js?v=3"></script>
 </body>
 </html>

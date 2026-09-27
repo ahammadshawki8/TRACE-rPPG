@@ -62,7 +62,7 @@ function go(v) {
   $$(".rail button[data-view]").forEach(b => b.classList.toggle("active", b.dataset.view === v));
   $("#view-title").textContent = TITLES[v];
   $("#ctx-view").textContent = TITLES[v].toUpperCase();
-  if (v === "scenarios") loadHub();
+  if (v === "scenarios" || v === "signal") loadHub();
   moveIndicator(); renderAll();
   window.scrollTo({ top: 0 });
 }
@@ -141,7 +141,7 @@ function renderAll() {
   if (view === "measure") renderMeasure();
   if (view === "methods") { renderFusion(); drawHistory(); renderEval(); }
   if (view === "scenarios" && hubDirty()) renderScenarios();
-  if (view === "signal") renderSignal();
+  if (view === "signal") { renderSignal(); renderDeckEvidence(); }
   if (view === "next") { updateHrvRing(); renderLiveness(); renderUses(); }
   if (view === "collect" && window.renderCollect) window.renderCollect();
 }
@@ -764,6 +764,65 @@ $("#pip-show").addEventListener("click", () => { pipClosed = false; renderPip();
   bar.addEventListener("pointercancel", end);
   window.addEventListener("resize", () => { if (!pip.hidden) { const r = pip.getBoundingClientRect(); pipPlace(r.left, r.top); } });
 })();
+
+/* ================================================================== how it works: the slide deck */
+const slides = $$("#stage .slide");
+let slideAt = Math.min(slides.length - 1, Math.max(0, +(localGet("deck-slide") || 0)));
+function showSlide(i) {
+  slideAt = Math.min(slides.length - 1, Math.max(0, i));
+  localSet("deck-slide", String(slideAt));
+  slides.forEach((s, k) => {
+    const on = k === slideAt;
+    if (on && !s.classList.contains("on")) { s.classList.remove("on"); void s.offsetWidth; } // restart the drawing
+    s.classList.toggle("on", on);
+    s.setAttribute("aria-hidden", String(!on));
+  });
+  $$("#deck-dots button").forEach((b, k) => b.setAttribute("aria-current", k === slideAt ? "step" : "false"));
+  $("#deck-count").textContent = `${slideAt + 1} / ${slides.length}`;
+  $("#deck-prev").disabled = slideAt === 0;
+  $("#deck-next").disabled = slideAt === slides.length - 1;
+}
+$("#deck-dots").innerHTML = slides.map((s, k) => `<li><button type="button" aria-label="Slide ${k + 1}: ${esc0(s.getAttribute("aria-label"))}"></button></li>`).join("");
+function esc0(s) { return String(s || "").replace(/"/g, "&quot;"); }
+$$("#deck-dots button").forEach((b, k) => b.addEventListener("click", () => showSlide(k)));
+$("#deck-prev").addEventListener("click", () => showSlide(slideAt - 1));
+$("#deck-next").addEventListener("click", () => showSlide(slideAt + 1));
+function toggleFull() {
+  const d = $("#deck");
+  if (document.fullscreenElement) document.exitFullscreen();
+  else if (d.requestFullscreen) d.requestFullscreen().catch(() => {});
+}
+$("#deck-full").addEventListener("click", toggleFull);
+document.addEventListener("fullscreenchange", () => {
+  const full = document.fullscreenElement === $("#deck");
+  $("#deck").classList.toggle("full", full);
+  $("#deck-full span").textContent = full ? "Exit" : "Present";
+});
+// Keyboard and presentation clickers (they send arrows or Page Up / Page Down).
+document.addEventListener("keydown", e => {
+  if (view !== "signal" || e.altKey || e.ctrlKey || e.metaKey) return;
+  const el = e.target instanceof Element ? e.target : null; // clickers can send keys to the document itself
+  if (el && el.closest("input, textarea, select, summary")) return;
+  const next = ["ArrowRight", "PageDown"].includes(e.key) || (e.key === " " && !(el && el.closest("button")));
+  const prev = ["ArrowLeft", "PageUp"].includes(e.key);
+  if (next) { e.preventDefault(); showSlide(slideAt + 1); }
+  else if (prev) { e.preventDefault(); showSlide(slideAt - 1); }
+  else if (e.key === "Home") showSlide(0);
+  else if (e.key === "End") showSlide(slides.length - 1);
+  else if (e.key === "f" || e.key === "F") toggleFull();
+});
+function renderDeckEvidence() {
+  const box = $("#deck-evidence");
+  if (!box) return;
+  const rows = [["simulated", "Simulated faces", "exact truth"], ["ubfc", "Public dataset", "clip-on sensor"], ["volunteers", "Our volunteers", "smartwatch"]];
+  box.innerHTML = rows.map(([k, name, ref]) => {
+    const s = hub?.[k];
+    if (!s?.available) return `<div class="ev"><b>${name}</b><span class="mono">${ref}</span><em class="mono muted">COMING SOON</em></div>`;
+    const m = s.overall.mae, best = ["green", "chrom", "pos"].reduce((a, x) => m[x] < m[a] ? x : a, "green");
+    return `<div class="ev"><b>${name}</b><span class="mono">${ref}</span><em class="mono">TRACE ${fmt(m.trace, 1)} vs ${MNAME[best]} ${fmt(m[best], 1)} BPM, ${s.readings.toLocaleString()} readings</em></div>`;
+  }).join("");
+}
+showSlide(slideAt);
 
 /* ================================================================== landing */
 // Decorative only: a stylised pulse line over the landing photo. No number is
