@@ -81,11 +81,15 @@ class FaceTracker:
     peaks at the shift, located to sub-pixel precision.
     """
 
-    def __init__(self, every: int = 15, deadband: float = 0.12, init_hits: int = 5, scale: float = 0.5):
+    def __init__(self, every: int = 15, deadband: float = 0.12, init_hits: int = 5, scale: float = 0.5,
+                 max_step: float = 0.15):
         self.cascade = cv2.CascadeClassifier(cv2.data.haarcascades + CASCADE_FILE)
         if self.cascade.empty():
             raise RuntimeError("Haar cascade not found; install opencv-python-headless<5")
         self.every, self.deadband, self.init_hits, self.scale = every, deadband, init_hits, scale
+        # Largest believable frame-to-frame move, as a fraction of face width
+        # (0.15 of a 200 px face is 30 px in 1/30 s, faster than any sitter).
+        self.max_step = max_step
         self.box: np.ndarray | None = None
         self.i = 0
         self.attempts = 0
@@ -97,8 +101,13 @@ class FaceTracker:
         self._hann: np.ndarray | None = None
 
     def _set_anchor(self, gray: np.ndarray, box: np.ndarray) -> None:
-        x, y, w, h = box
         H, W = gray.shape
+        # Keep the box inside the image: an anchor patch off the frame has no
+        # size, and phase correlation cannot build a window for it.
+        box = box.copy()
+        box[0] = float(np.clip(box[0], 0, max(0.0, W - box[2])))
+        box[1] = float(np.clip(box[1], 0, max(0.0, H - box[3])))
+        x, y, w, h = box
         pad = 0.15
         x0, y0 = int(max(0, x - pad * w)), int(max(0, y - pad * h))
         x1, y1 = int(min(W, x + (1 + pad) * w)), int(min(H, y + (1 + pad) * h))
@@ -150,6 +159,18 @@ class FaceTracker:
 
         box, resp = self._track(gray)
         w = self._anchor_box[2]
+        if np.hypot(*(box[:2] - self.box[:2])) > self.max_step * w:
+            # A head cannot move this far between two frames; phase
+            # correlation has locked onto something else. Keep the last box
+            # and let the detector check it now, instead of re-anchoring on a
+            # wrong position (which once walked the box off the image).
+            found = self.detect(rgb)
+            if found is not None:
+                c = found[:2] + found[2:] / 2
+                self.box = np.array([c[0] - self.box[2] / 2, c[1] - self.box[3] / 2, self.box[2], self.box[3]])
+            self._set_anchor(gray, self.box)
+            self.box = self._anchor_box.copy()
+            return self.box, found is not None
         moved = np.hypot(*(box[:2] - self._anchor_box[:2]))
         if moved > 0.2 * w or resp < 0.05:
             # The face has left the anchor patch (or changed a lot): re-anchor

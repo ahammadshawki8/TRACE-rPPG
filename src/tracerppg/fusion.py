@@ -166,6 +166,17 @@ def fuse(
     )
 
 
+def p_correct(quality: float, params: dict) -> float | None:
+    """P(estimate within 5 BPM | fused quality), from the logistic fit that
+    step5 froze into results/fusion_params.json. The fit was made on the
+    simulated tuning cohort, so on real faces it is an indication only.
+    Its 0.5 point is the confidence threshold."""
+    lg = params.get("logistic")
+    if not lg:
+        return None
+    return round(float(1.0 / (1.0 + np.exp(-(lg[0] + lg[1] * quality)))), 3)
+
+
 # Nominal blood-volume-pulse direction in normalised RGB for the artifact
 # reference. Close to published PBV signatures (de Haan and van Leest 2014)
 # but deliberately different from the simulator's generating vector

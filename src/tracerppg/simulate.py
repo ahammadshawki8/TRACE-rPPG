@@ -270,3 +270,171 @@ def skin_preview(fitzpatrick: int) -> np.ndarray:
     skin = SURFACE_LEVEL + base["dermal"] * ratio
     frame = base["img"] * (1.0 - base["mask"]) + skin * base["mask"]
     return np.clip(np.rint(frame), 0, 255).astype(np.uint8)
+
+
+# --------------------------------------------------------------------------
+# Live simulator: the same skin model, streamed, with settings that change
+# while it runs. Used by the demo app and by scripts/sim_scenarios.py.
+# --------------------------------------------------------------------------
+
+@dataclass
+class LiveParams:
+    """Settings a presenter can change while the volunteer is on screen.
+
+    fitzpatrick   skin type I to VI (melanin only; the face itself is fixed)
+    bpm           true mean heart rate; the heart glides to a new value over
+                  a few seconds, as a real one would
+    motion        0 still, 0.5 natural sitting, 1.2 talking, 2.5 restless
+    light         scene illumination, 1 = the calibrated room. Low light
+                  leaves the sensor noise floor unchanged, so the pulse sinks
+                  into it; high light clips the brightest skin
+    flicker_hz    a lamp whose brightness varies periodically (0 = off). A
+                  brightness change is exactly what green cannot tell from a
+                  pulse, and what CHROM and POS are built to cancel
+    flicker_depth relative amplitude of that brightness change
+    screen_light  coloured relighting from a screen (see _screen_light)
+    """
+
+    fitzpatrick: int = 2
+    bpm: float = 72.0
+    motion: float = 0.3
+    light: float = 1.0
+    flicker_hz: float = 0.0
+    flicker_depth: float = 0.03
+    screen_light: float = 0.002
+
+
+LIVE_LIMITS = {"fitzpatrick": (1, 6), "bpm": (40.0, 180.0), "motion": (0.0, 3.0), "light": (0.2, 1.6),
+               "flicker_hz": (0.0, 4.0), "flicker_depth": (0.0, 0.1), "screen_light": (0.0, 0.02)}
+
+
+class _Smooth:
+    """Unit-variance low-pass noise, one sample per call (one-pole filter)."""
+
+    def __init__(self, cut_hz: float, fs: float, rng: np.random.Generator):
+        self.a = float(np.exp(-2 * np.pi * cut_hz / fs))
+        self.gain = float(np.sqrt((1 + self.a) / (1 - self.a)))
+        self.y = 0.0
+        self.rng = rng
+
+    def __call__(self) -> float:
+        self.y = self.a * self.y + (1 - self.a) * self.rng.standard_normal()
+        return self.y * self.gain
+
+
+class LiveSimulator:
+    """Streams frames of a simulated volunteer whose settings can change live.
+
+    The physics is the same as `render`: surface reflection plus melanin-
+    attenuated dermal reflection modulated by the pulse along PULSE_DIRECTION,
+    then shading, lighting, motion and sensor noise. One shortcut buys speed
+    (about 30 fps is needed next to the live pipeline): the noise level is
+    set from the unmoved frame. The noise itself is drawn fresh every frame.
+    A precomputed bank of noise fields was tried and rejected: phase
+    correlation whitens the spectrum, so a reused noise pattern gives a sharp
+    false peak and the tracker jumped to it (5 to 8 px error, one crash).
+    Beats are generated one at a time, so the true rate can change and is
+    always known exactly (`beat_times`).
+    """
+
+
+    def __init__(self, params: LiveParams | None = None, fps: float = 30.0, seed: int = 0):
+        self.p = LiveParams(**asdict(params)) if params else LiveParams()
+        self.fps = fps
+        self.rng = np.random.default_rng(seed)
+        base = _base_face()
+        self.base = base
+        fx, fy, fw, fh = base["face"]
+        self.centre = (fx + fw / 2.0, fy + fh / 2.0)
+        self.bg = base["img"] * (1.0 - base["mask"])
+        self.noise = np.empty((HEIGHT, WIDTH, 3), dtype=np.float32)
+        self.a = (0.010 * PULSE_DIRECTION / PULSE_DIRECTION[1]).astype(np.float32)
+        # Heart: the rate glides toward the target with a 3 s time constant,
+        # plus LF (0.1 Hz) and respiratory (0.25 Hz) modulation for realism.
+        self.rate = self.p.bpm
+        self.beat_times: list[float] = [0.0]
+        self.phase = self.rng.uniform(0, 6.28, size=4)
+        self.fast, self.slow, self.rot = (_Smooth(2.5, fps, self.rng), _Smooth(0.5, fps, self.rng),
+                                          _Smooth(0.4, fps, self.rng))
+        self.scr1, self.scr2 = _Smooth(3.0, fps, self.rng), _Smooth(3.0, fps, self.rng)
+        self.scr_u = [u / np.linalg.norm(u) for u in self.rng.normal(size=(2, 3))]
+        self.sway_hz = self.rng.uniform(0.08, 0.2)
+        self.i = 0
+        self._ref = self._wave_reference()
+        self._prepare()
+
+    # ---------------------------------------------------------------- settings
+    def set(self, **kw) -> LiveParams:
+        """Change settings; unknown keys are ignored, values are clamped."""
+        for k, v in kw.items():
+            if k in LIVE_LIMITS and v is not None:
+                lo, hi = LIVE_LIMITS[k]
+                v = int(round(float(v))) if k == "fitzpatrick" else float(v)
+                setattr(self.p, k, min(hi, max(lo, v)))
+        self._prepare()
+        return self.p
+
+    def _prepare(self) -> None:
+        m = self.base["mask"]
+        self.skin_d = (self.base["dermal"] * melanin_ratio(int(self.p.fitzpatrick))) * m
+        self.surf_m = SURFACE_LEVEL * m
+        still = (self.bg + self.surf_m + self.skin_d) * self.p.light
+        self.sigma = np.sqrt(1.0 + 0.015 * np.clip(still, 0, None)).astype(np.float32)
+
+    # ---------------------------------------------------------------- heart
+    def _wave_reference(self) -> tuple[float, float]:
+        """Mean and peak-to-peak of the beat waveform at 72 BPM, so the
+        streamed pulse has the same unit scaling as `ppg_from_beats`."""
+        t = np.arange(0, 10, 1 / self.fps)
+        beats = np.arange(0, 11, 60 / 72.0)
+        d = t[:, None] - beats[None, :]
+        w = (np.exp(-0.5 * (d / 0.09) ** 2) + 0.35 * np.exp(-0.5 * ((d - 0.32) / 0.12) ** 2)).sum(axis=1)
+        return float(np.mean(w)), float(np.ptp(w))
+
+    def _pulse(self, t: float) -> float:
+        while self.beat_times[-1] < t + 1.0:
+            tb = self.beat_times[-1]
+            self.rate += (self.p.bpm - self.rate) * (1 - np.exp(-(60 / max(self.rate, 30)) / 3.0))
+            inst = (self.rate + 3.0 * np.sin(2 * np.pi * 0.10 * tb + self.phase[0])
+                    + 2.5 * np.sin(2 * np.pi * 0.25 * tb + self.phase[1]))
+            self.beat_times.append(tb + 60.0 / max(inst, 30.0))
+        d = t - np.asarray(self.beat_times[-8:])
+        d = d[np.abs(d) < 1.5]
+        w = float(np.sum(np.exp(-0.5 * (d / 0.09) ** 2) + 0.35 * np.exp(-0.5 * ((d - 0.32) / 0.12) ** 2)))
+        mean, ptp = self._ref
+        return (w - mean) / ptp
+
+    def true_bpm(self, t: float, span: float = 20.0) -> float | None:
+        """Mean rate of the beats in the last `span` seconds: the reference a
+        20 s analysis window should be compared with."""
+        b = np.asarray(self.beat_times)
+        m = (b > t - span) & (b <= t)
+        return float(60.0 / np.mean(np.diff(b[m]))) if m.sum() > 2 else None
+
+    # ---------------------------------------------------------------- frames
+    def next_frame(self) -> tuple[np.ndarray, float]:
+        p, t = self.p, self.i / self.fps
+        self.i += 1
+        pulse = self._pulse(t)
+        fast = self.fast()
+        sway = np.sin(2 * np.pi * self.sway_hz * t + self.phase[2])
+        dx = p.motion * (3.0 * sway + 1.2 * fast)
+        dy = p.motion * (1.5 * self.slow() + 0.6 * fast)
+        rot = p.motion * 0.8 * self.rot()
+        shade = p.motion * (0.004 * sway + 0.006 * fast)
+        spec = p.motion * 0.25 * fast
+        gain = p.light * (1.0 + 0.02 * np.sin(2 * np.pi * 0.03 * t + self.phase[3])) * (1.0 + shade)
+        if p.flicker_hz > 0:
+            gain *= 1.0 + p.flicker_depth * np.sin(2 * np.pi * p.flicker_hz * t)
+        colour = gain * (1.0 + p.screen_light * (self.scr1() * self.scr_u[0] + self.scr2() * self.scr_u[1]))
+        frame = self.bg + self.surf_m * (1.0 + spec) + self.skin_d * (1.0 + self.a * pulse)
+        frame *= colour.astype(np.float32)
+        M = cv2.getRotationMatrix2D(self.centre, float(rot), 1.0)
+        M[0, 2] += dx
+        M[1, 2] += dy
+        self.last_shift = (float(dx), float(dy))  # true head translation, for tracker checks
+        frame = cv2.warpAffine(frame, M, (WIDTH, HEIGHT), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
+        self.rng.standard_normal(out=self.noise, dtype=np.float32)
+        self.noise *= self.sigma
+        frame += self.noise
+        return np.clip(np.rint(frame), 0, 255).astype(np.uint8), t

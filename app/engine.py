@@ -21,7 +21,7 @@ import cv2
 import numpy as np
 
 from tracerppg.datasets import resample_uniform
-from tracerppg.fusion import artifact_reference, band_limited_pulses, fuse
+from tracerppg.fusion import artifact_reference, band_limited_pulses, fuse, p_correct
 from tracerppg.hrv import DISCLAIMER, HRV_METHOD, MIN_HRV_SECONDS, clean_rr, hrv_from_pulse
 from tracerppg.roi import REGIONS, FaceTracker, skin_mean
 from tracerppg.spectral import HR_BAND, estimate_bpm
@@ -65,24 +65,34 @@ class WebcamSource:
 
 
 class SimSource:
-    """A simulated volunteer rendered live, paced at 30 fps."""
+    """A simulated volunteer rendered live at 30 fps, whose skin type, heart
+    rate, motion and lighting can be changed while it runs (`set`).
 
-    def __init__(self, fitzpatrick: int = 2, motion: float = 0.3, duration_s: float = 600.0, seed: int = 11,
-                 mean_bpm: float = 72.0):
-        from tracerppg.simulate import SimConfig, render
+    Timestamps are simulation time, so if rendering ever falls behind the
+    wall clock the pipeline still sees a correct, uniform 30 fps signal.
+    """
 
-        self.cfg = SimConfig(fitzpatrick=fitzpatrick, motion=motion, duration_s=duration_s, seed=seed,
-                             mean_bpm=mean_bpm)
-        self.frames, self.rhythm, _, _ = render(self.cfg)
+    def __init__(self, **params):
+        from tracerppg.simulate import LiveParams, LiveSimulator
+
+        self.sim = LiveSimulator(LiveParams(), seed=int(params.pop("seed", 11)))
+        self.sim.set(**params)
+
+    @property
+    def params(self) -> dict:
+        return asdict(self.sim.p)
+
+    def set(self, **kw) -> dict:
+        self.sim.set(**kw)
+        return self.params
 
     def true_bpm(self, t: float, span: float = WINDOW_S) -> float | None:
-        b = self.rhythm.beat_times
-        m = (b > t - span) & (b <= t)
-        return float(60.0 / np.mean(np.diff(b[m]))) if m.sum() > 2 else None
+        return self.sim.true_bpm(t, span)
 
     def __iter__(self):
         start = time.monotonic()
-        for frame, t in self.frames:
+        while True:
+            frame, t = self.sim.next_frame()
             lag = t - (time.monotonic() - start)
             if lag > 0:
                 time.sleep(lag)
@@ -153,16 +163,7 @@ class LiveEngine:
             elif source == "file":
                 self.source = FileSource(kw["path"])
             else:
-                fz = int(kw.get("fitzpatrick", 2))
-                restless = float(kw.get("motion", 0.3)) > 1.0
-                clip = ROOT / "data" / "replay" / f"type{fz}_{'restless' if restless else 'calm'}"
-                if clip.with_suffix(".mkv").exists():
-                    # Pre-rendered volunteer: decoding is cheap, rendering is not.
-                    meta = json.loads(clip.with_suffix(".json").read_text())
-                    self.source = FileSource(str(clip.with_suffix(".mkv")), meta["beat_times"])
-                    self.source.fitzpatrick = fz
-                else:
-                    self.source = SimSource(fz, float(kw.get("motion", 0.3)))
+                self.source = SimSource(**kw)
         except Exception as exc:  # surfaced to the UI as a plain message
             self.error = str(exc)
             self.state = {"running": False, "error": self.error}
@@ -180,6 +181,11 @@ class LiveEngine:
             self.source.close()
         self.thread = None
         self.source = None
+
+    def set_sim(self, **kw) -> dict | None:
+        """Change the simulated volunteer while it runs."""
+        src = self.source
+        return src.set(**kw) if isinstance(src, SimSource) else None
 
     def hrv_begin(self):
         with self.lock:
@@ -291,7 +297,8 @@ class LiveEngine:
                  "params": {k: self.params.get(k) for k in ("gamma", "mask_k", "confidence")}}
         if isinstance(self.source, SimSource):
             state["true_bpm"] = self.source.true_bpm(now)
-            state["fitzpatrick"] = self.source.cfg.fitzpatrick
+            state["sim"] = self.source.params
+            state["fitzpatrick"] = state["sim"]["fitzpatrick"]
         elif isinstance(self.source, FileSource) and self.source.beats is not None:
             state["true_bpm"] = self.source.true_bpm(now)
             state["fitzpatrick"] = getattr(self.source, "fitzpatrick", None)
@@ -323,7 +330,7 @@ class LiveEngine:
                 # in-band peak: what the fusion actually sums.
                 "method_spectra": {k: _thin(v.power[band] / (v.power[band].max() + 1e-30), 240)
                                    for k, v in fr.per_method.items()},
-                "p_correct": _p_correct(fr.quality, self.params),
+                "p_correct": p_correct(fr.quality, self.params),
                 "method_traces": {k: _thin(pulses[k][show] / (np.std(pulses[k][show]) + 1e-12))
                                   for k in ("green", "chrom", "pos")},
                 "naive_green": round(estimate_bpm(pulses["green"], FS).bpm, 1),
@@ -336,17 +343,6 @@ class LiveEngine:
                 "spectrum": {"f": _thin(fr.freqs[band] * 60, 240), "p": _thin(fp, 240), "peak": round(fr.bpm, 1)},
             })
         self.state = state
-
-
-def _p_correct(quality: float, params: dict) -> float | None:
-    """P(within 5 BPM | fused quality) from the logistic fit frozen in step5.
-
-    Calibrated on the simulated tuning cohort only; the UI labels it so.
-    """
-    lg = params.get("logistic")
-    if not lg:
-        return None
-    return round(float(1.0 / (1.0 + np.exp(-(lg[0] + lg[1] * quality)))), 3)
 
 
 def _thin(x: np.ndarray, n: int = 300) -> list[float]:

@@ -6,7 +6,7 @@
 
 const METHODS = ["green", "chrom", "pos"];
 const MNAME = { green: "GREEN", chrom: "CHROM", pos: "POS" };
-const TITLES = { measure: "Measure", methods: "Methods", signal: "How it works", hrv: "Heart rhythm", summary: "Summary" };
+const TITLES = { measure: "Measure", methods: "Methods", signal: "How it works", scenarios: "Scenarios", hrv: "Heart rhythm", summary: "Summary" };
 const ART_TAG = 0.25; // artifact share at a method's peak above which the card is tagged
 
 const $ = s => document.querySelector(s);
@@ -14,7 +14,7 @@ const $$ = s => Array.from(document.querySelectorAll(s));
 function localGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
 function localSet(k, v) { try { localStorage.setItem(k, v); } catch { /* storage unavailable */ } }
 
-let view = "measure", state = {}, ws = null, simSource = null, results = null, hrv = null;
+let view = "measure", state = {}, ws = null, simSource = null, scenarios = null, hrv = null, scnSkin = "all";
 let lastT = null, lastReading = null;
 const wHistory = []; // {t, w: {green, chrom, pos}}
 
@@ -82,17 +82,15 @@ function connect() {
 }
 function send(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 
-function startSource(motion) {
+function startSource() {
   const v = document.querySelector('input[name="source"]:checked').value;
-  simSource = v.startsWith("sim") ? { fitzpatrick: v === "sim5" ? 5 : 2, motion: motion ?? 0.3 } : null;
+  simSource = v === "sim" ? { ...simSettings } : null;
   send(simSource ? { cmd: "start", source: "sim", options: simSource } : { cmd: "start", source: "webcam" });
   $$("img.feed").forEach(img => { img.src = `/video.mjpg?${Date.now()}`; });
   wHistory.length = 0;
 }
 $("#start").addEventListener("click", () => { startSource(); lastReading = null; hrv = null; renderHrv(); });
 $("#stop").addEventListener("click", () => send({ cmd: "stop" }));
-$("#more-motion").addEventListener("click", () => startSource(1.6));
-$("#less-motion").addEventListener("click", () => startSource(0.2));
 $("#new-session").addEventListener("click", () => {
   send({ cmd: "stop" }); lastReading = null; hrv = null; wHistory.length = 0;
   $$("img.feed").forEach(img => img.removeAttribute("src"));
@@ -131,8 +129,10 @@ function onState() {
 }
 
 function renderAll() {
+  renderSimPanel();
   if (view === "measure") renderMeasure();
   if (view === "methods") { renderFusion(); drawHistory(); renderEval(); }
+  if (view === "scenarios" && scnDirty()) renderScenarios();
   if (view === "signal") renderSignal();
   if (view === "hrv") updateHrvRing();
   if (view === "summary") renderSummary();
@@ -307,7 +307,6 @@ function renderFusion() {
   q("tp").textContent = haveBpm() ? pct(s.p_correct) : "--";
   q("td").textContent = dom ? `${MNAME[dom]} ${pct(w[dom])}` : "--";
   drawSpec(q("fspec"), s.spectrum?.f, s.spectrum?.p, css("--lime"), { peak: s.spectrum?.peak, width: 1.4 });
-  $("#sim-motion").hidden = !(s.running && s.source === "sim");
 }
 
 function drawHistory() {
@@ -339,12 +338,147 @@ function drawHistory() {
 }
 
 function renderEval() {
-  if (!results) return;
-  const S = results.selection_all, C = MCOL(), mx = Math.max(S.mae.green, S.mae.chrom, S.mae.pos, S.mae.trace) * 1.05;
+  if (!scenarios) return;
+  const O = scenarios.overall, C = MCOL(), mx = Math.max(O.mae.green, O.mae.chrom, O.mae.pos, O.mae.trace) * 1.05;
   $("#eval-bars").innerHTML =
-    METHODS.map(m => wbar(MNAME[m], S.mae[m], mx, C[m], fmt(S.mae[m], 1))).join("") +
-    wbar("TRACE", S.mae.trace, mx, css("--lime"), fmt(S.mae.trace, 1), "trace");
-  $("#eval-foot").textContent = `Average error in BPM over ${S.windows.toLocaleString()} measurements from ${results.n_subjects} simulated volunteers. Lower is better.`;
+    METHODS.map(m => wbar(MNAME[m], O.mae[m], mx, C[m], fmt(O.mae[m], 1))).join("") +
+    wbar("TRACE", O.mae.trace, mx, css("--lime"), fmt(O.mae.trace, 1), "trace");
+  $("#eval-foot").textContent = `Average error in BPM over ${O.n.toLocaleString()} simulated readings: ${scenarios.scenarios.length} conditions x 6 skin types. Lower is better. Details on the Scenarios screen.`;
+}
+
+/* ================================================================== simulator panel */
+// Mean cheek colour the simulator renders for each skin type (CLAUDE.md 11.1).
+const SKIN_RGB = { 1: [214, 183, 168], 2: [201, 167, 143], 3: [177, 139, 104], 4: [149, 109, 69], 5: [119, 80, 43], 6: [91, 56, 27] };
+const ROMAN = ["", "I", "II", "III", "IV", "V", "VI"];
+const MOTION = [["Still", 0.1], ["Calm", 0.3], ["Natural", 0.5], ["Talking", 1.2], ["Restless", 2.5]];
+const GLOW = [["Off", 0], ["Normal", 0.002], ["Strong", 0.008]];
+const BASE_SIM = { motion: 0.3, light: 1, flicker_hz: 0, flicker_depth: 0.03, screen_light: 0.002, bpm: 72 };
+const PRESETS = [
+  ["Ideal", { ...BASE_SIM, motion: 0.1 }],
+  ["Talking", { ...BASE_SIM, motion: 1.2 }],
+  ["Dim room", { ...BASE_SIM, light: 0.35 }],
+  ["Flickering lamp", { ...BASE_SIM, flicker_hz: 1.5 }],
+  ["Screen glow", { ...BASE_SIM, screen_light: 0.008 }],
+  ["Fast heart", { bpm: 120 }],
+];
+let simSettings = { fitzpatrick: 2, ...BASE_SIM };
+let simTimer = null, simEditUntil = 0, lastFlicker = 1.5;
+
+function pushSim(change) {
+  simSettings = { ...simSettings, ...change };
+  simEditUntil = performance.now() + 1500; // do not let a stale server echo undo a fresh change
+  $$(".sim-host").forEach(syncSimPanel);
+  clearTimeout(simTimer);
+  simTimer = setTimeout(() => { send({ cmd: "sim", params: simSettings }); simTimer = null; }, 120);
+}
+
+function buildSimPanel(host) {
+  host.innerHTML = `
+    <header class="card-h"><span class="label mono">SIMULATOR</span><span class="mono muted">CHANGES APPLY LIVE. THE TRUE RATE IS ALWAYS KNOWN.</span></header>
+    <div class="sim-grid">
+      <div class="ctl"><span class="label mono">SKIN TYPE <b class="mono" data-v="fz"></b></span>
+        <div class="swatches" role="radiogroup" aria-label="Skin type">${[1, 2, 3, 4, 5, 6].map(k =>
+          `<button type="button" role="radio" data-fz="${k}" style="--sw:rgb(${SKIN_RGB[k].join(",")})" aria-label="Fitzpatrick ${ROMAN[k]}"><i></i><span class="mono">${ROMAN[k]}</span></button>`).join("")}</div></div>
+      <div class="ctl"><span class="label mono">TRUE HEART RATE <b class="mono" data-v="bpm"></b></span>
+        <input type="range" min="45" max="150" step="1" data-k="bpm" aria-label="True heart rate"></div>
+      <div class="ctl"><span class="label mono">HEAD MOTION</span>
+        <div class="seg small" data-seg="motion" role="radiogroup" aria-label="Head motion">${MOTION.map(([n, v]) => `<button type="button" role="radio" data-val="${v}">${n}</button>`).join("")}</div></div>
+      <div class="ctl"><span class="label mono">LIGHT LEVEL <b class="mono" data-v="light"></b></span>
+        <input type="range" min="0.25" max="1.45" step="0.05" data-k="light" aria-label="Light level"></div>
+      <div class="ctl"><span class="label mono">FLICKERING LAMP <b class="mono" data-v="flicker"></b></span>
+        <div class="row"><div class="seg small" data-seg="flick" role="radiogroup" aria-label="Flickering lamp"><button type="button" role="radio" data-val="0">Off</button><button type="button" role="radio" data-val="1">On</button></div>
+        <input type="range" min="50" max="150" step="1" data-k="flicker_rate" aria-label="Flicker rate per minute"></div></div>
+      <div class="ctl"><span class="label mono">SCREEN GLOW</span>
+        <div class="seg small" data-seg="screen_light" role="radiogroup" aria-label="Screen glow">${GLOW.map(([n, v]) => `<button type="button" role="radio" data-val="${v}">${n}</button>`).join("")}</div></div>
+    </div>
+    <div class="presets"><span class="label mono">PRESETS</span>${PRESETS.map(([n], i) => `<button type="button" class="btn ghost small" data-preset="${i}">${n}</button>`).join("")}</div>`;
+  host.querySelectorAll("[data-fz]").forEach(b => b.addEventListener("click", () => pushSim({ fitzpatrick: +b.dataset.fz })));
+  host.querySelector('[data-k="bpm"]').addEventListener("input", e => pushSim({ bpm: +e.target.value }));
+  host.querySelector('[data-k="light"]').addEventListener("input", e => pushSim({ light: +e.target.value }));
+  host.querySelector('[data-k="flicker_rate"]').addEventListener("input", e => pushSim({ flicker_hz: +e.target.value / 60 }));
+  host.querySelectorAll('[data-seg="motion"] button').forEach(b => b.addEventListener("click", () => pushSim({ motion: +b.dataset.val })));
+  host.querySelectorAll('[data-seg="screen_light"] button').forEach(b => b.addEventListener("click", () => pushSim({ screen_light: +b.dataset.val })));
+  host.querySelectorAll('[data-seg="flick"] button').forEach(b => b.addEventListener("click", () =>
+    pushSim({ flicker_hz: +b.dataset.val ? lastFlicker : 0 })));
+  host.querySelectorAll("[data-preset]").forEach(b => b.addEventListener("click", () => pushSim(PRESETS[+b.dataset.preset][1])));
+  host.dataset.built = "1";
+  syncSimPanel(host);
+}
+
+function syncSimPanel(host) {
+  if (!host.dataset.built) return;
+  const s = simSettings, near = (a, b) => Math.abs(a - b) < 1e-6;
+  if (s.flicker_hz > 0) lastFlicker = s.flicker_hz;
+  host.querySelectorAll("[data-fz]").forEach(b => b.setAttribute("aria-checked", String(+b.dataset.fz === s.fitzpatrick)));
+  const setR = (k, v) => { const el = host.querySelector(`[data-k="${k}"]`); if (el && document.activeElement !== el) el.value = v; };
+  setR("bpm", s.bpm); setR("light", s.light); setR("flicker_rate", Math.round(lastFlicker * 60));
+  host.querySelector('[data-v="fz"]').textContent = `FITZPATRICK ${ROMAN[s.fitzpatrick]}`;
+  host.querySelector('[data-v="bpm"]').textContent = `${Math.round(s.bpm)} BPM`;
+  host.querySelector('[data-v="light"]').textContent = `${Math.round(s.light * 100)}%`;
+  host.querySelector('[data-v="flicker"]').textContent = s.flicker_hz > 0 ? `${Math.round(s.flicker_hz * 60)} / MIN` : "OFF";
+  host.querySelector('[data-k="flicker_rate"]').disabled = !(s.flicker_hz > 0);
+  host.querySelectorAll('[data-seg="motion"] button').forEach(b => b.setAttribute("aria-checked", String(near(+b.dataset.val, s.motion))));
+  host.querySelectorAll('[data-seg="screen_light"] button').forEach(b => b.setAttribute("aria-checked", String(near(+b.dataset.val, s.screen_light))));
+  host.querySelectorAll('[data-seg="flick"] button').forEach(b => b.setAttribute("aria-checked", String((+b.dataset.val === 1) === (s.flicker_hz > 0))));
+}
+
+function renderSimPanel() {
+  const on = !!(state.running && state.source === "sim");
+  // Follow the server's settings unless the presenter has just changed one.
+  if (on && state.sim && performance.now() > simEditUntil) simSettings = { ...simSettings, ...state.sim };
+  $$(".sim-host").forEach(host => {
+    host.hidden = !on;
+    if (on && !host.dataset.built) buildSimPanel(host);
+    else if (on) syncSimPanel(host);
+  });
+}
+
+/* ================================================================== scenarios */
+let scnKey = "";
+function scnDirty() {
+  const k = [scnSkin, !!scenarios, !!(state.running && state.source === "sim"), document.documentElement.dataset.theme].join("|");
+  if (k === scnKey) return false;
+  scnKey = k;
+  return true;
+}
+function tryScenario(i) {
+  const s = scenarios.scenarios[i];
+  pushSim({ ...BASE_SIM, ...s.settings, ...(scnSkin !== "all" ? { fitzpatrick: +scnSkin } : {}) });
+  go("methods");
+}
+function renderScenarios() {
+  const seg = $("#scn-skin");
+  if (!seg.children.length) {
+    seg.innerHTML = ["all", 1, 2, 3, 4, 5, 6].map(k => `<button type="button" role="radio" data-skin="${k}">${k === "all" ? "All skin" : ROMAN[k]}</button>`).join("");
+    seg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => { scnSkin = b.dataset.skin; scnDirty(); renderScenarios(); }));
+  }
+  seg.querySelectorAll("button").forEach(b => b.setAttribute("aria-checked", String(b.dataset.skin === String(scnSkin))));
+  if (!scenarios) { $("#scn-foot").textContent = "Run scripts/sim_scenarios.py to measure the scenarios."; return; }
+  const C = MCOL(), canTry = state.running && state.source === "sim", cols = [...METHODS, "trace"];
+  $("#scn-table").innerHTML = `<thead><tr><th>CONDITION</th><th>HOW TO CAUSE IT</th>${cols.map(m => `<th>${m === "trace" ? "TRACE" : MNAME[m]}</th>`).join("")}<th>TRUSTED MOST</th><th>CONFIDENT</th><th></th></tr></thead><tbody>${
+    scenarios.scenarios.map((s, i) => {
+      const a = scnSkin === "all" ? s.all : s.by_skin[scnSkin];
+      const best = Math.min(...cols.map(m => a.mae[m]));
+      const top = METHODS.reduce((x, m) => a.dominant[m] > a.dominant[x] ? m : x, "green");
+      return `<tr><td>${s.label}</td><td class="how">${s.how}</td>${cols.map(m => `<td class="${a.mae[m] === best ? "best" : ""}">${fmt(a.mae[m], 1)}</td>`).join("")}
+        <td><span class="who" style="--c:${C[top]}"><i></i>${MNAME[top]} ${pct(a.dominant[top])}</span></td><td>${pct(a.confident)}</td>
+        <td><button type="button" class="btn ghost small" data-try="${i}" ${canTry ? "" : "disabled"} title="${canTry ? "Apply to the live volunteer" : "Start a simulated volunteer first"}">Try it</button></td></tr>`;
+    }).join("")}</tbody>`;
+  $("#scn-table").querySelectorAll("[data-try]").forEach(b => b.addEventListener("click", () => tryScenario(+b.dataset.try)));
+  $("#scn-foot").textContent = `Mean absolute error in BPM against the true rate: ${scenarios.seeds} volunteers x ${scenarios.seconds} s per skin type and condition, one reading every 2.5 s. Best of the four in green. Trusted most: the method TRACE weighted highest most often.`;
+  const skins = [1, 2, 3, 4, 5, 6];
+  const heat = v => `rgba(255, 107, 120, ${Math.min(0.85, v / 30).toFixed(2)})`;
+  $("#scn-heat").innerHTML = `<thead><tr><th>CONDITION</th>${skins.map(k => `<th>${ROMAN[k]}</th>`).join("")}</tr></thead><tbody>${
+    scenarios.scenarios.map(s => `<tr><td>${s.label}</td>${skins.map(k => { const v = s.by_skin[k].mae.trace; return `<td style="background:${heat(v)}">${fmt(v, 1)}</td>`; }).join("")}</tr>`).join("")}</tbody>`;
+  const O = scenarios.overall;
+  $("#scn-conf").innerHTML = [
+    ["READINGS MARKED CONFIDENT", pct(O.confident)],
+    ["ERROR WHEN CONFIDENT", `${fmt(O.mae_confident, 1)} BPM`],
+    ["WITHIN 5 BPM WHEN CONFIDENT", pct(O.within5_confident)],
+    ["ERROR WHEN FLAGGED LOW", `${fmt(O.mae_flagged, 1)} BPM`],
+    ["DOUBLE OR HALF THE TRUE RATE", pct(O.harmonic)],
+  ].map(([k, v]) => `<div><dt class="mono">${k}</dt><dd class="mono">${v}</dd></div>`).join("");
+  $("#scn-conf-foot").textContent = "The confidence is useful if the readings it keeps are much more accurate than the ones it flags. Double or half: the peak search picked a harmonic of the true rate.";
 }
 
 /* ================================================================== how it works */
@@ -450,5 +584,5 @@ $("#export").addEventListener("click", () => {
 /* ================================================================== boot */
 let resizeTimer = null;
 window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { moveIndicator(); renderAll(); drawHrvCharts(); }, 120); });
-fetch("/static/lab/results.json", { cache: "no-store" }).then(r => r.json()).then(d => { results = d; renderAll(); }).catch(() => {});
+fetch("/static/lab/scenarios.json", { cache: "no-store" }).then(r => r.json()).then(d => { scenarios = d; renderAll(); }).catch(() => {});
 go("measure"); connect(); renderHrv();

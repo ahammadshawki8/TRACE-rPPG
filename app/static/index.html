@@ -32,6 +32,8 @@
     <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
     <symbol id="i-timer" viewBox="0 0 24 24"><path d="M10 2h4"/><path d="M12 14l3-3"/><circle cx="12" cy="14" r="8"/></symbol>
     <symbol id="i-play" viewBox="0 0 24 24"><path d="m6 3 14 9-14 9V3z"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M2 14h4"/><path d="M10 8h4"/><path d="M18 16h4"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></symbol>
     <symbol id="i-stop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></symbol>
   </defs>
 </svg>
@@ -47,6 +49,7 @@
     <button type="button" data-view="measure" title="Measure"><svg><use href="#i-pulse"/></svg><span>Measure</span></button>
     <button type="button" data-view="methods" title="Methods"><svg><use href="#i-merge"/></svg><span>Methods</span></button>
     <button type="button" data-view="signal" title="How it works"><svg><use href="#i-book"/></svg><span>How it works</span></button>
+    <button type="button" data-view="scenarios" title="Scenarios"><svg><use href="#i-grid"/></svg><span>Scenarios</span></button>
     <button type="button" data-view="hrv" title="Heart rhythm"><svg><use href="#i-waves"/></svg><span>Heart rhythm</span></button>
     <button type="button" data-view="summary" title="Summary"><svg><use href="#i-clipboard"/></svg><span>Summary</span></button>
   </nav>
@@ -88,11 +91,9 @@
         <article class="card hero span-12">
           <div class="hero-top"><span class="label mono">NEW MEASUREMENT</span></div>
           <h2 class="hero-h">Heart rate from the colour of a face, measured three ways and fused.</h2>
-          <div class="sources" role="radiogroup" aria-label="Video source">
-            <label class="source"><input type="radio" name="source" value="sim2" checked>
-              <span class="src-body"><svg><use href="#i-user"/></svg><b>Simulated volunteer</b><small class="mono">LIGHTER SKIN / TRUE RATE KNOWN</small></span></label>
-            <label class="source"><input type="radio" name="source" value="sim5">
-              <span class="src-body"><svg><use href="#i-user"/></svg><b>Simulated volunteer</b><small class="mono">DARKER SKIN / TRUE RATE KNOWN</small></span></label>
+          <div class="sources two" role="radiogroup" aria-label="Video source">
+            <label class="source"><input type="radio" name="source" value="sim" checked>
+              <span class="src-body"><svg><use href="#i-sliders"/></svg><b>Simulated volunteer</b><small class="mono">ADJUST SKIN, HEART, MOTION, LIGHT / TRUE RATE KNOWN</small></span></label>
             <label class="source"><input type="radio" name="source" value="webcam">
               <span class="src-body"><svg><use href="#i-camera"/></svg><b>Webcam</b><small class="mono">YOUR FACE / NO REFERENCE</small></span></label>
           </div>
@@ -148,6 +149,8 @@
           </dl>
         </article>
 
+        <article class="card span-12 sim-host" hidden></article>
+
         <article class="card span-12 chart-card">
           <header class="card-h"><span class="label mono">PULSE WAVE / LAST 10 S</span><span class="mono muted" id="pulse-best"></span></header>
           <canvas class="chart" id="c-pulse" style="--h:130px" aria-label="Filtered pulse waveform"></canvas>
@@ -159,6 +162,7 @@
     <section class="view" data-view="methods" aria-labelledby="view-title">
       <div class="bento">
         <article class="card span-12 fusion-host fusion-hero" data-fusion="full"></article>
+        <article class="card span-12 sim-host" hidden></article>
 
         <article class="card span-4 theory" style="--c:var(--m-green)">
           <header class="card-h"><span class="label mono"><i class="sw"></i>GREEN</span><span class="mono muted">VERKRUYSSE 2008</span></header>
@@ -177,14 +181,9 @@
         </article>
 
         <article class="card span-8 chart-card">
-          <header class="card-h"><span class="label mono">WEIGHTS OVER THE LAST 60 S</span>
-            <div class="seg small" id="sim-motion" hidden>
-              <button type="button" id="less-motion">Calm</button>
-              <button type="button" id="more-motion">Restless</button>
-            </div>
-          </header>
+          <header class="card-h"><span class="label mono">WEIGHTS OVER THE LAST 60 S</span></header>
           <canvas class="chart" id="c-hist" style="--h:170px" aria-label="Share of each method in the fusion over time"></canvas>
-          <p class="foot">Make the simulated volunteer restless and watch the weights move away from the method that motion corrupts.</p>
+          <p class="foot">Change motion or lighting in the simulator panel above and watch the weights move away from the method the change corrupts.</p>
         </article>
         <article class="card span-4">
           <header class="card-h"><span class="label mono">HOW WELL IT WORKS</span><span class="pill small sim">SIMULATED</span></header>
@@ -228,6 +227,29 @@
           <div class="step-out"><span class="big mono" id="s5-bpm">--</span><span class="unit mono">BPM</span><span class="mono muted" id="s5-f"></span></div>
         </article>
         <p class="foot">Steps 1 to 3 show the green channel, the easiest to follow. CHROM and POS go through the same detrend and bandpass. Start a measurement to see live signals.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ SCENARIOS -->
+    <section class="view" data-view="scenarios" aria-labelledby="view-title">
+      <div class="bento">
+        <article class="card span-12">
+          <header class="card-h"><span class="label mono">WHICH METHOD WINS WHERE</span>
+            <div class="seg small" id="scn-skin" role="radiogroup" aria-label="Skin type"></div>
+          </header>
+          <div class="table-scroll"><table class="data scn" id="scn-table"></table></div>
+          <p class="foot" id="scn-foot"></p>
+        </article>
+        <article class="card span-7">
+          <header class="card-h"><span class="label mono">TRACE ERROR BY SKIN TYPE / BPM</span><span class="pill small sim">SIMULATED</span></header>
+          <div class="table-scroll"><table class="data heat" id="scn-heat"></table></div>
+          <p class="foot">Mean absolute error of TRACE against the true rate. Redder cells are worse.</p>
+        </article>
+        <article class="card span-5">
+          <header class="card-h"><span class="label mono">CAN THE CONFIDENCE BE TRUSTED?</span></header>
+          <dl class="kv" id="scn-conf"></dl>
+          <p class="foot" id="scn-conf-foot"></p>
+        </article>
       </div>
     </section>
 

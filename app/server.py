@@ -70,6 +70,8 @@ async def ws(sock: WebSocket):
             cmd = msg.get("cmd")
             if cmd == "start":
                 await asyncio.to_thread(engine.start, msg.get("source", "sim"), **msg.get("options", {}))
+            elif cmd == "sim":
+                engine.set_sim(**msg.get("params", {}))
             elif cmd == "stop":
                 await asyncio.to_thread(engine.stop)
             elif cmd == "hrv_start":
