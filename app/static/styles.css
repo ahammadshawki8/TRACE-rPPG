@@ -772,6 +772,40 @@ table.glance tr.empty td { color: var(--ink-3); }
 .skin-table > em { font-style: normal; font-size: 10px; letter-spacing: .08em; color: var(--soft); }
 .syllabus { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; font-size: clamp(14px, 1.2vw, 18px); color: #333; }
 .syllabus .topic { margin-right: 8px; }
+/* No slide ever scrolls. Everything on the paper scales with the slide's own
+   width (container units), so a slide that fits at one size fits at all. */
+.stage { container-type: inline-size; }
+.slide { overflow: hidden; }
+.s-text { overflow: visible; max-height: none; padding-right: 0; gap: 1.1cqw; }
+.s-step { font-size: .85cqw; }
+.s-text h2 { font-size: 4.3cqw; }
+.s-text > p { font-size: 1.32cqw; max-width: 36cqw; }
+.recipes, .syllabus { font-size: 1.15cqw; max-width: 38cqw; gap: .5cqw; }
+.topic { font-size: .8cqw; padding: .3cqw .7cqw; }
+.s-text .btn.small { height: 2.5cqw; min-height: 28px; font-size: max(12px, 1cqw); padding: 0 1cqw; }
+.evidence .ev { padding: .6cqw 1cqw; }
+.evidence .ev b { font-size: 1.1cqw; }
+.evidence .ev span, .evidence .ev em { font-size: .9cqw; }
+.skin-row b { font-size: 1.1cqw; } .skin-row span, .skin-table > em { font-size: .8cqw; }
+.deeper summary { font-size: 1.7cqw; }
+.title-big { font-size: 7.5cqw !important; }
+.acronym { margin: 0; display: grid; gap: .8cqw; max-width: 40cqw; }
+.acronym div { display: grid; grid-template-columns: 6cqw 1fr; gap: 1cqw; align-items: baseline; }
+.acronym dt { font-family: var(--f-mono); font-size: 1.1cqw; letter-spacing: .1em; color: var(--soft); }
+.acronym dd { margin: 0; font-size: 1.4cqw; color: #333; }
+.acronym b { color: var(--orange); font-weight: 700; }
+/* Go deeper floats over the drawing side instead of growing the text column. */
+.deeper[open] .deeper-body { position: absolute; z-index: 3; top: 5%; bottom: 5%; right: 3%; width: 50%; overflow: hidden;
+  display: flex; flex-direction: column; gap: 1cqw; justify-content: center; padding: 2.2cqw 2.4cqw;
+  background: #fff; border: 1.5px solid rgba(0, 0, 0, .14); border-radius: 18px; box-shadow: 0 20px 40px -24px rgba(0, 0, 0, .35);
+  animation: rise 260ms var(--ease) both; }
+.deeper-body p { margin: 0 !important; font-size: 1.1cqw !important; }
+.deeper-body .formula { font-size: .95cqw !important; padding: .8cqw 1cqw; }
+.deeper-body .live-chart { margin: 0; padding: .8cqw 1cqw; }
+.deeper-body .live-chart .chart { height: 10cqw; }
+.deeper-body .live-chart span { font-size: .75cqw; }
+.deeper-body .live-bpm { display: flex; align-items: baseline; gap: .6cqw; font-size: 1cqw; }
+.deeper-body .live-bpm .big { font-size: 3.2cqw; line-height: 1; }
 .deck-bar { display: flex; align-items: center; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .deck-dots { list-style: none; display: flex; gap: 6px; margin: 0; padding: 0; }
 .deck-dots button { width: 9px; height: 9px; border-radius: 50%; border: 0; padding: 0; background: var(--line-2); cursor: pointer; transition: width var(--t-fast) var(--ease), background var(--t-fast); }
@@ -783,6 +817,17 @@ table.glance tr.empty td { color: var(--ink-3); }
   .stage { aspect-ratio: auto; min-height: 640px; }
   .slide { grid-template-columns: 1fr; align-content: start; overflow: auto; }
   .s-art { max-height: 280px; }
+  /* Phones: width-scaled text would be too small, so fixed sizes and scrolling are fine here. */
+  .s-text h2 { font-size: 30px; } .title-big { font-size: 44px !important; }
+  .s-text > p, .acronym dd { font-size: 15px; max-width: none; }
+  .recipes, .syllabus { font-size: 14px; max-width: none; }
+  .s-step, .topic, .acronym dt { font-size: 11px; }
+  .deeper summary { font-size: 20px; }
+  .evidence .ev b, .skin-row b { font-size: 13px; } .evidence .ev span, .evidence .ev em, .skin-row span, .skin-table > em { font-size: 11px; }
+  .deeper[open] .deeper-body { position: static; width: auto; padding: 14px; }
+  .deeper-body p { font-size: 13px !important; } .deeper-body .formula { font-size: 11px !important; }
+  .deeper-body .live-chart .chart { height: 90px; } .deeper-body .live-bpm .big { font-size: 28px; }
+  .acronym div { grid-template-columns: 56px 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { .slide, .slide.on { transition: none; } }
 
