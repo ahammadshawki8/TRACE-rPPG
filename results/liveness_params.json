@@ -1,0 +1,37 @@
+{
+ "min_quality": 0.15,
+ "agree_bpm": 5.0,
+ "chosen_on": "simulated seeds 1 to 4, 5 conditions, living and photo",
+ "table": [
+  {
+   "q": 0.1,
+   "live_pulse": 0.8,
+   "live_none": 0.05,
+   "photo_pulse": 0.1
+  },
+  {
+   "q": 0.15,
+   "live_pulse": 0.75,
+   "live_none": 0.05,
+   "photo_pulse": 0.0
+  },
+  {
+   "q": 0.2,
+   "live_pulse": 0.7,
+   "live_none": 0.05,
+   "photo_pulse": 0.0
+  },
+  {
+   "q": 0.24,
+   "live_pulse": 0.55,
+   "live_none": 0.1,
+   "photo_pulse": 0.0
+  },
+  {
+   "q": 0.27,
+   "live_pulse": 0.5,
+   "live_none": 0.15,
+   "photo_pulse": 0.0
+  }
+ ]
+}

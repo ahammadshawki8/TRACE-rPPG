@@ -1,6 +1,15 @@
 """Scenario sweep: every skin type under every presenter-controllable condition.
 
     .venv/Scripts/python.exe scripts/sim_scenarios.py [--seconds 60] [--seeds 3] [--workers 4]
+        [--seed-base 7000] [--tag sim] [--save-traces]
+
+--rescore TAG re-reads the traces saved by an earlier --save-traces run with
+the fusion parameters now in force (no video is rendered), and writes the
+app's scenarios.json from them.
+
+--save-traces keeps each run's skin-colour trace (results/raw/scen_<tag>/),
+so fusion variants can be re-scored offline without re-rendering video.
+Use different --seed-base values for tuning and testing (invariant 14).
 
 Each run renders one simulated volunteer with the live simulator and reads
 it with exactly the analysis the app performs (tracerppg.simeval), every
@@ -23,7 +32,7 @@ import numpy as np
 import pandas as pd
 
 from _common import ROOT
-from tracerppg.simeval import evaluate
+from tracerppg.simeval import analyse, frozen_params, readouts, stream
 from tracerppg.simulate import LiveParams, LiveSimulator
 
 METHODS = ("green", "chrom", "pos")
@@ -44,12 +53,40 @@ SCENARIOS = [
 
 
 def run_one(job: tuple) -> list[dict]:
-    name, settings, fz, seed, seconds = job
-    params = LiveParams(**{**settings, "fitzpatrick": fz})
-    rows = evaluate(LiveSimulator(params, seed=seed), seconds)
+    name, settings, fz, seed, seconds, trace_dir = job
+    sim = LiveSimulator(LiveParams(**{**settings, "fitzpatrick": fz}), seed=seed)
+    t, rgb = stream(sim, seconds)
+    if trace_dir:
+        truth = [sim.true_bpm(te, 20.0) for te in np.arange(20.0, seconds + 1e-9, 2.5)]
+        np.savez_compressed(f"{trace_dir}/{name}_{fz}_{seed}.npz", t=t, rgb=rgb, truth=np.array(truth, dtype=float),
+                            beats=np.asarray(sim.beat_times), scenario=name, fitzpatrick=fz, seed=seed)
+    rows = readouts(t, rgb, sim, seconds, frozen_params())
     out = []
     for r in rows:
         row = {"scenario": name, "fitzpatrick": fz, "seed": seed, "t": r["t"], "truth": r["truth"],
+               "trace": r["bpm"], "quality": r["quality"], "confident": r["confident"], "p_correct": r["p_correct"],
+               "green_amp": r["green_amp"]}
+        for m in METHODS:
+            row[m] = r["methods"][m]["bpm"]
+            row[f"q_{m}"] = r["methods"][m]["quality"]
+            row[f"a_{m}"] = r["methods"][m]["artifact"]
+            row[f"w_{m}"] = r["weights"][m]
+        out.append(row)
+    return out
+
+
+def rescore_one(path: str) -> list[dict]:
+    """Read-outs from one saved trace with the current parameters."""
+    params = frozen_params()
+    with np.load(path) as z:
+        t, rgb, truth = z["t"], z["rgb"], z["truth"]
+        name, fz, seed = str(z["scenario"]), int(z["fitzpatrick"]), int(z["seed"])
+    out = []
+    for i, te in enumerate(np.arange(20.0, 20.0 + 2.5 * len(truth) - 1e-9, 2.5)):
+        r = analyse(t, rgb, te, params)
+        if r is None or not np.isfinite(truth[i]):
+            continue
+        row = {"scenario": name, "fitzpatrick": fz, "seed": seed, "t": float(te), "truth": float(truth[i]),
                "trace": r["bpm"], "quality": r["quality"], "confident": r["confident"], "p_correct": r["p_correct"],
                "green_amp": r["green_amp"]}
         for m in METHODS:
@@ -81,8 +118,40 @@ def summarise(d: pd.DataFrame) -> dict:
     }
 
 
-def main(seconds: float, seeds: int, workers: int) -> None:
-    jobs = [(name, s, fz, 7000 + 100 * i + 10 * fz + k, seconds)
+def write_outputs(df: pd.DataFrame, tag: str, seconds: float, seeds: int, note: str = "") -> dict:
+    out = {"source": "simulated", "seconds": seconds, "seeds": seeds, "n_readouts": int(len(df)),
+           "scenarios": [], "skins": list(range(1, 7)), "fusion": frozen_params().get("version", 2), "note": note}
+    for name, label, settings, how in SCENARIOS:
+        d = df[df["scenario"] == name]
+        out["scenarios"].append({"id": name, "label": label, "settings": settings, "how": how,
+                                 "all": summarise(d),
+                                 "by_skin": {str(fz): summarise(d[d["fitzpatrick"] == fz]) for fz in range(1, 7)}})
+    out["overall"] = summarise(df)
+    return out
+
+
+def rescore(tag: str, workers: int) -> None:
+    files = sorted(str(p) for p in (ROOT / "results" / "raw" / f"scen_{tag}").glob("*.npz"))
+    with ProcessPoolExecutor(max_workers=workers) as ex:
+        rows = [r for part in ex.map(rescore_one, files, chunksize=4) for r in part]
+    df = pd.DataFrame(rows)
+    seeds = int(df.groupby(["scenario", "fitzpatrick"])["seed"].nunique().max())
+    out = write_outputs(df, tag, 60.0, seeds, f"re-scored from the saved {tag} traces (seeds never used for tuning)")
+    (ROOT / "app" / "static" / "lab" / "scenarios.json").write_text(json.dumps(out, indent=1))
+    df.to_csv(ROOT / "results" / f"scenarios_{tag}_v{out['fusion']}.csv", index=False)
+    o = out["overall"]
+    print(f"{len(files)} runs, {len(df)} read-outs, fusion v{out['fusion']}")
+    print("overall MAE: " + ", ".join(f"{m} {o['mae'][m]:.2f}" for m in (*METHODS, "trace")))
+    print(f"confident on {o['confident']:.0%}: MAE {o['mae_confident']:.2f} vs flagged {o['mae_flagged']:.2f}")
+
+
+def main(seconds: float, seeds: int, workers: int, seed_base: int = 7000, tag: str = "sim", save: bool = False) -> None:
+    trace_dir = ""
+    if save:
+        d = ROOT / "results" / "raw" / f"scen_{tag}"
+        d.mkdir(parents=True, exist_ok=True)
+        trace_dir = str(d)
+    jobs = [(name, s, fz, seed_base + 100 * i + 10 * fz + k, seconds, trace_dir)
             for i, (name, _, s, _) in enumerate(SCENARIOS) for fz in range(1, 7) for k in range(seeds)]
     print(f"{len(jobs)} runs of {seconds:.0f} s on {workers} workers")
     t0, rows = time.time(), []
@@ -92,7 +161,7 @@ def main(seconds: float, seeds: int, workers: int) -> None:
             if (i + 1) % 20 == 0:
                 print(f"  {i + 1}/{len(jobs)} runs, {time.time() - t0:.0f} s")
     df = pd.DataFrame(rows)
-    df.to_csv(ROOT / "results" / "scenarios_sim.csv", index=False)
+    df.to_csv(ROOT / "results" / f"scenarios_{tag}.csv", index=False)
 
     out = {"source": "simulated", "seconds": seconds, "seeds": seeds, "n_readouts": int(len(df)),
            "scenarios": [], "skins": list(range(1, 7))}
@@ -102,7 +171,10 @@ def main(seconds: float, seeds: int, workers: int) -> None:
                                  "all": summarise(d),
                                  "by_skin": {str(fz): summarise(d[d["fitzpatrick"] == fz]) for fz in range(1, 7)}})
     out["overall"] = summarise(df)
-    (ROOT / "app" / "static" / "lab" / "scenarios.json").write_text(json.dumps(out, indent=1))
+    if tag == "sim":
+        (ROOT / "app" / "static" / "lab" / "scenarios.json").write_text(json.dumps(out, indent=1))
+    else:
+        (ROOT / "results" / f"scenarios_{tag}.json").write_text(json.dumps(out, indent=1))
 
     print(f"\n{'scenario':26s} {'green':>6s} {'chrom':>6s} {'pos':>6s} {'TRACE':>6s}  trusted most  confident  harmonic")
     for s in out["scenarios"]:
@@ -121,5 +193,12 @@ if __name__ == "__main__":
     ap.add_argument("--seconds", type=float, default=60.0)
     ap.add_argument("--seeds", type=int, default=3)
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--seed-base", type=int, default=7000)
+    ap.add_argument("--tag", default="sim")
+    ap.add_argument("--save-traces", action="store_true")
+    ap.add_argument("--rescore", default="")
     a = ap.parse_args()
-    main(a.seconds, a.seeds, a.workers)
+    if a.rescore:
+        rescore(a.rescore, a.workers)
+    else:
+        main(a.seconds, a.seeds, a.workers, a.seed_base, a.tag, a.save_traces)

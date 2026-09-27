@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TRACE Pulse</title>
+<title>TRACE rPPG</title>
 <meta name="description" content="Contactless heart rate from face video with quality-weighted fusion of Green, CHROM and POS.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23101116'/%3E%3Cpath d='M4 17h6l3-8 5 15 3-9 2 2h5' fill='none' stroke='%23B8FF3D' stroke-width='2.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/static/styles.css?v=4">
+<link rel="stylesheet" href="/static/styles.css?v=7">
 </head>
 <body>
 
@@ -34,6 +34,10 @@
     <symbol id="i-play" viewBox="0 0 24 24"><path d="m6 3 14 9-14 9V3z"/></symbol>
     <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M2 14h4"/><path d="M10 8h4"/><path d="M18 16h4"/></symbol>
     <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+    <symbol id="i-rec" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M9.94 14.06 5 19"/><path d="M14 4l1.5 4.5L20 10l-4.5 1.5L14 16l-1.5-4.5L8 10l4.5-1.5z"/><path d="M5 3v4"/><path d="M3 5h4"/></symbol>
     <symbol id="i-stop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></symbol>
   </defs>
 </svg>
@@ -50,8 +54,8 @@
     <button type="button" data-view="methods" title="Methods"><svg><use href="#i-merge"/></svg><span>Methods</span></button>
     <button type="button" data-view="signal" title="How it works"><svg><use href="#i-book"/></svg><span>How it works</span></button>
     <button type="button" data-view="scenarios" title="Scenarios"><svg><use href="#i-grid"/></svg><span>Scenarios</span></button>
-    <button type="button" data-view="hrv" title="Heart rhythm"><svg><use href="#i-waves"/></svg><span>Heart rhythm</span></button>
-    <button type="button" data-view="summary" title="Summary"><svg><use href="#i-clipboard"/></svg><span>Summary</span></button>
+    <button type="button" data-view="collect" title="Collect"><svg><use href="#i-users"/></svg><span>Collect</span></button>
+    <button type="button" data-view="next" title="What's next"><svg><use href="#i-spark"/></svg><span>What's next</span></button>
   </nav>
   <div class="rail-foot">
     <button type="button" id="theme" title="Theme" aria-label="Switch light or dark theme"><svg><use href="#i-moon"/></svg><span>Theme</span></button>
@@ -72,7 +76,7 @@
 <div class="shell">
   <header class="context">
     <div class="ctx-title">
-      <span class="ctx-kicker mono">TRACE / <span id="ctx-view">MEASURE</span></span>
+      <span class="ctx-kicker mono">TRACE rPPG / <span id="ctx-view">MEASURE</span></span>
       <h1 id="view-title">Measure</h1>
     </div>
     <div class="ctx-pills">
@@ -136,9 +140,9 @@
         </article>
 
         <article class="card span-3 lift" data-goto="methods" tabindex="0" role="link" aria-label="Open methods">
-          <header class="card-h"><span class="label mono">METHOD WEIGHTS</span><svg class="muted"><use href="#i-right"/></svg></header>
+          <header class="card-h"><span class="label mono">METHOD TRUST</span><svg class="muted"><use href="#i-right"/></svg></header>
           <div class="wbars" id="mini-weights"></div>
-          <p class="foot">TRACE trusts each method by its signal quality, window by window.</p>
+          <p class="foot">Trust comes from each method's spectral quality. TRACE selects the most trusted (*) every half second.</p>
         </article>
         <article class="card span-3">
           <header class="card-h"><span class="label mono">SESSION</span></header>
@@ -181,9 +185,9 @@
         </article>
 
         <article class="card span-8 chart-card">
-          <header class="card-h"><span class="label mono">WEIGHTS OVER THE LAST 60 S</span></header>
+          <header class="card-h"><span class="label mono">TRUST OVER THE LAST 60 S</span></header>
           <canvas class="chart" id="c-hist" style="--h:170px" aria-label="Share of each method in the fusion over time"></canvas>
-          <p class="foot">Change motion or lighting in the simulator panel above and watch the weights move away from the method the change corrupts.</p>
+          <p class="foot">Change motion or lighting in the simulator panel above and watch trust move away from the method the change corrupts.</p>
         </article>
         <article class="card span-4">
           <header class="card-h"><span class="label mono">HOW WELL IT WORKS</span><span class="pill small sim">SIMULATED</span></header>
@@ -217,7 +221,7 @@
         <article class="card step ft">
           <div class="step-n mono">04</div>
           <div class="step-t"><h3>Spectrum <span class="tag ft">FOURIER TRANSFORM</span></h3><p class="formula mono">Y(f) = sum y[n] e^(-j 2 pi f n / fs)</p>
-            <p>The FFT measures how much of each rhythm the signal holds. Green, CHROM and POS each give one spectrum, and TRACE adds them, weighted by quality.</p></div>
+            <p>The FFT measures how much of each rhythm the signal holds. Green, CHROM and POS each give one spectrum, and TRACE selects the one with the sharpest peak after removing motion frequencies.</p></div>
           <canvas class="chart" id="c-s4" style="--h:150px" aria-label="Fused spectrum with the peak marked"></canvas>
         </article>
         <article class="card step result">
@@ -253,57 +257,97 @@
       </div>
     </section>
 
-    <!-- ============================================================ HRV -->
-    <section class="view" data-view="hrv" aria-labelledby="view-title">
+    <!-- ============================================================ COLLECT -->
+    <section class="view" data-view="collect" aria-labelledby="view-title">
       <div class="bento">
-        <article class="card span-4 row-2 hrv-ctl">
-          <header class="card-h"><span class="label mono">RECORDING</span><span class="pill small" id="hrv-state">READY</span></header>
-          <div class="ring-wrap small">
-            <svg class="ring" viewBox="0 0 200 200" role="img" aria-label="Recording progress toward two minutes">
-              <circle class="ring-bg" cx="100" cy="100" r="86"/>
-              <circle class="ring-fg coral" id="hrv-ring" cx="100" cy="100" r="86" pathLength="100" stroke-dasharray="0 100"/>
-            </svg>
-            <div class="ring-center"><span class="big mono" id="hrv-time">0:00</span><span class="unit mono">/ 2:00</span></div>
+        <article class="card span-12 study-strip" id="col-strip"></article>
+
+        <article class="card span-5 row-2" id="col-volunteer"></article>
+
+        <article class="card span-7 row-2" id="col-record">
+          <header class="card-h"><span class="label mono">RECORDING</span><span class="pill small" id="col-rec-state">CAMERA OFF</span></header>
+          <div class="col-rec-grid">
+            <div class="camera"><img class="feed" alt="Camera preview"><div class="cam-empty mono">CAMERA OFF</div></div>
+            <div class="col-controls" id="col-controls"></div>
           </div>
-          <p class="foot">The time between beats varies. A second Fourier transform of those gaps shows two rhythms: LF (0.04 to 0.15 Hz) and HF, which follows breathing. LF/HF needs at least two minutes.</p>
-          <div class="btn-row">
-            <button class="btn" type="button" id="hrv-go"><svg><use href="#i-play"/></svg><span>Start recording</span></button>
-            <button class="btn ghost" type="button" id="hrv-done" disabled><span>Finish and analyse</span></button>
-          </div>
+          <div id="col-live"></div>
         </article>
-        <div class="span-8 row-2 hrv-out" id="hrv-out"></div>
+
+        <article class="card span-12" id="col-last" hidden></article>
+
+        <article class="card span-12">
+          <header class="card-h"><span class="label mono">STUDY RESULTS / TRACE AND EACH METHOD AGAINST THE SMARTWATCH</span>
+            <a class="btn ghost small" href="/api/collect/study.csv" download>Export CSV</a></header>
+          <div id="col-study"></div>
+        </article>
+
+        <article class="card span-12">
+          <header class="card-h"><span class="label mono">MANAGE VOLUNTEERS AND RECORDINGS</span><span class="mono muted">DATA\OWN ON THIS PC</span></header>
+          <div id="col-manage"></div>
+        </article>
       </div>
     </section>
 
-    <!-- ============================================================ SUMMARY -->
-    <section class="view" data-view="summary" aria-labelledby="view-title">
+    <!-- ============================================================ WHAT'S NEXT -->
+    <section class="view" data-view="next" aria-labelledby="view-title">
       <div class="bento">
-        <article class="card hero span-8">
-          <div class="hero-top"><span class="label mono">RESULT</span><span class="pill" id="res-state">NO READING</span></div>
-          <div class="readout"><span class="big mono" id="res-bpm">--</span><span class="unit mono">BPM</span></div>
-          <div class="hero-stats" id="res-stats"></div>
+        <article class="card span-12 next-intro">
+          <h2>A camera that can feel a pulse can do more than count beats.</h2>
+          <p>Once the heartbeat is in the video, its timing, its rhythm and even its absence carry information. Three of those ideas run live below. The rest are where the same signal is heading.</p>
         </article>
-        <article class="card span-4">
-          <header class="card-h"><span class="label mono">METHOD WEIGHTS</span></header>
-          <div class="wbars" id="res-weights"></div>
+
+        <!-- 1. liveness -->
+        <article class="card span-5 live-card">
+          <header class="card-h"><span class="label mono">01 / IS THIS A REAL PERSON?</span><span class="pill small" id="live-verdict">START A MEASUREMENT</span></header>
+          <div class="liveness">
+            <div class="live-dial" id="live-dial" aria-hidden="true"><i></i></div>
+            <div>
+              <b class="mono" id="live-share">--</b>
+              <p class="foot">of the last 10 s had a pulse that passed the confidence gate with CHROM and POS agreeing within 5 BPM.</p>
+            </div>
+          </div>
+          <p>A printed photo, a phone screen or a mask can look like a face, but it has no blood flowing under it. Checking for a pulse is a way to spot fake faces, a real research topic in face login security and deepfake detection.</p>
+          <p class="foot" id="live-howto">Try it: start the simulated volunteer and switch the simulator's pulse to "Photo", or hold a printed photo up to the webcam. A research prototype, not a security product.</p>
         </article>
-        <article class="card span-6">
-          <header class="card-h"><span class="label mono">EACH METHOD</span></header>
-          <dl class="kv" id="res-methods"></dl>
+
+        <!-- 2 + 3. heart rhythm with guided breathing -->
+        <article class="card span-7 hrv-ctl">
+          <header class="card-h"><span class="label mono">02 / HEART RHYTHM AND 03 / GUIDED BREATHING</span><span class="pill small" id="hrv-state">READY</span></header>
+          <div class="hrv-grid">
+            <div class="ring-wrap small">
+              <svg class="ring" viewBox="0 0 200 200" role="img" aria-label="Recording progress toward two minutes">
+                <circle class="ring-bg" cx="100" cy="100" r="86"/>
+                <circle class="ring-fg coral" id="hrv-ring" cx="100" cy="100" r="86" pathLength="100" stroke-dasharray="0 100"/>
+              </svg>
+              <div class="ring-center"><span class="big mono" id="hrv-time">0:00</span><span class="unit mono">/ 2:00</span></div>
+            </div>
+            <div>
+              <p>A healthy heart is not a metronome. The gap between beats stretches and shrinks with every breath and with stress. Recording those gaps and taking a <b>second Fourier transform</b> of them gives heart-rate variability: a wellness sign of how relaxed or strained the body is.</p>
+              <label class="check"><input type="checkbox" id="pace-on"> Breathe with the circle: 6 breaths a minute, which is known to raise heart-rate variability</label>
+              <div class="btn-row">
+                <button class="btn" type="button" id="hrv-go"><svg><use href="#i-play"/></svg><span>Start recording</span></button>
+                <button class="btn ghost" type="button" id="hrv-done" disabled><span>Finish and analyse</span></button>
+              </div>
+              <p class="foot">LF/HF needs at least two minutes of steady video. Five is the clinical standard.</p>
+            </div>
+          </div>
+          <div class="pacer" id="pacer" hidden aria-live="polite"><div class="pace-circle" id="pace-circle"></div><span class="mono" id="pace-text">BREATHE IN</span></div>
         </article>
-        <article class="card span-6">
-          <header class="card-h"><span class="label mono">NOTES</span></header>
-          <ul class="warns" id="res-warns"></ul>
+        <div class="span-12 hrv-out" id="hrv-out"></div>
+
+        <!-- where it goes -->
+        <article class="card span-12">
+          <header class="card-h"><span class="label mono">WHERE THE SAME SIGNAL IS GOING</span>
+            <span class="legend mono"><i class="lg done"></i>IN THIS APP <i class="lg focus"></i>PROTOTYPE HERE <i class="lg pend"></i>FUTURE WORK</span></header>
+          <div class="uses" id="uses"></div>
+          <p class="foot">Wellness and research directions, not medical claims. Anything that informs care needs clinical validation first.</p>
         </article>
-        <div class="strip span-12">
-          <button class="btn" type="button" id="export"><svg><use href="#i-download"/></svg><span>Export as JSON</span></button>
-          <button class="btn ghost" type="button" id="new-session"><svg><use href="#i-restart"/></svg><span>New measurement</span></button>
-        </div>
       </div>
     </section>
   </main>
 </div>
 
-<script src="/static/app.js?v=4"></script>
+<script src="/static/app.js?v=9"></script>
+<script src="/static/collect.js?v=3"></script>
 </body>
 </html>

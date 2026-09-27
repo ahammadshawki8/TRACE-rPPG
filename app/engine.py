@@ -21,7 +21,7 @@ import cv2
 import numpy as np
 
 from tracerppg.datasets import resample_uniform
-from tracerppg.fusion import artifact_reference, band_limited_pulses, fuse, p_correct
+from tracerppg.fusion import artifact_reference, band_limited_pulses, fuse, p_correct, weights_from_quality
 from tracerppg.hrv import DISCLAIMER, HRV_METHOD, MIN_HRV_SECONDS, clean_rr, hrv_from_pulse
 from tracerppg.roi import REGIONS, FaceTracker, skin_mean
 from tracerppg.spectral import HR_BAND, estimate_bpm
@@ -32,13 +32,23 @@ FS = 30.0
 WINDOW_S = 20.0      # analysis window, the same length the grid evaluates
 MIN_S = 8.0          # first reading after this much signal (resolution 7.5 BPM before interpolation)
 ANALYSE_EVERY = 0.5  # seconds between read-outs
+# Liveness: over the last 10 s of read-outs (20 at 2 per second), how often
+# was a pulse found (see pulse_found)? A photo, a screen or a mask has no blood-volume pulse, so neither
+# holds for long. A rule on existing outputs, nothing learned.
+LIVENESS_READOUTS = 20
+LIVE_SHARE, NONE_SHARE = 0.7, 0.2
+# Per-method quality needed for a vote, chosen by scripts/tune_liveness.py on
+# development volunteers (living and photo) so that no photo was accepted.
+_lp = ROOT / "results" / "liveness_params.json"
+LIVENESS_Q = json.loads(_lp.read_text())["min_quality"] if _lp.exists() else 0.15
 
 
 def fusion_params() -> dict:
-    p = ROOT / "results" / "fusion_params.json"
-    if p.exists():
-        return json.loads(p.read_text())
-    return {"gamma": 2.0, "mask_k": 4.0, "confidence": 0.35}
+    """TRACE v3 (per-window selection, tuned and tested on separate simulated
+    cohorts) when present, else the frozen v2 blend."""
+    from tracerppg.simeval import frozen_params
+
+    return frozen_params()
 
 
 # --------------------------------------------------------------------- sources
@@ -59,6 +69,12 @@ class WebcamSource:
             if not ok:
                 break
             yield cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB), time.monotonic() - self.t0
+
+    def info(self) -> dict:
+        g = self.cap.get
+        return {"width": g(cv2.CAP_PROP_FRAME_WIDTH), "height": g(cv2.CAP_PROP_FRAME_HEIGHT), "fps": g(cv2.CAP_PROP_FPS),
+                "auto_exposure": g(cv2.CAP_PROP_AUTO_EXPOSURE), "exposure": g(cv2.CAP_PROP_EXPOSURE),
+                "auto_wb": g(cv2.CAP_PROP_AUTO_WB), "backend": self.cap.getBackendName()}
 
     def close(self):
         self.cap.release()
@@ -140,6 +156,9 @@ class LiveEngine:
         self.source_name = None
         self.error: str | None = None
         self.params = fusion_params()
+        self.recorder = None
+        self.last_recording: dict | None = None
+        self.rec_lock = threading.Lock()
         self.reset()
 
     def reset(self):
@@ -150,6 +169,7 @@ class LiveEngine:
         self.state: dict = {"running": False}
         self.hrv_start: float | None = None
         self.hrv_result: dict | None = None
+        self.live_hist: deque = deque(maxlen=LIVENESS_READOUTS)
         self.window_s = WINDOW_S
 
     # ------------------------------------------------------------ control
@@ -174,7 +194,10 @@ class LiveEngine:
         self.thread.start()
 
     def stop(self):
+        if self.recorder is not None:
+            self.rec_stop(save=True)
         self.stop_flag.set()
+        self.jpeg = None  # the preview must go dark, not freeze on the last frame
         if self.thread is not None:
             self.thread.join(timeout=3)
         if self.source is not None:
@@ -186,6 +209,42 @@ class LiveEngine:
         """Change the simulated volunteer while it runs."""
         src = self.source
         return src.set(**kw) if isinstance(src, SimSource) else None
+
+    # ------------------------------------------------------------ recording
+    def rec_start(self, volunteer: str, condition: dict, duration: float = 60.0, watch: str = "",
+                  keep_video: bool = False) -> dict:
+        import collect
+
+        if self.source_name != "webcam" or self.thread is None:
+            return {"error": "Start the webcam first. Recordings are of real volunteers only."}
+        info = self.source.info() if hasattr(self.source, "info") else {}
+        try:
+            rec = collect.Recorder(volunteer, condition or {}, duration, watch, keep_video, info)
+        except ValueError as exc:
+            return {"error": str(exc)}
+        with self.rec_lock:
+            self.recorder, self.last_recording = rec, None
+        return {"ok": True, "clip": rec.clip}
+
+    def rec_watch(self, bpm: float) -> dict:
+        rec = self.recorder
+        if rec is None or not (30 <= bpm <= 220):
+            return {"error": "No recording running, or the value is not a heart rate."}
+        return rec.watch_reading(bpm)
+
+    def rec_stop(self, save: bool = True) -> dict | None:
+        with self.rec_lock:
+            rec, self.recorder = self.recorder, None
+        if rec is None:
+            return None
+        if not save:
+            rec.finish(False)
+            import collect
+            collect.delete_clip(rec.volunteer, rec.clip)
+            self.last_recording = {"discarded": True}
+            return self.last_recording
+        self.last_recording = rec.finish(rec.capture_done or rec.elapsed >= rec.duration - 0.5)
+        return self.last_recording
 
     def hrv_begin(self):
         with self.lock:
@@ -245,6 +304,13 @@ class LiveEngine:
                         self.rgb.popleft()
                     while self.centres and self.centres[0][0] < t - 3.0:
                         self.centres.popleft()
+                rec = self.recorder
+                if rec is not None:
+                    rec.add(frame, t, mean if npx > 200 else None, npx, box)
+                    # Capture stops at the planned length; the recording then
+                    # waits for the last watch reading, at most 90 s.
+                    if rec.capture_done and time.monotonic() - rec.frozen_at > 90:
+                        threading.Thread(target=self.rec_stop, daemon=True).start()
                 if i % 2 == 0:
                     self.jpeg = self._preview(frame, box)
                 if t - last >= ANALYSE_EVERY:
@@ -276,6 +342,10 @@ class LiveEngine:
         ok, buf = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 80])
         return buf.tobytes() if ok else b""
 
+    def _liveness(self, found: bool) -> dict:
+        self.live_hist.append(bool(found))
+        return _liveness_verdict(self.live_hist)
+
     def _analyse(self, now: float, box, npx: int, frame):
         with self.lock:
             t = np.array(self.t)
@@ -294,7 +364,9 @@ class LiveEngine:
         state = {"running": True, "source": self.source_name, "t": now, "buffered_s": round(buffered, 1),
                  "needed_s": MIN_S, "checks": {"face": face, "light": light, "still": still},
                  "luminance": round(lum, 1), "motion_px": round(motion, 2), "error": self.error,
-                 "params": {k: self.params.get(k) for k in ("gamma", "mask_k", "confidence")}}
+                 "params": {"mode": "select" if self.params.get("gamma") == float("inf") else "blend",
+                            "version": self.params.get("version", 2), "gamma": _finite(self.params.get("gamma")),
+                            "mask_k": self.params.get("mask_k"), "confidence": self.params.get("confidence")}}
         if isinstance(self.source, SimSource):
             state["true_bpm"] = self.source.true_bpm(now)
             state["sim"] = self.source.params
@@ -302,6 +374,13 @@ class LiveEngine:
         elif isinstance(self.source, FileSource) and self.source.beats is not None:
             state["true_bpm"] = self.source.true_bpm(now)
             state["fitzpatrick"] = getattr(self.source, "fitzpatrick", None)
+        rec = self.recorder
+        if rec is not None:
+            state["rec"] = {"active": True, "volunteer": rec.volunteer, "clip": rec.clip, "elapsed": round(rec.elapsed, 1),
+                            "capture_done": rec.capture_done,
+                            "duration": rec.duration, "readings": rec.readings, "condition": rec.condition}
+        elif self.last_recording is not None:
+            state["rec"] = {"active": False, "last": {k: v for k, v in self.last_recording.items() if k != "camera"}}
         if self.hrv_start is not None:
             state["hrv_elapsed"] = round(now - self.hrv_start, 1)
             state["hrv_needed"] = MIN_HRV_SECONDS
@@ -324,6 +403,9 @@ class LiveEngine:
             state.update({
                 "bpm": round(fr.bpm, 1), "quality": round(fr.quality, 3), "confident": bool(fr.confident),
                 "weights": {k: round(v, 3) for k, v in fr.weights.items()},
+                # Each method's share of the summed quality scores: how much TRACE
+                # trusts it. v3 then selects the most trusted one (weights 1, 0, 0).
+                "scores": {k: round(v, 3) for k, v in weights_from_quality({m: w.quality for m, w in fr.per_method.items()}, 1.0).items()},
                 "methods": {k: {"bpm": round(v.bpm, 1), "quality": round(v.quality, 3), "artifact": round(v.artifact, 3)}
                             for k, v in fr.per_method.items()},
                 # Each method's artifact-masked spectrum, normalised to its own
@@ -331,6 +413,7 @@ class LiveEngine:
                 "method_spectra": {k: _thin(v.power[band] / (v.power[band].max() + 1e-30), 240)
                                    for k, v in fr.per_method.items()},
                 "p_correct": p_correct(fr.quality, self.params),
+                "liveness": self._liveness(pulse_found(fr, LIVENESS_Q)),
                 "method_traces": {k: _thin(pulses[k][show] / (np.std(pulses[k][show]) + 1e-12))
                                   for k in ("green", "chrom", "pos")},
                 "naive_green": round(estimate_bpm(pulses["green"], FS).bpm, 1),
@@ -343,6 +426,30 @@ class LiveEngine:
                 "spectrum": {"f": _thin(fr.freqs[band] * 60, 240), "p": _thin(fp, 240), "peak": round(fr.bpm, 1)},
             })
         self.state = state
+
+
+def _finite(x):
+    """JSON has no infinity; the browser would reject the whole message."""
+    return None if x is None or not np.isfinite(x) else x
+
+
+def pulse_found(fr, threshold: float) -> bool:
+    """One read-out's liveness vote, independent of how TRACE fuses: CHROM and
+    POS, two different colour projections, must each find a clean peak
+    (quality over the confidence threshold) and agree within 5 BPM."""
+    c, p = fr.per_method["chrom"], fr.per_method["pos"]
+    return min(c.quality, p.quality) >= threshold and abs(c.bpm - p.bpm) <= 5.0
+
+
+def _liveness_verdict(hist) -> dict:
+    n = len(hist)
+    share = sum(hist) / n if n else 0.0
+    verdict = "checking"
+    if n >= LIVENESS_READOUTS // 2 and share >= LIVE_SHARE:
+        verdict = "pulse"
+    elif n >= int(LIVENESS_READOUTS * 0.8) and share <= NONE_SHARE:
+        verdict = "none"
+    return {"verdict": verdict, "share": round(share, 2), "n": n, "of": LIVENESS_READOUTS}
 
 
 def _thin(x: np.ndarray, n: int = 300) -> list[float]:

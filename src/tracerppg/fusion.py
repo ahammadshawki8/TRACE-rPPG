@@ -166,6 +166,34 @@ def fuse(
     )
 
 
+def harmonic_continuity(prev_bpm: float | None, fr: FusionResult, rho: float, tol: float = 0.1) -> tuple[float, bool]:
+    """Refuse a read-out that is double or half the previous one.
+
+    A heart cannot double or halve its rate between two read-outs a few
+    seconds apart, but a pulse with a strong second harmonic, or a noisy
+    window, can make the spectral peak jump to 2f or f/2. When the new peak
+    sits within `tol` of 2x or 0.5x the previous read-out AND the fused
+    spectrum still holds at least `rho` of its peak power near the previous
+    rate, the read-out stays at the peak near the previous rate. Otherwise
+    the new peak stands, so a genuine change is never blocked for long.
+    Classical tracking on the Fourier spectrum; nothing is learned.
+    """
+    if prev_bpm is None or fr.freqs is None:
+        return fr.bpm, False
+    ratio = fr.bpm / prev_bpm
+    if abs(ratio - 2.0) > 2.0 * tol and abs(ratio - 0.5) > 0.5 * tol:
+        return fr.bpm, False
+    f = fr.freqs * 60.0
+    near = np.abs(f - prev_bpm) <= 6.0
+    if not near.any():
+        return fr.bpm, False
+    p = fr.fused_power
+    if float(np.max(p[near])) < rho * float(np.max(p[band_mask(fr.freqs, HR_BAND)])):
+        return fr.bpm, False
+    i = np.flatnonzero(near)[np.argmax(p[near])]
+    return float(f[i]), True
+
+
 def p_correct(quality: float, params: dict) -> float | None:
     """P(estimate within 5 BPM | fused quality), from the logistic fit that
     step5 froze into results/fusion_params.json. The fit was made on the

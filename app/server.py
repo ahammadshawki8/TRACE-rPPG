@@ -23,6 +23,9 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse  # n
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 
 from engine import LiveEngine  # noqa: E402
+import collect  # noqa: E402
+from fastapi import Body, HTTPException  # noqa: E402
+from fastapi.responses import PlainTextResponse  # noqa: E402
 
 STATIC = Path(__file__).resolve().parent / "static"
 app = FastAPI(title="TRACE live")
@@ -44,6 +47,69 @@ def lab():
         return JSONResponse({"available": False,
                              "message": "Run the grid and scripts/build_app_assets.py to fill the compression lab."})
     return JSONResponse({"available": True, **json.loads(p.read_text())})
+
+
+@app.get("/api/collect")
+def collect_index():
+    return {"volunteers": collect.volunteers(), "clips": collect.clips(), "options": {
+        "age_groups": collect.AGE_GROUPS, "lighting": collect.LIGHTING, "motion": collect.MOTION}}
+
+
+@app.post("/api/collect/volunteer")
+def collect_volunteer(body: dict = Body(...)):
+    try:
+        return collect.upsert_volunteer(body)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+
+
+@app.delete("/api/collect/volunteer/{code}")
+def collect_delete_volunteer(code: str):
+    collect.delete_volunteer(code)
+    return {"ok": True}
+
+
+@app.delete("/api/collect/clip/{code}/{clip}")
+def collect_delete_clip(code: str, clip: str):
+    collect.delete_clip(code, clip)
+    return {"ok": True}
+
+
+@app.patch("/api/collect/clip/{code}/{clip}")
+def collect_update_clip(code: str, clip: str, body: dict = Body(...)):
+    try:
+        return collect.update_clip(code, clip, body.get("condition", {}))
+    except ValueError as exc:
+        raise HTTPException(404, str(exc))
+
+
+@app.post("/api/collect/open/{code}/{clip}")
+def collect_open(code: str, clip: str, what: str = "folder"):
+    try:
+        collect.open_in_explorer(code, clip, what)
+    except ValueError as exc:
+        raise HTTPException(404, str(exc))
+    return {"ok": True}
+
+
+@app.get("/api/collect/study")
+def collect_study():
+    s = collect.study()
+    s.pop("rows")
+    return s
+
+
+@app.get("/api/collect/study.csv")
+def collect_csv():
+    rows = collect.study()["rows"]
+    cols = ["volunteer", "fitzpatrick", "age_group", "lighting", "motion", "t", "watch", "trace", "green", "chrom", "pos",
+            "confident", "p_correct", "w_green", "w_chrom", "w_pos"]
+    lines = [",".join(cols)]
+    for r in rows:
+        r = {**r, **{f"w_{m}": r["weights"][m] for m in collect.METHODS}}
+        lines.append(",".join(str(round(r[c], 3)) if isinstance(r[c], float) else str(r[c]) for c in cols))
+    return PlainTextResponse(chr(10).join(lines), media_type="text/csv",
+                             headers={"Content-Disposition": "attachment; filename=trace-study.csv"})
 
 
 @app.get("/video.mjpg")
@@ -72,6 +138,15 @@ async def ws(sock: WebSocket):
                 await asyncio.to_thread(engine.start, msg.get("source", "sim"), **msg.get("options", {}))
             elif cmd == "sim":
                 engine.set_sim(**msg.get("params", {}))
+            elif cmd == "rec_start":
+                r = await asyncio.to_thread(engine.rec_start, **msg.get("options", {}))
+                await sock.send_text(json.dumps({"type": "rec_ack", "result": r}))
+            elif cmd == "rec_watch":
+                r = engine.rec_watch(float(msg.get("bpm", 0)))
+                await sock.send_text(json.dumps({"type": "rec_ack", "result": r}))
+            elif cmd == "rec_stop":
+                r = await asyncio.to_thread(engine.rec_stop, bool(msg.get("save", True)))
+                await sock.send_text(json.dumps({"type": "rec_done", "result": r}, default=float))
             elif cmd == "stop":
                 await asyncio.to_thread(engine.stop)
             elif cmd == "hrv_start":

@@ -1,12 +1,12 @@
 "use strict";
-/* TRACE Pulse: the live app.
+/* TRACE rPPG: the live app.
    Displays what the Python pipeline produces; it never recomputes pipeline
    math. Live values arrive over /ws (app/engine.py). The evaluation numbers
    come from /static/lab/results.json (scripts/build_dashboard_data.py). */
 
 const METHODS = ["green", "chrom", "pos"];
 const MNAME = { green: "GREEN", chrom: "CHROM", pos: "POS" };
-const TITLES = { measure: "Measure", methods: "Methods", signal: "How it works", scenarios: "Scenarios", hrv: "Heart rhythm", summary: "Summary" };
+const TITLES = { measure: "Measure", methods: "Methods", signal: "How it works", scenarios: "Scenarios", collect: "Collect", next: "What's next" };
 const ART_TAG = 0.25; // artifact share at a method's peak above which the card is tagged
 
 const $ = s => document.querySelector(s);
@@ -15,7 +15,7 @@ function localGet(k) { try { return localStorage.getItem(k); } catch { return nu
 function localSet(k, v) { try { localStorage.setItem(k, v); } catch { /* storage unavailable */ } }
 
 let view = "measure", state = {}, ws = null, simSource = null, scenarios = null, hrv = null, scnSkin = "all";
-let lastT = null, lastReading = null;
+let lastT = null;
 const wHistory = []; // {t, w: {green, chrom, pos}}
 
 /* ================================================================== helpers */
@@ -77,10 +77,18 @@ function connect() {
     const msg = JSON.parse(ev.data);
     if (msg.type === "state") { state = msg.state || {}; onState(); }
     if (msg.type === "hrv") { hrv = msg.result; renderHrv(); }
+    if (msg.type.startsWith("rec_") && window.onRecMessage) window.onRecMessage(msg);
   };
+  ws.onopen = () => { while (outbox.length) ws.send(JSON.stringify(outbox.shift())); };
   ws.onclose = () => { setPill($("#pill-live"), "OFFLINE", "warn"); setTimeout(connect, 1500); };
 }
-function send(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
+// Commands sent before the connection is open (a fast click right after the
+// page loads, or during a reconnect) wait here instead of being dropped.
+const outbox = [];
+function send(o) {
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify(o));
+  else outbox.push(o);
+}
 
 function startSource() {
   const v = document.querySelector('input[name="source"]:checked').value;
@@ -89,23 +97,15 @@ function startSource() {
   $$("img.feed").forEach(img => { img.src = `/video.mjpg?${Date.now()}`; });
   wHistory.length = 0;
 }
-$("#start").addEventListener("click", () => { startSource(); lastReading = null; hrv = null; renderHrv(); });
+$("#start").addEventListener("click", () => { startSource(); hrv = null; renderHrv(); });
 $("#stop").addEventListener("click", () => send({ cmd: "stop" }));
-$("#new-session").addEventListener("click", () => {
-  send({ cmd: "stop" }); lastReading = null; hrv = null; wHistory.length = 0;
-  $$("img.feed").forEach(img => img.removeAttribute("src"));
-  renderHrv(); go("measure");
-});
 
 /* ================================================================== live state */
 function onState() {
   const s = state;
   if (s.running && s.t != null && s.t !== lastT) {
     lastT = s.t;
-    if (s.weights) { wHistory.push({ t: s.t, w: { ...s.weights } }); while (wHistory.length && wHistory[0].t < s.t - 60) wHistory.shift(); }
-    if (haveBpm()) lastReading = { bpm: s.bpm, quality: s.quality, p_correct: s.p_correct ?? null, confident: s.confident,
-      weights: s.weights, methods: s.methods, truth: s.true_bpm || null, source: s.source, fitzpatrick: s.fitzpatrick || null,
-      session_s: s.t, at: new Date().toISOString() };
+    if (s.scores) { wHistory.push({ t: s.t, w: { ...s.scores }, sel: dominantOf(s.weights) }); while (wHistory.length && wHistory[0].t < s.t - 60) wHistory.shift(); }
   }
   if (s.error) setPill($("#pill-live"), "ERROR", "warn");
   else setPill($("#pill-live"), s.running ? "LIVE" : "IDLE", s.running ? "good" : "");
@@ -113,17 +113,22 @@ function onState() {
   src.hidden = !s.running;
   if (s.running) {
     const sim = s.source === "sim";
-    src.textContent = sim ? `SIMULATED / ${s.fitzpatrick === 5 ? "DARKER" : "LIGHTER"} SKIN` : "WEBCAM";
+    src.textContent = sim ? `SIMULATED / SKIN TYPE ${["", "I", "II", "III", "IV", "V", "VI"][s.fitzpatrick] || "--"}${s.sim && s.sim.pulse < 0.5 ? " / NO PULSE" : ""}` : "WEBCAM";
     src.className = "pill " + (sim ? "sim" : "info");
   }
   $("#pill-timer").hidden = !s.running;
   $("#pill-timer span").textContent = mmss(s.t);
   $("#stop").hidden = !s.running;
   // A page reload while the engine is running must reattach the preview.
-  if (s.running) $$("img.feed").forEach(img => { if (!img.getAttribute("src")) img.src = `/video.mjpg?${Date.now()}`; });
+  // When the source stops, drop the stream so the preview goes dark instead
+  // of freezing on the last frame the browser received.
+  $$("img.feed").forEach(img => {
+    if (s.running && !img.getAttribute("src")) img.src = `/video.mjpg?${Date.now()}`;
+    if (!s.running && img.getAttribute("src")) img.removeAttribute("src");
+  });
   $$(".cam-empty").forEach(el => {
     el.hidden = !!s.running;
-    el.textContent = s.error ? (s.error.includes("camera") ? "NO CAMERA FOUND. CHOOSE A SIMULATED VOLUNTEER." : s.error) : "STARTING";
+    el.textContent = s.error ? (s.error.includes("camera") ? "NO CAMERA FOUND. CHOOSE A SIMULATED VOLUNTEER." : s.error) : "CAMERA OFF";
   });
   renderAll();
 }
@@ -134,8 +139,8 @@ function renderAll() {
   if (view === "methods") { renderFusion(); drawHistory(); renderEval(); }
   if (view === "scenarios" && scnDirty()) renderScenarios();
   if (view === "signal") renderSignal();
-  if (view === "hrv") updateHrvRing();
-  if (view === "summary") renderSummary();
+  if (view === "next") { updateHrvRing(); renderLiveness(); renderUses(); }
+  if (view === "collect" && window.renderCollect) window.renderCollect();
 }
 
 /* ================================================================== charts (display only) */
@@ -227,13 +232,13 @@ function renderMeasure() {
   $("#live-truth-wrap").hidden = !s.true_bpm;
   if (s.true_bpm) $("#live-truth").textContent = `${fmt(s.true_bpm, 1)} BPM`;
 
-  const w = s.weights;
-  $("#mini-weights").innerHTML = METHODS.map(m => wbar(MNAME[m], w ? w[m] : 0, 1, C[m], w ? pct(w[m]) : "--")).join("");
+  const w = s.scores, sel = dominantOf(s.weights);
+  $("#mini-weights").innerHTML = METHODS.map(m => wbar(MNAME[m] + (m === sel ? " *" : ""), w ? w[m] : 0, 1, C[m], w ? pct(w[m]) : "--", m === sel ? "sel" : "")).join("");
   $("#tm-src").textContent = s.source === "sim" ? "SIMULATED" : "WEBCAM";
   $("#tm-buf").textContent = `${fmt(s.buffered_s, 1)} S`;
   $("#tm-motion").textContent = s.motion_px != null ? `${fmt(s.motion_px, 1)} PX` : "--";
   drawTrace($("#c-pulse"), s.trace?.pulse, css("--coral"), { width: 1.8, glow: true, grid: true, head: true, sym: true });
-  $("#pulse-best").textContent = s.trace?.best ? `FROM ${MNAME[s.trace.best]}, THE MOST TRUSTED METHOD` : "";
+  $("#pulse-best").textContent = s.trace?.best ? `FROM ${MNAME[s.trace.best]}, THE SELECTED METHOD` : "";
 }
 
 /* ================================================================== methods: TRACE fusion module */
@@ -249,7 +254,7 @@ function buildFusion(host) {
           <span class="ch-name"><i></i>${MNAME[m]}</span>
           <span class="ch-bpm mono"><span data-r="bpm">--</span><small>BPM</small></span>
           <div class="ch-bar" role="meter" aria-label="${MNAME[m]} weight" aria-valuemin="0" aria-valuemax="100"><i></i></div>
-          <div class="ch-meta"><span class="w">WEIGHT <b data-r="w">--</b></span><span>QUALITY <b data-r="q">--</b></span><span class="ch-tags" data-r="tags"></span></div>
+          <div class="ch-meta"><span class="w">TRUST <b data-r="w">--</b></span><span>QUALITY <b data-r="q">--</b></span><span class="ch-tags" data-r="tags"></span></div>
           <div class="ch-viz"><canvas data-r="wave" aria-hidden="true"></canvas><canvas data-r="spec" aria-hidden="true"></canvas></div>
         </div>`).join("")}
       </div>
@@ -262,12 +267,12 @@ function buildFusion(host) {
         <span class="tn-bpm" data-r="tbpm">--<small>BPM</small></span>
         <dl>
           <div><dt>CONFIDENCE</dt><dd data-r="tp">--</dd></div>
-          <div><dt>MOST TRUSTED</dt><dd data-r="td">--</dd></div>
+          <div><dt>SELECTED</dt><dd data-r="td">--</dd></div>
         </dl>
         <canvas data-r="fspec" aria-label="Fused spectrum"></canvas>
       </div>
     </div>
-    <p class="fusion-note">Each method gives its own spectrum. TRACE scores every spectrum by how sharp its peak is, suppresses frequencies that a motion reference flags, and adds the three with those scores as weights. The weights are recomputed every half second.</p>`;
+    <p class="fusion-note">Each method gives its own spectrum. TRACE suppresses the frequencies a motion reference flags, scores every spectrum by how sharp its remaining peak is (the trust bars), and every half second selects the method it trusts most. The heart rate is read from that method's cleaned spectrum.</p>`;
   host.dataset.built = "1";
 }
 function renderFusion() {
@@ -275,29 +280,29 @@ function renderFusion() {
   const host = $(".fusion-host");
   if (!host.dataset.built) buildFusion(host);
   const q = r => host.querySelector(`[data-r="${r}"]`);
-  const w = s.weights || {}, dom = dominantOf(s.weights);
+  const w = s.scores || {}, dom = dominantOf(s.weights);
   setPill(q("state"), !s.running ? "START A MEASUREMENT" : !s.weights ? "COLLECTING" : s.confident ? "STEADY" : "LOW CONFIDENCE",
     !s.running ? "" : !s.weights ? "info" : s.confident ? "good" : "warn");
   METHODS.forEach(m => {
     const ch = host.querySelector(`.ch[data-m="${m}"]`), mm = s.methods?.[m];
     const wv = w[m] ?? 0;
-    ch.style.setProperty("--w", s.weights ? wv : .3);
+    ch.style.setProperty("--w", s.scores ? wv : .3);
     ch.classList.toggle("dominant", m === dom);
     ch.querySelector(".ch-bar i").style.width = `${Math.round(wv * 100)}%`;
     ch.querySelector(".ch-bar").setAttribute("aria-valuenow", String(Math.round(wv * 100)));
     ch.querySelector('[data-r="bpm"]').textContent = mm ? fmt(mm.bpm, 1) : "--";
-    ch.querySelector('[data-r="w"]').textContent = s.weights ? pct(wv) : "--";
+    ch.querySelector('[data-r="w"]').textContent = s.scores ? pct(wv) : "--";
     ch.querySelector('[data-r="q"]').textContent = mm ? fmt(mm.quality, 2) : "--";
     const tags = [];
     if (mm) {
-      if (m === dom) tags.push(["lead", "MOST TRUSTED"]);
+      if (m === dom) tags.push(["lead", "SELECTED"]);
       if (mm.quality < thr) tags.push(["lowq", "WEAK SIGNAL"]);
       if ((mm.artifact || 0) > ART_TAG) tags.push(["art", "MOTION"]);
       if (truth && Math.abs(mm.bpm - truth) > 5) tags.push(["art", "WRONG"]);
     }
     ch.querySelector('[data-r="tags"]').innerHTML = tags.map(([c, t]) => `<span class="tag ${c}">${t}</span>`).join("");
     host.querySelectorAll(`[data-route="${m}"]`).forEach(p => { p.style.stroke = C[m]; p.style.strokeWidth = 1 + wv * 12; p.style.strokeOpacity = .15 + wv * .7; });
-    host.querySelectorAll(`[data-dash="${m}"]`).forEach(p => { p.style.stroke = "#fff"; p.style.strokeWidth = 1.2; p.style.strokeOpacity = s.weights ? wv * .5 : 0; });
+    host.querySelectorAll(`[data-dash="${m}"]`).forEach(p => { p.style.stroke = "#fff"; p.style.strokeWidth = 1.2; p.style.strokeOpacity = s.weights && m === dom ? .8 : 0; });
     drawTrace(ch.querySelector('[data-r="wave"]'), s.method_traces?.[m], C[m], { width: 1.1, pad: 3 });
     drawSpec(ch.querySelector('[data-r="spec"]'), s.spectrum?.f, s.method_spectra?.[m], C[m], { peak: mm ? mm.bpm : null, peakColor: C[m], width: 1.1 });
   });
@@ -334,7 +339,14 @@ function drawHistory() {
     ctx.fillText(`${MNAME[m]} ${pct(last.w[m])}`, pw + 10, Math.max(pad + 6, Math.min(h - pad, Y(mid) + 4)));
     base = top;
   });
-  ctx.fillStyle = css("--ink-3"); ctx.textAlign = "left"; ctx.fillText("-60 S", 0, h - 2); ctx.textAlign = "right"; ctx.fillText("NOW", pw, h - 2);
+  // Selection strip: which method TRACE picked at each read-out.
+  wHistory.forEach((e, i) => {
+    if (!e.sel || i === 0) return;
+    ctx.fillStyle = C[e.sel];
+    ctx.fillRect(X(wHistory[i - 1].t), h - pad + 3, Math.max(1, X(e.t) - X(wHistory[i - 1].t)), 5);
+  });
+  ctx.fillStyle = css("--ink-3"); ctx.font = "10px 'IBM Plex Mono', monospace"; ctx.textAlign = "left"; ctx.fillText("SELECTED", pw + 10, h - pad + 9);
+  ctx.textAlign = "left"; ctx.fillText("-60 S", 0, h - 2); ctx.textAlign = "right"; ctx.fillText("NOW", pw, h - 2);
 }
 
 function renderEval() {
@@ -361,7 +373,7 @@ const PRESETS = [
   ["Screen glow", { ...BASE_SIM, screen_light: 0.008 }],
   ["Fast heart", { bpm: 120 }],
 ];
-let simSettings = { fitzpatrick: 2, ...BASE_SIM };
+let simSettings = { fitzpatrick: 2, pulse: 1, ...BASE_SIM };
 let simTimer = null, simEditUntil = 0, lastFlicker = 1.5;
 
 function pushSim(change) {
@@ -390,6 +402,8 @@ function buildSimPanel(host) {
         <input type="range" min="50" max="150" step="1" data-k="flicker_rate" aria-label="Flicker rate per minute"></div></div>
       <div class="ctl"><span class="label mono">SCREEN GLOW</span>
         <div class="seg small" data-seg="screen_light" role="radiogroup" aria-label="Screen glow">${GLOW.map(([n, v]) => `<button type="button" role="radio" data-val="${v}">${n}</button>`).join("")}</div></div>
+      <div class="ctl"><span class="label mono">WHAT THE CAMERA SEES</span>
+        <div class="seg small" data-seg="pulse" role="radiogroup" aria-label="Living face or photo"><button type="button" role="radio" data-val="1">Living face</button><button type="button" role="radio" data-val="0">Photo (no pulse)</button></div></div>
     </div>
     <div class="presets"><span class="label mono">PRESETS</span>${PRESETS.map(([n], i) => `<button type="button" class="btn ghost small" data-preset="${i}">${n}</button>`).join("")}</div>`;
   host.querySelectorAll("[data-fz]").forEach(b => b.addEventListener("click", () => pushSim({ fitzpatrick: +b.dataset.fz })));
@@ -398,6 +412,7 @@ function buildSimPanel(host) {
   host.querySelector('[data-k="flicker_rate"]').addEventListener("input", e => pushSim({ flicker_hz: +e.target.value / 60 }));
   host.querySelectorAll('[data-seg="motion"] button').forEach(b => b.addEventListener("click", () => pushSim({ motion: +b.dataset.val })));
   host.querySelectorAll('[data-seg="screen_light"] button').forEach(b => b.addEventListener("click", () => pushSim({ screen_light: +b.dataset.val })));
+  host.querySelectorAll('[data-seg="pulse"] button').forEach(b => b.addEventListener("click", () => pushSim({ pulse: +b.dataset.val })));
   host.querySelectorAll('[data-seg="flick"] button').forEach(b => b.addEventListener("click", () =>
     pushSim({ flicker_hz: +b.dataset.val ? lastFlicker : 0 })));
   host.querySelectorAll("[data-preset]").forEach(b => b.addEventListener("click", () => pushSim(PRESETS[+b.dataset.preset][1])));
@@ -419,6 +434,7 @@ function syncSimPanel(host) {
   host.querySelector('[data-k="flicker_rate"]').disabled = !(s.flicker_hz > 0);
   host.querySelectorAll('[data-seg="motion"] button').forEach(b => b.setAttribute("aria-checked", String(near(+b.dataset.val, s.motion))));
   host.querySelectorAll('[data-seg="screen_light"] button').forEach(b => b.setAttribute("aria-checked", String(near(+b.dataset.val, s.screen_light))));
+  host.querySelectorAll('[data-seg="pulse"] button').forEach(b => b.setAttribute("aria-checked", String((+b.dataset.val === 1) === ((s.pulse ?? 1) >= 0.5))));
   host.querySelectorAll('[data-seg="flick"] button').forEach(b => b.setAttribute("aria-checked", String((+b.dataset.val === 1) === (s.flicker_hz > 0))));
 }
 
@@ -455,7 +471,7 @@ function renderScenarios() {
   seg.querySelectorAll("button").forEach(b => b.setAttribute("aria-checked", String(b.dataset.skin === String(scnSkin))));
   if (!scenarios) { $("#scn-foot").textContent = "Run scripts/sim_scenarios.py to measure the scenarios."; return; }
   const C = MCOL(), canTry = state.running && state.source === "sim", cols = [...METHODS, "trace"];
-  $("#scn-table").innerHTML = `<thead><tr><th>CONDITION</th><th>HOW TO CAUSE IT</th>${cols.map(m => `<th>${m === "trace" ? "TRACE" : MNAME[m]}</th>`).join("")}<th>TRUSTED MOST</th><th>CONFIDENT</th><th></th></tr></thead><tbody>${
+  $("#scn-table").innerHTML = `<thead><tr><th>CONDITION</th><th>HOW TO CAUSE IT</th>${cols.map(m => `<th>${m === "trace" ? "TRACE" : MNAME[m]}</th>`).join("")}<th>SELECTED MOST</th><th>CONFIDENT</th><th></th></tr></thead><tbody>${
     scenarios.scenarios.map((s, i) => {
       const a = scnSkin === "all" ? s.all : s.by_skin[scnSkin];
       const best = Math.min(...cols.map(m => a.mae[m]));
@@ -465,7 +481,7 @@ function renderScenarios() {
         <td><button type="button" class="btn ghost small" data-try="${i}" ${canTry ? "" : "disabled"} title="${canTry ? "Apply to the live volunteer" : "Start a simulated volunteer first"}">Try it</button></td></tr>`;
     }).join("")}</tbody>`;
   $("#scn-table").querySelectorAll("[data-try]").forEach(b => b.addEventListener("click", () => tryScenario(+b.dataset.try)));
-  $("#scn-foot").textContent = `Mean absolute error in BPM against the true rate: ${scenarios.seeds} volunteers x ${scenarios.seconds} s per skin type and condition, one reading every 2.5 s. Best of the four in green. Trusted most: the method TRACE weighted highest most often.`;
+  $("#scn-foot").textContent = `Mean absolute error in BPM against the true rate: ${scenarios.seeds} volunteers x ${scenarios.seconds} s per skin type and condition, one reading every 2.5 s. Best of the four in green. Selected most: the method TRACE picked most often.`;
   const skins = [1, 2, 3, 4, 5, 6];
   const heat = v => `rgba(255, 107, 120, ${Math.min(0.85, v / 30).toFixed(2)})`;
   $("#scn-heat").innerHTML = `<thead><tr><th>CONDITION</th>${skins.map(k => `<th>${ROMAN[k]}</th>`).join("")}</tr></thead><tbody>${
@@ -494,7 +510,19 @@ function renderSignal() {
   $("#s5-f").textContent = s.spectrum?.peak ? `f_peak = ${fmt(s.spectrum.peak / 60, 3)} Hz` : "";
 }
 
-/* ================================================================== heart rhythm */
+/* ================================================================== what's next: liveness */
+function renderLiveness() {
+  const s = state, L = s.liveness, pill = $("#live-verdict");
+  if (!s.running) { setPill(pill, "START A MEASUREMENT", ""); $("#live-share").textContent = "--"; $("#live-dial").style.setProperty("--share", 0); return; }
+  if (!L) { setPill(pill, "COLLECTING SIGNAL", "info"); return; }
+  const v = { pulse: ["PULSE FOUND: LIVING FACE", "good"], none: ["NO PULSE: PHOTO OR SCREEN?", "warn"], checking: ["CHECKING", "info"] }[L.verdict];
+  setPill(pill, v[0], v[1]);
+  $("#live-share").textContent = `${pct(L.share)} (${L.n}/${L.of})`;
+  $("#live-dial").style.setProperty("--share", L.share);
+  $("#live-dial").dataset.verdict = L.verdict;
+}
+
+/* ================================================================== what's next: heart rhythm */
 let hrvEmptyFor = null;
 function updateHrvRing() {
   const el = state.hrv_elapsed, need = state.hrv_needed || 120;
@@ -511,34 +539,50 @@ $("#hrv-done").addEventListener("click", () => send({ cmd: "hrv_finish" }));
 function renderHrv() {
   const out = $("#hrv-out");
   hrvEmptyFor = hrv ? null : !!state.running;
-  if (!hrv) {
-    out.innerHTML = `<div class="empty-state wide"><div><svg><use href="#i-waves"/></svg><p></p></div></div>`;
-    out.querySelector("p").textContent = state.running ? "Press Start recording, sit still for two minutes, then analyse." : "Start a measurement first. Heart rhythm uses the live signal.";
-    return;
-  }
-  if (hrv.error) { out.innerHTML = `<div class="card wide"><p class="foot"></p></div>`; out.querySelector("p").textContent = hrv.error; return; }
+  if (!hrv) { out.innerHTML = ""; return; }
+  if (hrv.error) { out.innerHTML = `<div class="card"><p class="foot"></p></div>`; out.querySelector("p").textContent = hrv.error; return; }
   const f = (v, d = 0) => v == null ? "--" : (+v).toFixed(d);
   out.innerHTML = `
-    <article class="card wide">
-      <header class="card-h"><span class="label mono">BEAT STATISTICS / ${f(hrv.seconds)} S</span><span class="pill small ${hrv.valid ? "good" : "warn"}">${hrv.valid ? "LF/HF VALID" : "UNDER 2 MIN"}</span></header>
-      <div class="stat-grid">
+    <div class="bento">
+    <article class="card span-12">
+      <header class="card-h"><span class="label mono">HEART RHYTHM / ${f(hrv.seconds)} S / ${hrv.rr_ms.length + 1} BEATS</span><span class="pill small ${hrv.valid ? "good" : "warn"}">${hrv.valid ? "LF/HF VALID" : "UNDER 2 MIN"}</span></header>
+      <div class="stat-grid six">
         <div class="stat"><span class="label mono">MEAN HR</span><b>${f(hrv.mean_hr)}<small>BPM</small></b></div>
         <div class="stat"><span class="label mono">SDNN</span><b>${f(hrv.sdnn)}<small>MS</small></b></div>
         <div class="stat"><span class="label mono">RMSSD</span><b>${f(hrv.rmssd)}<small>MS</small></b></div>
         <div class="stat"><span class="label mono">LF/HF</span><b>${hrv.valid ? f(hrv.lf_hf, 2) : "--"}</b></div>
         <div class="stat"><span class="label mono">BREATHING</span><b>${hrv.valid && hrv.resp_bpm ? f(hrv.resp_bpm) : "--"}<small>/MIN</small></b></div>
-        <div class="stat"><span class="label mono">BEATS</span><b>${hrv.rr_ms.length + 1}</b></div>
+        <div class="stat"><span class="label mono">PACED</span><b>${hrvPaced ? "6<small>/MIN</small>" : "NO"}</b></div>
       </div>
+      <p class="indicator"></p>
+      ${hrv.valid ? "" : `<p class="foot">Under two minutes: beat statistics only. LF/HF and breathing rate are withheld.</p>`}
     </article>
-    <article class="card chart-card"><header class="card-h"><span class="label mono">TIME BETWEEN BEATS / MS</span></header><canvas class="chart" id="c-tach" style="--h:150px" aria-label="Intervals between beats"></canvas></article>
-    <article class="card chart-card fourier"><header class="card-h"><span class="label mono">SECOND FFT / LF AND HF</span></header>${hrv.psd_f ? `<canvas class="chart" id="c-psd" style="--h:150px" aria-label="Spectrum of the beat intervals with LF and HF bands"></canvas>` : `<p class="foot">Needs a longer recording.</p>`}</article>
-    <article class="card wide"><p class="indicator"></p>${hrv.valid ? "" : `<p class="foot">Under two minutes: beat statistics only. LF/HF is withheld.</p>`}</article>`;
+    <article class="card span-7 chart-card"><header class="card-h"><span class="label mono">BEAT-TO-BEAT HEART RATE</span><span class="mono muted">60 000 / GAP BETWEEN BEATS (MS)</span></header>
+      <canvas class="chart" id="c-tach" style="--h:170px" aria-label="Heart rate computed from each gap between beats, over time"></canvas>
+      <p class="foot">The rate rises when breathing in and falls when breathing out (respiratory sinus arrhythmia). With paced breathing the wave should follow the 10 s circle.</p></article>
+    <article class="card span-5 chart-card fourier"><header class="card-h"><span class="label mono">SECOND FFT / LF AND HF</span></header>
+      ${hrv.psd_f ? `<canvas class="chart" id="c-psd" style="--h:170px" aria-label="Spectrum of the beat intervals with LF and HF bands"></canvas>` : `<p class="foot">Needs a longer recording.</p>`}
+      <p class="foot">HF (0.15 to 0.4 Hz) follows breathing. LF (0.04 to 0.15 Hz) follows blood-pressure control. 6 breaths a minute is 0.1 Hz, inside LF.</p></article>
+    </div>`;
   out.querySelector(".indicator").textContent = hrv.indicator;
   drawHrvCharts();
 }
 function drawHrvCharts() {
   if (!hrv || !hrv.rr_ms) return;
-  const t = $("#c-tach"); if (t) drawTrace(t, hrv.rr_ms, css("--coral"), { width: 1.5, grid: true, head: true });
+  const t = $("#c-tach");
+  if (t && hrv.rr_t && hrv.rr_t.length > 1) {
+    const f = fit(t);
+    if (f) {
+      const { ctx, w, h } = f, xs = hrv.rr_t, ys = hrv.rr_ms.map(v => 60000 / v), pad = 14;
+      let lo = Math.min(...ys), hi = Math.max(...ys); if (hi - lo < 4) { lo -= 2; hi += 2; }
+      const X = v => (v - xs[0]) / (xs[xs.length - 1] - xs[0]) * (w - 40) + 36, Y = v => h - pad - (v - lo) / (hi - lo) * (h - 2 * pad);
+      ctx.strokeStyle = css("--grid"); ctx.fillStyle = css("--ink-3"); ctx.font = "10px 'IBM Plex Mono', monospace"; ctx.textAlign = "right";
+      [lo, (lo + hi) / 2, hi].forEach(v => { const y = Math.round(Y(v)) + .5; ctx.beginPath(); ctx.moveTo(36, y); ctx.lineTo(w, y); ctx.stroke(); ctx.fillText(Math.round(v), 30, y + 3); });
+      ctx.strokeStyle = css("--coral"); ctx.lineWidth = 1.6; ctx.beginPath();
+      xs.forEach((x, i) => i ? ctx.lineTo(X(x), Y(ys[i])) : ctx.moveTo(X(x), Y(ys[i]))); ctx.stroke();
+      ctx.fillStyle = css("--coral"); xs.forEach((x, i) => { ctx.beginPath(); ctx.arc(X(x), Y(ys[i]), 1.8, 0, 7); ctx.fill(); });
+    }
+  }
   const c = $("#c-psd"); if (!c || !hrv.psd_f) return;
   const fc = fit(c); if (!fc) return;
   const { ctx, w, h } = fc, fmax = 0.5, pmax = Math.max(...hrv.psd_p) || 1, pad = 18;
@@ -552,34 +596,43 @@ function drawHrvCharts() {
   [0.1, 0.2, 0.3, 0.4].forEach(v => ctx.fillText(`${v} HZ`, x(v), h - 4));
 }
 
-/* ================================================================== summary */
-function renderSummary() {
-  const r = lastReading, C = MCOL();
-  const b = $("#res-bpm");
-  b.textContent = r ? fmt(r.bpm) : "--";
-  b.className = "big mono" + (!r ? " none" : r.confident ? "" : " low");
-  setPill($("#res-state"), !r ? "NO READING" : r.confident ? "STEADY" : "LOW CONFIDENCE", !r ? "" : r.confident ? "good" : "warn");
-  const dom = r ? dominantOf(r.weights) : null;
-  const stats = [["CONFIDENCE", r ? pct(r.p_correct) : "--"], ["MOST TRUSTED", dom ? `${MNAME[dom]} ${pct(r.weights[dom])}` : "--"]];
-  if (r?.truth) stats.push(["TRUE RATE / ERROR", `${fmt(r.truth, 1)} / ${fmt(Math.abs(r.bpm - r.truth), 1)}`]);
-  if (hrv && !hrv.error) stats.push(["SDNN / RMSSD", `${fmt(hrv.sdnn)} / ${fmt(hrv.rmssd)} MS`]);
-  $("#res-stats").innerHTML = stats.map(([k, v]) => `<div><span class="label mono">${k}</span><b class="mono">${v}</b></div>`).join("");
-  $("#res-weights").innerHTML = r?.weights ? METHODS.map(m => wbar(MNAME[m], r.weights[m], 1, C[m], pct(r.weights[m]))).join("") : `<p class="foot">No reading yet.</p>`;
-  $("#res-methods").innerHTML = r?.methods ? METHODS.map(m => `<div><dt class="mono">${MNAME[m]}</dt><dd class="mono">${fmt(r.methods[m].bpm, 1)} BPM</dd></div>`).join("") +
-    `<div><dt class="mono">TRACE</dt><dd class="mono good">${fmt(r.bpm, 1)} BPM</dd></div>` : `<div><dt class="mono">--</dt><dd class="mono">NO READING</dd></div>`;
-  const notes = [];
-  if (r?.source === "sim") notes.push("Simulated volunteer: the skin is rendered, so the true rate is known.");
-  if (r && !r.confident) notes.push("The last reading was below the confidence threshold.");
-  notes.push("An academic project, not a medical device. It does not diagnose anything.");
-  $("#res-warns").innerHTML = notes.map(t => `<li><svg><use href="#i-alert"/></svg><span>${t}</span></li>`).join("");
-}
-$("#export").addEventListener("click", () => {
-  const blob = new Blob([JSON.stringify({ reading: lastReading, heart_rhythm: hrv, weight_history: wHistory,
-    fusion_params: state.params || null, note: "Academic project, not a medical diagnosis.", exported: new Date().toISOString() }, null, 2)],
-    { type: "application/json" });
-  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "trace-measurement.json"; a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+/* ================================================================== what's next: guided breathing */
+let hrvPaced = false, paceTimer = null;
+$("#pace-on").addEventListener("change", e => {
+  hrvPaced = e.target.checked;
+  $("#pacer").hidden = !hrvPaced;
+  clearInterval(paceTimer);
+  if (hrvPaced) {
+    const t0 = performance.now();
+    paceTimer = setInterval(() => {
+      const ph = ((performance.now() - t0) / 1000) % 10;
+      const inhale = ph < 5;
+      $("#pace-text").textContent = `${inhale ? "BREATHE IN" : "BREATHE OUT"} ${Math.ceil(inhale ? 5 - ph : 10 - ph)}`;
+      $("#pace-circle").style.setProperty("--s", (inhale ? 0.55 + 0.45 * (ph / 5) : 1 - 0.45 * ((ph - 5) / 5)).toFixed(3));
+    }, 100);
+  }
 });
+
+/* ================================================================== what's next: applications */
+const USES = [
+  ["done", "Telehealth check-in", "A doctor on a video call sees the patient's pulse with no device in the patient's home.", "HEART RATE", "Accuracy drops on heavily compressed calls, which this project measured."],
+  ["done", "Stress and relaxation", "Heart-rate variability falls under stress and rises with rest: a wellness signal for study breaks or work.", "HRV", "Wellness indicator, not a diagnosis."],
+  ["done", "Breathing coach", "Slow paced breathing makes the heart rate swing with each breath. The camera can show the user that it is working.", "BEAT TIMING", "Try it with the circle above."],
+  ["focus", "Real face check", "A photo, screen or mask has no pulse. Face login and video-call deepfake detection can ask: is blood flowing?", "PULSE PRESENCE", "Prototype above; not a security product."],
+  ["pend", "Driver fatigue", "Heart rate and its variability change as a driver gets drowsy; a dashboard camera already faces them.", "HR + HRV", "Needs infrared light at night and strong motion handling."],
+  ["pend", "Newborn monitoring", "Adhesive sensors can hurt fragile skin. A camera over the cot measures without touching.", "HEART RATE, BREATHING", "Needs clinical validation."],
+  ["pend", "Fitness recovery", "How fast the heart rate falls in the minute after exercise is a known fitness marker.", "BEAT TIMING", "Needs tracking through heavy motion."],
+  ["pend", "Sleep and elder care", "A bedside camera could watch heart rate and breathing overnight without wearables.", "HR, BREATHING", "Needs low light and privacy safeguards."],
+  ["pend", "Irregular rhythm screening", "Irregular gaps between beats can hint at rhythm problems such as atrial fibrillation, a research topic for camera screening.", "BEAT TIMING", "Research only; any screening needs a clinician and clinical trials."],
+];
+function renderUses() {
+  const box = $("#uses");
+  if (box.children.length) return;
+  const tag = { done: "IN THIS APP", focus: "PROTOTYPE HERE", pend: "FUTURE WORK" };
+  box.innerHTML = USES.map(([st, title, what, sig, note]) => `
+    <div class="use ${st}"><span class="tag ${st === "done" ? "lead" : st === "focus" ? "ft" : ""}">${tag[st]}</span>
+      <h3>${title}</h3><p>${what}</p><span class="mono sig">NEEDS ${sig}</span><p class="note">${note}</p></div>`).join("");
+}
 
 /* ================================================================== boot */
 let resizeTimer = null;

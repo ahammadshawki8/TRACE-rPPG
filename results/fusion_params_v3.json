@@ -1,0 +1,23 @@
+{
+ "version": 3,
+ "gamma": Infinity,
+ "mask_k": 4.0,
+ "confidence": 0.27314207046641503,
+ "logistic": [
+  -3.728035207873125,
+  13.648703773487417
+ ],
+ "continuity_rho": null,
+ "pbv_nominal": [
+  0.27,
+  0.8,
+  0.54
+ ],
+ "tuned_on": "live-simulator scenario sweep, seeds 8000+ (10 conditions x 6 skin types x 2 volunteers x 60 s)",
+ "tested_on": "seeds 9000+ (x 3 volunteers), scored once",
+ "v2": {
+  "gamma": 1.0,
+  "mask_k": 4.0,
+  "confidence": 0.23955152037773392
+ }
+}

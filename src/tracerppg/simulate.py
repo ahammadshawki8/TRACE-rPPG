@@ -293,6 +293,8 @@ class LiveParams:
                   pulse, and what CHROM and POS are built to cancel
     flicker_depth relative amplitude of that brightness change
     screen_light  coloured relighting from a screen (see _screen_light)
+    pulse         1 = a living face, 0 = a photo or mask: same face, same
+                  motion and lighting, no blood-volume pulse (liveness demo)
     """
 
     fitzpatrick: int = 2
@@ -302,10 +304,12 @@ class LiveParams:
     flicker_hz: float = 0.0
     flicker_depth: float = 0.03
     screen_light: float = 0.002
+    pulse: float = 1.0
 
 
 LIVE_LIMITS = {"fitzpatrick": (1, 6), "bpm": (40.0, 180.0), "motion": (0.0, 3.0), "light": (0.2, 1.6),
-               "flicker_hz": (0.0, 4.0), "flicker_depth": (0.0, 0.1), "screen_light": (0.0, 0.02)}
+               "flicker_hz": (0.0, 4.0), "flicker_depth": (0.0, 0.1), "screen_light": (0.0, 0.02),
+               "pulse": (0.0, 1.0)}
 
 
 class _Smooth:
@@ -427,7 +431,7 @@ class LiveSimulator:
         if p.flicker_hz > 0:
             gain *= 1.0 + p.flicker_depth * np.sin(2 * np.pi * p.flicker_hz * t)
         colour = gain * (1.0 + p.screen_light * (self.scr1() * self.scr_u[0] + self.scr2() * self.scr_u[1]))
-        frame = self.bg + self.surf_m * (1.0 + spec) + self.skin_d * (1.0 + self.a * pulse)
+        frame = self.bg + self.surf_m * (1.0 + spec) + self.skin_d * (1.0 + self.a * (p.pulse * pulse))
         frame *= colour.astype(np.float32)
         M = cv2.getRotationMatrix2D(self.centre, float(rot), 1.0)
         M[0, 2] += dx

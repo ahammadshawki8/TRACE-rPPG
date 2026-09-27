@@ -30,7 +30,7 @@ Their interaction had not been measured.
 | T7 | Full grid, interaction statistics, figures | done on the simulated pilot (36 subjects, 23 conditions, 11 methods) |
 | T8 | Own data collection | protocol and consent form ready; recording not started |
 | T9 | HRV and LF/HF (the second Fourier transform) | done, 11/11 |
-| T10 | TRACE Pulse app | done; measure, live method fusion, theory walk-through, heart rhythm, summary |
+| T10 | TRACE rPPG app | done; measure, live method fusion, theory walk-through, scenarios, volunteer collection, what's next |
 
 `CLAUDE.md` is the detailed project memory: every measured number, every
 decision, and every failed attempt.
