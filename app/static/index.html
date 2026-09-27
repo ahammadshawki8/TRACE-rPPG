@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Caveat:wght@500;700&display=swap">
-<link rel="stylesheet" href="/static/styles.css?v=23">
+<link rel="stylesheet" href="/static/styles.css?v=24">
 </head>
 <body>
 
@@ -157,14 +157,15 @@
               <circle class="ring-fg" id="ring-fg" cx="100" cy="100" r="86" pathLength="100" stroke-dasharray="0 100"/>
               <line class="ring-thr" x1="6" y1="100" x2="22" y2="100"/>
             </svg>
-            <div class="ring-center"><span class="big mono" id="live-bpm">--</span><span class="unit mono">BPM</span></div>
+            <div class="ring-center"><span class="big mono" id="live-bpm">--</span><span class="unit mono">BPM</span><span class="lock-tag mono" id="lock-tag" hidden>LOCKED</span></div>
           </div>
           <dl class="kv">
             <div><dt class="mono">CONFIDENCE</dt><dd class="mono" id="live-p">--</dd></div>
             <div><dt class="mono">SIGNAL QUALITY</dt><dd class="mono" id="live-q">--</dd></div>
             <div id="live-truth-wrap" hidden><dt class="mono">TRUE RATE</dt><dd class="mono" id="live-truth">--</dd></div>
+            <div><dt class="mono">LAST LOCK</dt><dd class="mono" id="live-lock">--</dd></div>
           </dl>
-          <p class="foot">The ring shows confidence. Below the tick at half, the reading is marked low confidence.</p>
+          <p class="foot">The ring shows confidence. Below the tick at half, the reading is low confidence. At 95 percent the reading locks for 3 s with a buzz, then goes live again.</p>
         </article>
 
         <article class="card span-3 lift" data-goto="methods" tabindex="0" role="link" aria-label="Open methods">
@@ -802,7 +803,7 @@
   <img id="pip-img" alt="Live camera preview">
 </div>
 
-<script src="/static/app.js?v=19"></script>
+<script src="/static/app.js?v=20"></script>
 <script src="/static/collect.js?v=3"></script>
 </body>
 </html>

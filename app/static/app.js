@@ -97,6 +97,47 @@ function startSource(kind = "sim") {
   send(simSource ? { cmd: "start", source: "sim", options: simSource } : { cmd: "start", source: "webcam" });
   $$("img.feed").forEach(img => { img.src = `/video.mjpg?${Date.now()}`; });
   wHistory.length = 0;
+  lock = null; lastLock = null; lockGapUntil = 0;
+  audioCtx();  // a click is the gesture browsers need before any sound
+}
+
+/* ================================================================== confidence lock
+   A live reading moves every half second. When the confidence (the frozen
+   logistic P(within 5 BPM)) reaches 95 percent, the number is held for 3 s
+   and the device buzzes, then the display goes live again. The next lock
+   needs at least 3 s of live display first, so a steady face gives a calm
+   rhythm of locks instead of one endless freeze. Display only: the pipeline
+   keeps running underneath. */
+const LOCK = { p: 0.95, hold: 3000, gap: 3000 };
+let lock = null, lastLock = null, lockGapUntil = 0, actx = null;
+function audioCtx() {
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === "suspended") actx.resume();
+  } catch { actx = null; }
+  return actx;
+}
+function buzz() {
+  try { navigator.vibrate?.([140, 70, 140]); } catch { /* not a phone */ }
+  const a = audioCtx(); if (!a) return;
+  const lp = a.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 900; lp.connect(a.destination);
+  [0, 0.21].forEach(d => {
+    const t0 = a.currentTime + d, o = a.createOscillator(), g = a.createGain(), am = a.createOscillator(), ag = a.createGain();
+    o.type = "sawtooth"; o.frequency.value = 118; am.type = "square"; am.frequency.value = 34; ag.gain.value = 0.07;
+    g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.12, t0 + 0.012);
+    g.gain.setValueAtTime(0.12, t0 + 0.12); g.gain.linearRampToValueAtTime(0, t0 + 0.15);
+    am.connect(ag); ag.connect(g.gain); o.connect(g); g.connect(lp);
+    o.start(t0); am.start(t0); o.stop(t0 + 0.17); am.stop(t0 + 0.17);
+  });
+}
+function updateLock(s, have) {
+  const now = performance.now();
+  if (lock && now >= lock.until) { lock = null; lockGapUntil = now + LOCK.gap; }
+  if (!lock && have && s.confident && s.p_correct != null && s.p_correct >= LOCK.p && now >= lockGapUntil) {
+    lock = lastLock = { bpm: s.bpm, p: s.p_correct, until: now + LOCK.hold, at: new Date() };
+    buzz();
+    setTimeout(() => { if (state.running) renderMeasure(); }, LOCK.hold + 30);
+  }
 }
 // The two source cards on the landing start a session directly.
 $$(".source-card[data-source]").forEach(b => b.addEventListener("click", () => { startSource(b.dataset.source); hrv = null; renderHrv(); }));
@@ -222,13 +263,19 @@ function renderMeasure() {
     : bad.includes("still") ? "Rest your head. Small movements are fine."
     : "Red box: tracked face. Green boxes: forehead and cheeks, where the pulse is read.";
 
+  updateLock(s, have);
+  const card = $(".live-readout"), was = card.classList.contains("locked");
+  card.classList.toggle("locked", !!lock);
+  if (lock && !was) { card.classList.remove("buzzing"); void card.offsetWidth; card.classList.add("buzzing"); }
+  $("#lock-tag").hidden = !lock;
+  $("#live-lock").textContent = lastLock ? `${fmt(lastLock.bpm)} BPM / ${pct(lastLock.p)}` : "--";
   const b = $("#live-bpm");
-  b.textContent = have ? fmt(s.bpm) : "--";
-  b.className = "big mono" + (!have ? " none" : s.confident ? "" : " low");
-  setPill($("#live-state"), !have ? "COLLECTING" : s.confident ? "STEADY" : "LOW CONFIDENCE", !have ? "info" : s.confident ? "good" : "warn");
+  b.textContent = lock ? fmt(lock.bpm) : have ? fmt(s.bpm) : "--";
+  b.className = "big mono" + (lock ? "" : !have ? " none" : s.confident ? "" : " low");
+  setPill($("#live-state"), lock ? "LOCKED" : !have ? "COLLECTING" : s.confident ? "LIVE" : "LOW CONFIDENCE", lock || (have && s.confident) ? "good" : !have ? "info" : "warn");
   const ring = $("#ring-fg");
-  ring.setAttribute("stroke-dasharray", `${(have && s.p_correct != null ? s.p_correct * 100 : 0).toFixed(1)} 100`);
-  ring.classList.toggle("low", have && !s.confident);
+  ring.setAttribute("stroke-dasharray", `${(lock ? 100 : have && s.p_correct != null ? s.p_correct * 100 : 0).toFixed(1)} 100`);
+  ring.classList.toggle("low", !lock && have && !s.confident);
   $("#live-p").textContent = have ? pct(s.p_correct) : `${fmt(Math.max(0, (s.needed_s || 8) - (s.buffered_s || 0)))} S TO GO`;
   $("#live-p").className = "mono " + (have ? (s.confident ? "good" : "warn") : "");
   $("#live-q").textContent = have ? fmt(s.quality, 2) : "--";

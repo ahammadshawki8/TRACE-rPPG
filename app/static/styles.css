@@ -877,3 +877,14 @@ table.glance tr.empty td { color: var(--ink-3); }
   *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
   .routes .flowdash { animation: none; }
 }
+
+/* Confidence lock: the readout holds for 3 s and gives a short buzz. */
+.lock-tag { margin-top: 4px; font-size: 10px; letter-spacing: .18em; padding: 2px 8px; border-radius: 999px; background: var(--lime); color: var(--lime-ink); }
+.live-readout.locked .ring-fg { stroke: var(--lime); filter: drop-shadow(0 0 12px color-mix(in srgb, var(--lime) 70%, transparent)); }
+.live-readout.locked #live-bpm { color: var(--lime); }
+.live-readout.buzzing .ring-wrap { animation: lock-buzz 360ms linear 1; }
+@keyframes lock-buzz {
+  0%, 100% { transform: none; } 10% { transform: translate(-2px, 1px); } 20% { transform: translate(2px, -1px); } 30% { transform: translate(-2px, 0); }
+  40% { transform: translate(2px, 1px); } 50% { transform: none; } 60% { transform: translate(-2px, -1px); } 70% { transform: translate(2px, 1px); } 80% { transform: translate(-1px, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .live-readout.buzzing .ring-wrap { animation: none; } }
