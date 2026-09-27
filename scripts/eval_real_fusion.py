@@ -41,12 +41,15 @@ def traces_for(rec, cache_dir) -> Traces:
 def evaluate(rec, tr: Traces, v2: dict, v3: dict) -> list[dict]:
     ok = tr.n_pixels > 200
     t, rgb = tr.t[ok], tr.rgb[ok]
+    # Coverage is judged at the video's own frame rate: some UBFC subjects
+    # were filmed at about 23 fps, and a 30 fps count rejected all of them.
+    native_fps = (len(tr.t) - 1) / max(1e-9, tr.t[-1] - tr.t[0])
     ends = np.arange(WIN, min(rec.duration_s, t[-1]) + 1e-9, HOP)
     refs = reference_hr(rec, [(e - WIN, e) for e in ends])
     rows, prev = [], None
     for te, ref in zip(ends, refs):
         m = (t > te - WIN) & (t <= te)
-        if m.sum() < FS * WIN * 0.8:
+        if m.sum() < native_fps * WIN * 0.8:
             continue
         cols = np.column_stack([resample_uniform(t[m], rgb[m, c], FS)[1] for c in range(3)])
         pulses, art = band_limited_pulses(cols, FS), artifact_reference(cols, FS)
@@ -63,7 +66,9 @@ def evaluate(rec, tr: Traces, v2: dict, v3: dict) -> list[dict]:
     return rows
 
 
-def summary(rows: list[dict]) -> dict:
+def summary(rows: list[dict]) -> dict | None:
+    if not rows:
+        return None
     out = {"n": len(rows)}
     for k in (*METHODS, "v2", "v3"):
         e = np.array([abs(r[k] - r["ref"]) for r in rows])
@@ -97,9 +102,12 @@ def main(root, tag: str) -> None:
     per, allrows = {}, []
     for rec in recs:
         rows = evaluate(rec, traces_for(rec, cache), v2, v3)
-        per[rec.subject] = summary(rows)
+        s = summary(rows)
+        if s is None:
+            print(f"  {rec.subject:10s} no scorable window (face lost or video too short), left out")
+            continue
+        per[rec.subject] = s
         allrows += rows
-        s = per[rec.subject]
         print(f"  {rec.subject:10s} " + " ".join(f"{k} {s[k]['mae']:5.1f}" for k in (*METHODS, "v2", "v3")))
     tot = summary(allrows)
     print(f"\n  {len(recs)} subjects, {tot['n']} windows. MAE / within 5 BPM against the contact oximeter:")
