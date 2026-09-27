@@ -25,7 +25,6 @@ from tracerppg.fusion import artifact_reference, band_limited_pulses, fuse
 from tracerppg.hrv import DISCLAIMER, HRV_METHOD, MIN_HRV_SECONDS, clean_rr, hrv_from_pulse
 from tracerppg.roi import REGIONS, FaceTracker, skin_mean
 from tracerppg.spectral import HR_BAND, estimate_bpm
-from tracerppg.mechanical import CameraBCG
 
 ROOT = Path(__file__).resolve().parents[1]
 FS = 30.0
@@ -147,8 +146,6 @@ class LiveEngine:
         self.stop()
         self.reset()
         self.error = None
-        self.window_s = float(kw.get("game_window", WINDOW_S))
-        self.window_s = min(30.0, max(8.0, self.window_s))
         try:
             if source == "webcam":
                 self.source = WebcamSource(int(kw.get("index", 0)))
@@ -220,15 +217,12 @@ class LiveEngine:
     # ------------------------------------------------------------ worker
     def _run(self):
         tracker = FaceTracker()
-        mechanical = CameraBCG()
         last = 0.0
         try:
             for i, (frame, t) in enumerate(self.source):
                 if self.stop_flag.is_set():
                     break
                 box, _ = tracker.update(frame)
-                if self.source_name == "webcam":
-                    mechanical.update(frame, box, t)
                 if box is not None:
                     mean, npx = skin_mean(frame, box)
                     centre = box[:2] + box[2:] / 2
@@ -249,9 +243,6 @@ class LiveEngine:
                 if t - last >= ANALYSE_EVERY:
                     last = t
                     self._analyse(t, box, npx, frame if box is not None else None)
-                    reference_bpm = self.state.get("bpm") if self.state.get("confident") else None
-                    self.state["bcg"] = mechanical.result(reference_bpm) if self.source_name == "webcam" else {
-                        "usable": False, "reason": "Replay has no validated cardiac head motion", "experimental": True}
         except Exception as exc:
             self.error = f"The video source stopped: {exc}"
         finally:

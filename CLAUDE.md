@@ -51,7 +51,7 @@ This file is the persistent memory of the project. Every session starts by readi
 
 ## 2. Where We Left Off
 
-**Last updated:** 2026-09-15
+**Last updated:** 2026-09-27
 
 ### 2.1 Status
 
@@ -65,13 +65,16 @@ This file is the persistent memory of the project. Every session starts by readi
 | T5 | Compression harness | **Done.** 8/8 (`step6_compression.py`) plus the pulse-fidelity mechanism table |
 | T6 | Neural baselines | **Done.** 9/9 (`step8_neural.py`): PhysNet and FactorizePhys, PURE checkpoints, separate `.venv-nn` |
 | T7 | Full grid and statistics | **Done (simulated pilot).** 36 subjects x 23 conditions x 11 methods, 63,072 rows; no widening found (Section 13, T7) |
-| T8 | Own data collection (conditional) | Materials ready (`deliverables/data_collection_protocol.md`); recording needs participants and approval |
+| T8 | Own data collection (conditional) | Protocol written then removed 2026-09-27 (git history); recording needs participants |
 | T9 | HRV / LF-HF layer | **Done.** 11/11 (`step7_hrv.py`); excellent on clean video, fragile with motion (reported) |
-| T10 | Live demo app | **Done.** Original research flow remains at `/lab`; `/` now opens TRACE Ghost Protocol, a pulse-aware stealth game with session replay and export |
-| T12 | Interactive extension | **Done (prototype).** Linear camera flow shows three rPPG methods and conservative rPPG-guided camera rBCG, then a quality-gated pulse controller drives a multi-stage horror mission with replay and JSON export; guided rBCG gate 6/6 (`step9_camera_bcg.py`) |
-| T11 | Write-up (abstract, poster, report) | **Done (drafts from simulated results).** Poster A1, extended abstract (IEEE .tex + PDF), course report PDF; author names are placeholders |
+| T10 | Live demo app | **Done.** Seven-step research flow served at `/` (the game was removed 2026-09-27) |
+| T11 | Write-up (abstract, poster, report) | **Removed 2026-09-27** with `build_deliverables.py`; drafts were built around the compression x skin-tone claim and live in git history (`7ba553c`). To be rewritten around the fusion result |
 
-Also done: seven bilingual theory lessons (`Lesson/`), pitch deck and Bangla presentation script (`Idea/`), generated `pipeline-viz.html`.
+Also kept: generated `pipeline-viz.html`. Lessons (`Lesson/`), planning documents (`Idea/`), the data-collection protocol and the supervisor briefing were removed on 2026-09-27 to keep the repo to the core pipeline and its demo; all are in git history before that date.
+
+### 2.0 Current focus (teacher feedback, 2026-09-27)
+
+The teacher approved the pipeline and the idea and asked for less, not more: **prove that the dynamic selection among the three classical methods (green, CHROM, POS, fused by TRACE) actually works, with proper experiments, results and numbers, and showcase it well.** The game and camera rBCG are dropped. The compression x skin-tone study stays in code but is no longer the headline.
 
 ### 2.1b Headline results so far (all simulated, 2026-09-11)
 
@@ -82,7 +85,9 @@ Also done: seven bilingual theory lessons (`Lesson/`), pitch deck and Bangla pre
 - **Demo finding:** the darker-skin replay read 73 BPM vs true 90 marked high confidence: the confidence gate is not reliable on dark skin.
 - **Power:** pilot subject SD 12.2 BPM, residual 5.4; detecting 1 BPM per doubling at 80 percent power needs more than 40 per group. Real data must reduce between-subject variance (fixed lighting, no screen light) or recruit more.
 
-### 2.2 Next tasks (need people, data, or decisions)
+#### 2.2 Next tasks (need people, data, or decisions)
+
+0. **Fusion evidence (current focus, Section 2.0).** Build an experiment and a showcase that demonstrate the per-window quality weighting across green, CHROM and POS: when each method wins, how the weights follow it, and TRACE vs each single method with the artifact-mask ablation. Wait for the user's direction on shape. (need people, data, or decisions)
 
 1. **Real data (the dataset may live on another drive).** Download UBFC-rPPG DATASET_2 (Kaggle mirror, U6) to D, then:
 
@@ -94,11 +99,10 @@ Also done: seven bilingual theory lessons (`Lesson/`), pitch deck and Bangla pre
    .venv\Scripts\python.exe scripts\make_labels_template.py D:\datasets\ubfc   # then rate each subject
    .venv\Scripts\python.exe scripts\run_grid.py --dataset D:\datasets\ubfc --tag ubfc --work-root D:\trace-scratch --workers 4
    .venv\Scripts\python.exe scripts\analyze_grid.py --tag ubfc
-   .venv\Scripts\python.exe scripts\build_deliverables.py --tag ubfc --pdf
    ```
 
    Notes: subject folders are found recursively, so any nesting works; `fitzpatrick.csv` (subject, type) is required for the skin-tone comparison because UBFC ships no labels; keep `--work-root` on the same drive as the data (each subject's encodes are transient but large); start with 8 to 10 subjects to check the pipeline before committing the full download. Resolve U2 (VitalVideo codec) and T8 (own recordings; supervisor approved on 2026-09-12).
-2. **Fill placeholders** in `deliverables/*/template_*` (author names, department, emails), then `build_deliverables.py --pdf`. Add the repository QR code to the poster.
+2. **Write-up:** deliverables were removed; rebuild them later around the fusion result.
 3. **Supervisor checks** (U1): native ACM DL and IEEE Xplore search for the interaction.
 4. **Demo:** test with a real webcam; record a backup screen video of the full flow.
 5. **Future work candidates:** adaptive pulse direction for TRACE's artifact reference; success-rate (within 5 BPM) as a co-primary outcome so floor effects cannot hide an interaction.
@@ -118,7 +122,7 @@ Also done: seven bilingual theory lessons (`Lesson/`), pitch deck and Bangla pre
 | U2 | Is VitalVideo access confirmed, and what is its source video quality? | Still unconfirmed. Found 2026-09-11: the paper (arXiv 2306.11891, CC BY-SA 4.0, vitalvideos.org) says "two 30 second uncompressed videos" per participant, but the Health-HCI-Group loader lists `.mp4` files. Run `ffprobe` on the distributed files before use; if they are lossy, VitalVideo has the same confound as MMPD. The paper also says skin tone is imbalanced. |
 | U5 | UBFC-rPPG download | `sites.google.com` is intercepted on this network (certificate for another domain), so the dataset page could not be reached from this machine. Download DATASET_2 manually into `data/ubfc/subjectN/` and rerun `step2_ground_truth.py`. |
 | U3 | Course project deadline and deliverable format | Unknown. Ask. |
-| U4 | Team members and role split | **Authors: Ahammad Shawki and S. M. Abu Fayeem** (2026-09-12). Department, university and emails still placeholders in `deliverables/*/template_*`. |
+| U4 | Team members and role split | **Authors: Ahammad Shawki and S. M. Abu Fayeem** (2026-09-12). Department, university and emails still to fill when the write-up is rebuilt. |
 | U6 | Where does UBFC-rPPG live? | Kaggle mirror `malekdinarito/ubfc-rppg-dataset`, 73.37 GB, too large for the C drive. Plan: download to D (for example `D:\datasets\ubfc`), set `TRACE_UBFC_DIR`, and pass `--work-root D:\trace-scratch` so encodes are written there too. Cite Bobbia et al. 2017 and follow UBFC's research-only terms; the Kaggle copy is a third-party mirror, so check a few subjects against `step2_ground_truth.py` before trusting it. |
 
 ---
@@ -637,7 +641,7 @@ Track tags: **[P]** poster, **[C]** course, **[B]** both.
 
 - [ ] Decide if needed (VitalVideo insufficient on the skin-tone axis); U2 still open
 - [x] Power analysis machinery: `stats.power_interaction`, table in `results/power_sim.csv` (from `analyze_grid.py`, using the pilot's own variance components)
-- [x] `deliverables/data_collection_protocol.md`: participant information and consent form, data-handling statement, equipment, 15-minute session procedure (R1 still, R2 talking, R3 still for HRV), sync tap, lossless FFV1 capture command, file layout that `run_grid.py --dataset data/own` reads unchanged, pre-session checklist
+- [x] (removed 2026-09-27, in git history) `deliverables/data_collection_protocol.md`: participant information and consent form, data-handling statement, equipment, 15-minute session procedure (R1 still, R2 talking, R3 still for HRV), sync tap, lossless FFV1 capture command, file layout that `run_grid.py --dataset data/own` reads unchanged, pre-session checklist
 - [x] Fitzpatrick labelling: self-report plus rater with a printed card, both recorded
 - [x] **Supervisor approval: given in full on 2026-09-12.** Confirm whether the institution also needs a separate ethics review before recording.
 - [ ] Fill the chosen sample size into the protocol; pilot session on a team member
@@ -668,19 +672,11 @@ Track tags: **[P]** poster, **[C]** course, **[B]** both.
 - [x] Fixes from the test: `Cache-Control: no-store` on `/` plus `?v=` on assets; `--on-pulse` token so text on the accent passes contrast in dark mode; stepper collapses labels below 1180 px without a scrollbar; tachogram plots cleaned RR; CSS tick instead of a check-mark character
 - [ ] Webcam path (DirectShow) untested unattended; backup screen recording (needs a person)
 
-### T12: TRACE Ghost Protocol [C]
+### T12: removed
 
-- [x] `app/static/game.html`, `game.css`, `game.js`: pixel-art stealth arena with walls, lockers, watchers, decoys, three memory cores, extraction, mobile controls, mission log and session replay
-- [x] The game uses a local baseline, slow pulse filtering and quality gates. A usable pulse changes watcher sensing radius gradually; invalid or stale data returns the field to neutral.
-- [x] Two source modes: synthetic FFT pulse for a repeatable demo and webcam rPPG with camera BCG. The game opens directly into a linear signal check.
-- [x] Replay records pulse, detection radius, player path and events. JSON export includes a research disclaimer and no camera frames.
-- [x] Horror mission: three named levels and ordered relays require timed linking, one stalker patrols/investigates/chases from the start and a second wakes in Level II. Heartbeats emit visible and audible double-thump waves that reveal the stalker and reveal the player's location; BPM controls wave/audio frequency and baseline-relative intensity controls hearing range, pitch and drone tension. Flashlight/battery, sprint noise, lockers, limited signal flares, pathfinding, adaptive director events, distinct audiovisual jumpscares, 6-breaths/min recovery interludes, scoring and restart/export provide counterplay and a complete run structure. Research mapping is in `Idea/Psychophysiological_Horror_Design.md`.
-- [x] Game polish pass: original Listener creature art, readable environmental lighting, hospital props, objective compass, level/chase presentation, stamina and a rechargeable pulse-grounding countermeasure. Layered Web Audio adds BPM double-thumps, filtered room tone, footsteps, switches, lockers, relay calibration/completion, flare ignition, spatial threat ticks, directional events, proximity tension and chase stingers. A master compressor and user volume control bound output.
-- [x] `src/tracerppg/mechanical.py`: experimental camera-motion rBCG channel. Its spectral search is guided by stable rPPG, requires three consecutive agreeing analysis windows and withholds BPM when mechanical evidence is weak or contradictory. It is shown as corroboration, never as ECG or diagnosis.
-- [x] Verified: Python compilation, JavaScript syntax, T0 12/12, guided rBCG 6/6 (`step9_camera_bcg.py`) and websocket demo states. The synthetic rBCG check holds 65 BPM against a slightly stronger 80 BPM motion component and rejects pure 80 BPM motion when rPPG says 65. Real webcam rBCG still needs human testing.
-- Findings: the darker-skin replay read 73 BPM vs true 90 marked high confidence (confidence gate unreliable on dark skin); earlier, before replays existed, TRACE v2 read 153 vs 74 on light skin with a short buffer (Section 8.4 leakage); live rendering runs at about 0.1x real time under load, hence pre-rendered replays (`data/replay/`, about 580 MB each, pulse fidelity preserved by storage, e.g. 0.323 lossless vs 0.297 stored)
+The pulse-driven horror game, `biofeedback.py`, camera rBCG (`mechanical.py`, `step9_camera_bcg.py`) were removed on 2026-09-27 at the teacher's direction. Last version: commit `b1435b0`.
 
-### T11: Write-up [B] (drafts done from simulated results)
+### T11: Write-up [B] (drafts removed 2026-09-27; history below)
 
 - [x] `scripts/build_deliverables.py` fills every number from results files and composes outcome-dependent sentences (`HEADLINE`, `VERDICT_*` including the failure-plateau explanation when the gap narrows, `MITIGATION` naming whichever method actually ranks best). LaTeX special characters escaped for the `.tex`. PDFs printed by headless Chrome. Edit `deliverables/*/template_*`, never the generated files.
 - [x] Poster `deliverables/poster/poster.{html,pdf}`: A1 portrait, headline finding, simulated-pilot banner, fan figure, success-rate figure, mechanism numbers, TRACE mitigation, classical vs learned table, course-topic pipeline, design, limits, next steps
@@ -746,9 +742,9 @@ Idea/                  source planning documents (see 15.4)
 data/                  datasets, gitignored
 ```
 
-Added since: `src/tracerppg/{datasets,simulate,video,roi,methods,metrics,fusion,compress,hrv,stats,grid}.py`; `scripts/step2` to `step8`, `_common.py`, `run_grid.py`, `nn_infer.py` (runs in `.venv-nn`), `analyze_grid.py`, `build_app_assets.py`, `build_deliverables.py`; `app/` (server, engine, static, screenshots); `deliverables/` (poster, abstract, report, data protocol); `results/` (frozen fusion params, tables, figures; `results/raw/` gitignored); `data/` (cache, replay, work; gitignored); `.venv-nn/` and `third_party/` (gitignored).
+Added since: `src/tracerppg/{datasets,simulate,video,roi,methods,metrics,fusion,compress,hrv,stats,grid}.py`; `scripts/step2` to `step8`, `_common.py`, `run_grid.py`, `nn_infer.py` (runs in `.venv-nn`), `analyze_grid.py`, `build_app_assets.py`; `app/` (server, engine, static, screenshots); `results/` (frozen fusion params, tables, figures; `results/raw/` gitignored); `data/` (cache, replay, work; gitignored); `.venv-nn/` and `third_party/` (gitignored).
 
-Full rebuild order: `run_grid.py --max-subjects 36` (stage 1, nn, 2), `step6_compression.py`, `step7_hrv.py`, `analyze_grid.py`, `build_app_assets.py`, `build_deliverables.py --pdf`.
+Full rebuild order: `run_grid.py --max-subjects 36` (stage 1, nn, 2), `step6_compression.py`, `step7_hrv.py`, `analyze_grid.py`, `build_app_assets.py`.
 
 ### 15.2 Commands
 
@@ -772,17 +768,9 @@ Platform: Windows 11, Git Bash and PowerShell available. Scripts add `src/` to `
 - HTML pages are self-contained single files using the shared design tokens (Section 6.4), light and dark themes, no build step.
 - Lessons are bilingual: English text with Bangla alongside, technical terms kept in English.
 
-### 15.4 Source documents in `Idea/`
+### 15.4 Source documents
 
-| File | Contents |
-|---|---|
-| `TRACE-rPPG_Main_Project_Plan.md` | Original course plan: pipeline, papers, datasets, validation, demo arc, method purity (Section 17) |
-| `TRACE-rPPG_Novelty_and_Literature_Search.md` | The pivot to the NSysS poster: occupied work, the open gap, experiment design, 12-week timeline, risks |
-| `TRACE-rPPG_Fusion_Extensions_rBCG_SCG.md` | Future work: rPPG + rBCG, rPPG + accelerometer SCG, triple fusion |
-| `pitch-deck.html` | 17-slide course proposal deck |
-| `bangla-script.html` | Bangla presenter script for the deck, with Q&A preparation |
-
-Where the Idea documents disagree, the Novelty document (newer) wins, and this file wins over both.
+The `Idea/` planning documents were removed on 2026-09-27 (see git history before that date). This file is now the only planning source.
 
 ---
 
@@ -844,6 +832,7 @@ Where the Idea documents disagree, the Novelty document (newer) wins, and this f
 
 Newest first. One entry per session: date, what was done, what was verified, where it stopped.
 
+- **2026-09-27:** Teacher feedback: focus on proving the dynamic three-method selection with experiments and numbers; drop the game. Removed the game, `biofeedback.py`, camera rBCG, `Idea/`, `Lesson/`, `deliverables/`, `build_deliverables.py` and the night screenshots; `/` serves the seven-step research demo again (websocket handler restored to the T10 version). Verified: T0 12/12, T3 7/7, server on 127.0.0.1:8000, light-skin replay TRACE 77.2 vs true 77.0 BPM with weights green 0.09 (reading 54.9), CHROM 0.39, POS 0.52, zero console errors. Untracked browser-profile folders (`.edge-test/`, `.playwright-mcp/`, `data/chrome-*-test/`) left for the user to delete. Next: Section 2.2 item 0.
 - **2026-09-16:** Reworked Night Signal presentation and sound after visual-quality feedback. Removed the obsolete duplicate renderer; added original transparent Listener art, brighter layered darkness, environmental light pools, floor texture, hospital props, an objective compass, level titles, chase warnings, audio captions, resource bars, stamina and a rechargeable Q-key pulse-grounding mechanic. Rebuilt audio into ambience, SFX and heartbeat buses with a compressor, room noise, BPM double-thumps, footsteps, doors, switches, relays, flares, positional threat cues and chase stingers. Headless Chrome reached gameplay with the asset loaded, a running AudioContext, exact viewport fit and zero runtime errors. T0 remained 12/12 and guided camera rBCG remained 6/6.
 - **2026-09-16:** Extended Night Signal into three levels: The Listening Ward, The Blackout and The Choir. Added bounded Web Audio synthesis with live-BPM double-thump scheduling, stage/intensity/proximity drone modulation, stereo apparitions and varied compressed jumpscare bursts. Added ordered objectives, a Level II second-stalker wake-up and 10-second 6-breaths/min recovery interludes that record entry/current BPM. Wrote the primary-study mapping in `Idea/Psychophysiological_Horror_Design.md`. Browser-verified Level I activation, recovery, Level II transition, default audio controls, exact viewport fit and zero runtime errors.
 - **2026-09-16:** Rebuilt the simple survival arena as the Saint Orison horror mission. Added a briefing and objective arc, three timed relay interactions, automatic BPM-timed heartbeat waves, baseline-relative enemy hearing, flashlight and battery, sprint noise, lockers, signal flares, corridor pathfinding, patrol/investigate/chase AI, staged second stalker, adaptive scare director, multiple jumpscare compositions, damage/recovery, score, restart and optional JSON export. The game view now compacts to the viewport with no document scrolling while preserving both live signal charts. Browser-verified the full signal-to-briefing-to-game transition, movement, live director telemetry and relay activation at 1440 x 802; JavaScript syntax passed.
