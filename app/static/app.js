@@ -811,7 +811,25 @@ document.addEventListener("keydown", e => {
   else if (e.key === "End") showSlide(slides.length - 1);
   else if (e.key === "f" || e.key === "F") toggleFull();
 });
+function renderDeckTables() {
+  const sim = hub?.simulated;
+  const mot = $("#deck-motion"), skin = $("#deck-skin");
+  if (!sim?.available) { if (mot) mot.innerHTML = ""; if (skin) skin.innerHTML = ""; return; }
+  if (mot) {
+    const pick = id => sim.scenarios.find(s => s.id === id);
+    mot.innerHTML = [["still", "Still"], ["talking", "Talking"], ["restless", "Restless"]].map(([id, name]) => {
+      const s = pick(id); if (!s) return "";
+      return `<div class="ev"><b>${name}</b><span class="mono">simulated</span><em class="mono">GREEN ${fmt(s.all.mae.green, 1)}  /  TRACE ${fmt(s.all.mae.trace, 1)} BPM error</em></div>`;
+    }).join("");
+  }
+  if (skin) {
+    const rows = (sim.breakdowns.find(b => b.title === "BY SKIN TYPE") || {}).rows || [];
+    skin.innerHTML = `<div class="skin-row">${rows.map(r => `<div><span class="mono">${esc(r.label.replace("Type ", ""))}</span><b class="mono">${fmt(r.mae.trace, 1)}</b></div>`).join("")}</div>
+      <em class="mono">TRACE ERROR IN BPM BY SKIN TYPE, SIMULATED VOLUNTEERS</em>`;
+  }
+}
 function renderDeckEvidence() {
+  renderDeckTables();
   const box = $("#deck-evidence");
   if (!box) return;
   const rows = [["simulated", "Simulated faces", "exact truth"], ["ubfc", "Public dataset", "clip-on sensor"], ["volunteers", "Our volunteers", "smartwatch"]];

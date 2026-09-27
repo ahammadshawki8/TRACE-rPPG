@@ -758,6 +758,18 @@ table.glance tr.empty td { color: var(--ink-3); }
 .evidence .ev span { font-size: 11px; color: var(--soft); align-self: center; }
 .evidence .ev em { grid-column: 1 / -1; font-style: normal; font-size: 12px; color: var(--blue); }
 .evidence .ev em.muted { color: var(--soft); }
+.recipes { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: clamp(13px, 1.1vw, 16px); color: #333; max-width: 46ch; }
+.recipes b { color: var(--ink-d); }
+.s-art .hand.small { font-size: 16px; fill: var(--soft); }
+.s-art .jug-r { fill: rgba(216, 67, 59, .55); } .s-art .jug-g { fill: rgba(46, 158, 91, .55); } .s-art .jug-b { fill: rgba(47, 111, 214, .55); }
+.s-art .spin { transform-box: view-box; transform-origin: 440px 196px; animation: spin 1.6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.skin-table { gap: 4px; }
+.skin-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.skin-row div { display: grid; gap: 2px; text-align: center; padding: 6px 0; border-radius: 8px; background: #F1EFE8; }
+.skin-row span { font-size: 10px; color: var(--soft); }
+.skin-row b { font-size: 14px; color: var(--ink-d); font-weight: 500; }
+.skin-table > em { font-style: normal; font-size: 10px; letter-spacing: .08em; color: var(--soft); }
 .syllabus { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; font-size: clamp(14px, 1.2vw, 18px); color: #333; }
 .syllabus .topic { margin-right: 8px; }
 .deck-bar { display: flex; align-items: center; gap: 10px; justify-content: center; flex-wrap: wrap; }

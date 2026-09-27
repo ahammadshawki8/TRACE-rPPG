@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Caveat:wght@500;700&display=swap">
-<link rel="stylesheet" href="/static/styles.css?v=20">
+<link rel="stylesheet" href="/static/styles.css?v=21">
 </head>
 <body>
 
@@ -388,12 +388,49 @@
             </svg>
           </section>
 
+          <!-- methods explained -->
+          <section class="slide" data-n="m" aria-label="Meet Green, CHROM and POS">
+            <div class="s-text">
+              <span class="s-step">STEP 4 / THE THREE METHODS</span>
+              <h2>Meet Green, CHROM and POS.</h2>
+              <p>Each frame gives three numbers: red, green, blue. The three methods are three recipes for mixing them into one pulse signal.</p>
+              <ul class="recipes">
+                <li><b>Green</b> uses only the green channel. Simple, but anything that changes brightness looks like a pulse.</li>
+                <li><b>CHROM</b> subtracts two colour differences that both cancel white light, so brightness changes drop out.</li>
+                <li><b>POS</b> looks along a direction at right angles to your own skin tone, re-aimed every 1.6 seconds.</li>
+              </ul>
+              <div class="jump"><button type="button" class="btn ghost small" data-goto="methods"><svg><use href="#i-merge"/></svg>See them live: Methods</button></div>
+              <details class="deeper"><summary>Go deeper</summary>
+                <p class="formula mono">GREEN  S = G / mean(G) - 1</p>
+                <p class="formula mono">CHROM  X = 3R - 2G,  Y = 1.5R + G - 1.5B,  S = X - (std X / std Y) Y</p>
+                <p class="formula mono">POS    S1 = G - B,  S2 = G + B - 2R,  h = S1 + (std S1 / std S2) S2</p>
+                <p>Green is from Verkruysse 2008, CHROM from de Haan 2013, POS from Wang 2017. The mixing weights come from the physics of light reflecting off skin, not from training.</p></details>
+            </div>
+            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Three recipe cards, each mixing red, green and blue jugs differently">
+              <g filter="url(#wobble)">
+                <rect class="ink" x="12" y="42" width="136" height="186" rx="12"/><rect class="ink" x="172" y="42" width="136" height="186" rx="12"/><rect class="ink" x="332" y="42" width="136" height="186" rx="12"/>
+                <path class="ink" d="M30,70 l0,50 l24,0 l0,-50 M68,70 l0,50 l24,0 l0,-50 M106,70 l0,50 l24,0 l0,-50"/>
+                <rect class="jug-g" x="70" y="76" width="20" height="42"/>
+                <path class="ink" d="M190,70 l0,50 l24,0 l0,-50 M228,70 l0,50 l24,0 l0,-50 M266,70 l0,50 l24,0 l0,-50"/>
+                <rect class="jug-r" x="192" y="78" width="20" height="40"/><rect class="jug-g" x="230" y="92" width="20" height="26"/><rect class="jug-b" x="268" y="100" width="20" height="18"/>
+                <path class="ink" d="M350,70 l0,50 l24,0 l0,-50 M388,70 l0,50 l24,0 l0,-50 M426,70 l0,50 l24,0 l0,-50"/>
+                <rect class="jug-r" x="352" y="96" width="20" height="22"/><rect class="jug-g" x="390" y="78" width="20" height="40"/><rect class="jug-b" x="428" y="88" width="20" height="30"/>
+                <circle class="ink" cx="440" cy="196" r="14"/><path class="orange-ink spin" d="M440,196 L440,184"/>
+                <g class="bob" transform="translate(240,270) scale(0.9)"><use href="#beat"/><path class="ink" d="M12,-14 L36,-44"/></g>
+              </g>
+              <g class="labels"><text class="hand" x="46" y="32">GREEN</text><text class="hand" x="206" y="32">CHROM</text><text class="hand" x="378" y="32">POS</text>
+                <text class="hand small" x="34" y="138">R  G  B</text><text class="hand small" x="194" y="138">R  G  B</text><text class="hand small" x="354" y="138">R  G  B</text>
+                <text class="hand red" x="30" y="190">only green</text><text class="hand orange" x="186" y="178">cancels</text><text class="hand orange" x="186" y="200">white light</text>
+                <text class="hand blue" x="346" y="178">aims at</text><text class="hand blue" x="346" y="200">your skin</text></g>
+            </svg>
+          </section>
+
           <!-- 6 -->
           <section class="slide" data-n="6" aria-label="Three pairs of glasses">
             <div class="s-text">
-              <span class="s-step">STEP 4 / THREE METHODS</span>
+              <span class="s-step">PROBLEM 1 / LIGHTING</span>
               <h2>Three pairs of glasses.</h2>
-              <p>Green looks at one colour and is fooled when light or motion changes brightness. CHROM and POS mix colours so that brightness cancels out and the pulse stays.</p>
+              <p>A lamp flickers, a cloud passes, a screen glows: brightness changes all the time. Green cannot tell that from a pulse and is fooled. CHROM and POS mix colours so that brightness cancels out, and the pulse stays.</p>
               <div class="jump"><button type="button" class="btn ghost small" data-goto="methods"><svg><use href="#i-merge"/></svg>See them live: Methods</button></div>
               <details class="deeper"><summary>Go deeper</summary>
                 <p class="formula mono">GREEN  S = G / mean(G) - 1</p>
@@ -418,6 +455,69 @@
                 
               </g>
                 <g class="labels"><text class="hand" x="56" y="98">GREEN</text><text class="hand" x="206" y="98">CHROM</text><text class="hand" x="364" y="98">POS</text><text class="hand red" x="34" y="196">fooled</text><text class="hand orange" x="330" y="286">light and motion</text></g>
+            </svg>
+          </section>
+
+          <!-- motion -->
+          <section class="slide" data-n="motion" aria-label="Problem 2: motion">
+            <div class="s-text">
+              <span class="s-step">PROBLEM 2 / MOTION</span>
+              <h2>Stay on the face, ignore the sway.</h2>
+              <p>First the box follows the face, so we keep reading the same skin. Then a second signal that sees motion but not blood tells TRACE which rhythms are sway, and those are masked out before choosing.</p>
+              <div class="evidence" id="deck-motion"></div>
+              <details class="deeper"><summary>Go deeper</summary>
+                <p>Tracking uses phase correlation: a shift between frames is a linear phase in the Fourier transform, so the peak of the inverse FFT gives the movement to a fraction of a pixel. The motion reference is the brightness direction with the blood direction removed, so it sees shading and sway but not the pulse. Heavy, fast motion is still the hardest case, and the numbers show it.</p></details>
+            </div>
+            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat holds a tracking box on a swaying face; a red stencil masks the sway peak in a spectrum">
+              <g filter="url(#wobble)">
+                <circle class="ink dash" cx="104" cy="124" r="46"/>
+                <circle class="ink" cx="150" cy="136" r="46"/>
+                <path class="ink" d="M136,128 q5,-4 10,0 M160,128 q5,-4 10,0 M140,154 q10,8 20,0"/>
+                <path class="ink dash" d="M60,206 C90,226 150,226 190,206"/><path class="ink" d="M180,200 L190,206 L180,212"/>
+                <path class="orange-ink" d="M98,86 l0,-10 l12,0 M190,76 l12,0 l0,10 M98,186 l0,10 l12,0 M190,196 l12,0 l0,-10"/>
+                <g class="bob" transform="translate(236,254) scale(1.15)"><use href="#beat"/><path class="ink" d="M-12,-14 L-28,-50"/></g>
+                <path class="ink" d="M290,236 L466,236"/>
+                <path class="ink" d="M296,234 l14,-2 l10,-70 l10,70 l30,0"/>
+                <rect class="mask" x="304" y="150" width="34" height="86"/>
+                <path class="orange-ink" d="M360,234 l24,0 l10,-96 l10,96 l30,0"/>
+              </g>
+              <g class="labels"><text class="hand orange" x="84" y="64">box follows the face</text>
+                <text class="hand red" x="256" y="140">sway: masked</text><text class="hand orange" x="410" y="150">pulse</text>
+                <text class="hand" x="300" y="266">the spectrum</text></g>
+            </svg>
+          </section>
+
+          <!-- skin tone -->
+          <section class="slide" data-n="skin" aria-label="Problem 3: skin tone">
+            <div class="s-text">
+              <span class="s-step">PROBLEM 3 / SKIN TONE</span>
+              <h2>Every skin tone, same heartbeat.</h2>
+              <p>Melanin absorbs light too, so on darker skin the pulse is fainter, not gone. We make every tone count the same way:</p>
+              <ul class="recipes">
+                <li>the skin mask learns each person's own skin colour, instead of a fixed colour rule</li>
+                <li>each colour is divided by its own average, so a small change on dark skin weighs as much as a big one on light skin</li>
+                <li>POS aims at each person's own skin tone, and we test on all six skin types</li>
+              </ul>
+              <div class="evidence skin-table" id="deck-skin"></div>
+              <details class="deeper"><summary>Go deeper</summary>
+                <p>The skin types are the Fitzpatrick scale, I (always burns) to VI (never burns). Darker skin is still harder, and we report that openly: the table shows TRACE's error by skin type on the simulated volunteers, and the Scenarios screen adds real volunteers as they are recorded.</p></details>
+            </div>
+            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Six skin tones; the pulse is a large ripple on light skin and a small ripple on dark skin, and Beat listens to the faint one">
+              <g>
+                <circle cx="60" cy="52" r="20" style="fill:#D6B7A8"/><circle cx="132" cy="52" r="20" style="fill:#C9A78F"/><circle cx="204" cy="52" r="20" style="fill:#B18B68"/>
+                <circle cx="276" cy="52" r="20" style="fill:#956D45"/><circle cx="348" cy="52" r="20" style="fill:#77502B"/><circle cx="420" cy="52" r="20" style="fill:#5B381B"/>
+              </g>
+              <g filter="url(#wobble)">
+                <circle class="ink" cx="60" cy="52" r="20"/><circle class="ink" cx="132" cy="52" r="20"/><circle class="ink" cx="204" cy="52" r="20"/>
+                <circle class="ink" cx="276" cy="52" r="20"/><circle class="ink" cx="348" cy="52" r="20"/><circle class="ink" cx="420" cy="52" r="20"/>
+                <path class="orange-ink" d="M40,150 q14,-26 28,0 q14,26 28,0 q14,-26 28,0 q14,26 28,0 q14,-26 28,0 q14,26 28,0 q14,-26 28,0 q14,26 28,0"/>
+                <path class="orange-ink" d="M40,226 q14,-7 28,0 q14,7 28,0 q14,-7 28,0 q14,7 28,0 q14,-7 28,0 q14,7 28,0 q14,-7 28,0 q14,7 28,0"/>
+                <path class="ink" d="M318,214 L356,196 L356,236 Z"/>
+                <g class="bob" transform="translate(396,252) scale(1.3)"><use href="#beat"/><path class="ink" d="M-12,-14 L-30,-30"/></g>
+              </g>
+              <g class="labels"><text class="hand small" x="54" y="92">I</text><text class="hand small" x="126" y="92">II</text><text class="hand small" x="196" y="92">III</text>
+                <text class="hand small" x="268" y="92">IV</text><text class="hand small" x="342" y="92">V</text><text class="hand small" x="412" y="92">VI</text>
+                <text class="hand" x="40" y="118">lighter skin: strong ripple</text><text class="hand" x="40" y="206">darker skin: fainter, not gone</text></g>
             </svg>
           </section>
 
@@ -662,7 +762,7 @@
   <img id="pip-img" alt="Live camera preview">
 </div>
 
-<script src="/static/app.js?v=17"></script>
+<script src="/static/app.js?v=18"></script>
 <script src="/static/collect.js?v=3"></script>
 </body>
 </html>
