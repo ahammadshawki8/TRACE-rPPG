@@ -67,6 +67,7 @@ class MethodWindow:
     bpm: float
     quality: float
     power: np.ndarray = field(repr=False)
+    artifact: float = 0.0  # v2 only: share of artifact power at this method's peak
 
 
 @dataclass
@@ -148,7 +149,7 @@ def fuse(
             pk, _ = correct_harmonic_lock(freqs, pm, pk)
             a_frac = float(np.sum(a_norm[mask & (np.abs(freqs - pk) <= 0.12)])) / a_total
             q = spectral_snr(freqs, pm, pk) * (1.0 - a_frac) ** 2
-            per[name] = MethodWindow(bpm=pk * 60.0, quality=q, power=pm)
+            per[name] = MethodWindow(bpm=pk * 60.0, quality=q, power=pm, artifact=a_frac)
             masked[name] = pm
         w = weights_from_quality({n: m.quality for n, m in per.items()}, gamma)
         fused = np.zeros_like(freqs)

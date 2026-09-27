@@ -316,8 +316,13 @@ class LiveEngine:
             state.update({
                 "bpm": round(fr.bpm, 1), "quality": round(fr.quality, 3), "confident": bool(fr.confident),
                 "weights": {k: round(v, 3) for k, v in fr.weights.items()},
-                "methods": {k: {"bpm": round(v.bpm, 1), "quality": round(v.quality, 3)}
+                "methods": {k: {"bpm": round(v.bpm, 1), "quality": round(v.quality, 3), "artifact": round(v.artifact, 3)}
                             for k, v in fr.per_method.items()},
+                # Each method's artifact-masked spectrum, normalised to its own
+                # in-band peak: what the fusion actually sums.
+                "method_spectra": {k: _thin(v.power[band] / (v.power[band].max() + 1e-30), 240)
+                                   for k, v in fr.per_method.items()},
+                "p_correct": _p_correct(fr.quality, self.params),
                 "method_traces": {k: _thin(pulses[k][show] / (np.std(pulses[k][show]) + 1e-12))
                                   for k in ("green", "chrom", "pos")},
                 "naive_green": round(estimate_bpm(pulses["green"], FS).bpm, 1),
@@ -326,6 +331,17 @@ class LiveEngine:
                 "spectrum": {"f": _thin(fr.freqs[band] * 60, 240), "p": _thin(fp, 240), "peak": round(fr.bpm, 1)},
             })
         self.state = state
+
+
+def _p_correct(quality: float, params: dict) -> float | None:
+    """P(within 5 BPM | fused quality) from the logistic fit frozen in step5.
+
+    Calibrated on the simulated tuning cohort only; the UI labels it so.
+    """
+    lg = params.get("logistic")
+    if not lg:
+        return None
+    return round(float(1.0 / (1.0 + np.exp(-(lg[0] + lg[1] * quality)))), 3)
 
 
 def _thin(x: np.ndarray, n: int = 300) -> list[float]:

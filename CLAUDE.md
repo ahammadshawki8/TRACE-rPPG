@@ -67,7 +67,7 @@ This file is the persistent memory of the project. Every session starts by readi
 | T7 | Full grid and statistics | **Done (simulated pilot).** 36 subjects x 23 conditions x 11 methods, 63,072 rows; no widening found (Section 13, T7) |
 | T8 | Own data collection (conditional) | Protocol written then removed 2026-09-27 (git history); recording needs participants |
 | T9 | HRV / LF-HF layer | **Done.** 11/11 (`step7_hrv.py`); excellent on clean video, fragile with motion (reported) |
-| T10 | Live demo app | **Done.** Seven-step research flow served at `/` (the game was removed 2026-09-27) |
+| T10 | Live demo app | **Done.** TRACE Research Console at `/`: rail navigation, seven-stage guided session, live fusion module, compression lab over all three codecs, experiments evidence from `scripts/build_dashboard_data.py` |
 | T11 | Write-up (abstract, poster, report) | **Removed 2026-09-27** with `build_deliverables.py`; drafts were built around the compression x skin-tone claim and live in git history (`7ba553c`). To be rewritten around the fusion result |
 
 Also kept: generated `pipeline-viz.html`. Lessons (`Lesson/`), planning documents (`Idea/`), the data-collection protocol and the supervisor briefing were removed on 2026-09-27 to keep the repo to the core pipeline and its demo; all are in git history before that date.
@@ -239,12 +239,13 @@ flowchart LR
 2. **Never show a bare number.** Every BPM or LF/HF value carries its quality score. Below the confidence threshold, show "low confidence, hold still" instead of a possibly wrong number.
 3. **Show the mathematics.** Raw signal, filtered signal and spectrum stay visible next to the result. "You can see the Fourier transform happening" is the point of the demo.
 4. **Plain language first**, with an expandable "how this works" panel on each screen for the technical detail.
-5. **Design system:** reuse the tokens already shared by the pitch deck, Bangla script and lessons, so everything looks like one project.
-   - Light: paper `#FAF7F8`, paper-2 `#F2EDEF`, ink `#1F1720`, ink-2 `#5A4E58`, rule `#E0D6DB`, accent (crimson, Fourier) `#B01B3F`, signal (teal, convolution / good) `#10796B`, warn (amber) `#9C5A12`.
-   - Dark: paper `#16111A`, ink `#F0E9EE`, accent `#FF6B8A`, signal `#45D6B0`, warn `#E0A050`.
-   - Fonts: Spectral (display), Archivo (body), IBM Plex Mono (numbers, labels), Hind Siliguri (Bangla).
-   - Colour meaning is fixed: teal is convolution and "good", crimson is Fourier transform and emphasis, amber is warning and drift.
-6. **Theme and access:** light and dark via `prefers-color-scheme` plus a `data-theme` override; text contrast at least 4.5:1; visible focus; full keyboard operation (arrows, Enter); respect `prefers-reduced-motion`; works at phone width.
+5. **Design system: TRACE Research Console (2026-09-27).** Dark graphite first (`app/static/styles.css` tokens on `:root`, light theme under `[data-theme="light"]`).
+   - Surfaces: bg `#0D0E11`, panel `#15171D`, panel-2 `#1A1D24`, line `rgba(255,255,255,.07)`, ink `#F4F5F7`, ink-2 `#9298A5`.
+   - Accent meaning is fixed and used sparingly: lime `#B8FF3D` = TRACE, active, valid; violet `#A77BFF` = Fourier / spectra; coral `#FF856F` = physiological signal (BPM, pulse); amber `#FFB547` = warning, simulated.
+   - Method identities: Green `#4FD6B0`, CHROM `#D46BFF`, POS `#7F95FF`, always paired with a text label.
+   - Fonts: Archivo (UI), IBM Plex Mono (numbers, labels, tags), Hind Siliguri (Bangla). Icons: inline Lucide sprite in `index.html`, no icon dependency.
+   - Layout: left icon rail (bottom bar on phones), sticky context header with the seven-stage stepper, bento grids of cards. The TRACE fusion module (three method channels routed by live weight into TRACE) is the centrepiece on Overview and Methods.
+6. **Theme and access:** dark by default with a light `data-theme` toggle; text contrast at least 4.5:1; visible focus; full keyboard operation (arrows, Enter); respect `prefers-reduced-motion`; works at phone width.
 7. **Privacy by construction:** frames stay on the local machine; nothing is uploaded; no recording is saved unless the user explicitly exports.
 
 ---
@@ -744,7 +745,7 @@ data/                  datasets, gitignored
 
 Added since: `src/tracerppg/{datasets,simulate,video,roi,methods,metrics,fusion,compress,hrv,stats,grid}.py`; `scripts/step2` to `step8`, `_common.py`, `run_grid.py`, `nn_infer.py` (runs in `.venv-nn`), `analyze_grid.py`, `build_app_assets.py`; `app/` (server, engine, static, screenshots); `results/` (frozen fusion params, tables, figures; `results/raw/` gitignored); `data/` (cache, replay, work; gitignored); `.venv-nn/` and `third_party/` (gitignored).
 
-Full rebuild order: `run_grid.py --max-subjects 36` (stage 1, nn, 2), `step6_compression.py`, `step7_hrv.py`, `analyze_grid.py`, `build_app_assets.py`.
+Full rebuild order: `run_grid.py --max-subjects 36` (stage 1, nn, 2), `step6_compression.py`, `step7_hrv.py`, `analyze_grid.py`, `build_app_assets.py`, `build_dashboard_data.py`.
 
 ### 15.2 Commands
 
@@ -832,6 +833,7 @@ The `Idea/` planning documents were removed on 2026-09-27 (see git history befor
 
 Newest first. One entry per session: date, what was done, what was verified, where it stopped.
 
+- **2026-09-27 (later):** Redesigned the frontend as the TRACE Research Console from four user-supplied references (`inspired_ui/`, untracked). Rewrote `app/static/{index.html,styles.css,app.js}`; WebSocket contract unchanged. Engine now also sends each method's masked spectrum, the artifact share at each method's peak (new `MethodWindow.artifact`, no math change) and `p_correct` from the frozen step5 logistic. New `scripts/build_dashboard_data.py` writes `app/static/lab/results.json` from the grid. Measured over 6,624 simulated windows: MAE green 22.82, CHROM 20.59, POS 17.97, TRACE 15.25, per-window oracle 13.98; TRACE's top weight lands on a best-or-tied method 56.4 percent of the time vs 58.7 for always-POS, so the gain comes from blending and the mask, not from ranking (shown on the Experiments screen). Browser-verified every view, light theme and 390 px width; T0 12/12, T4 8/8.
 - **2026-09-27:** Teacher feedback: focus on proving the dynamic three-method selection with experiments and numbers; drop the game. Removed the game, `biofeedback.py`, camera rBCG, `Idea/`, `Lesson/`, `deliverables/`, `build_deliverables.py` and the night screenshots; `/` serves the seven-step research demo again (websocket handler restored to the T10 version). Verified: T0 12/12, T3 7/7, server on 127.0.0.1:8000, light-skin replay TRACE 77.2 vs true 77.0 BPM with weights green 0.09 (reading 54.9), CHROM 0.39, POS 0.52, zero console errors. Untracked browser-profile folders (`.edge-test/`, `.playwright-mcp/`, `data/chrome-*-test/`) left for the user to delete. Next: Section 2.2 item 0.
 - **2026-09-16:** Reworked Night Signal presentation and sound after visual-quality feedback. Removed the obsolete duplicate renderer; added original transparent Listener art, brighter layered darkness, environmental light pools, floor texture, hospital props, an objective compass, level titles, chase warnings, audio captions, resource bars, stamina and a rechargeable Q-key pulse-grounding mechanic. Rebuilt audio into ambience, SFX and heartbeat buses with a compressor, room noise, BPM double-thumps, footsteps, doors, switches, relays, flares, positional threat cues and chase stingers. Headless Chrome reached gameplay with the asset loaded, a running AudioContext, exact viewport fit and zero runtime errors. T0 remained 12/12 and guided camera rBCG remained 6/6.
 - **2026-09-16:** Extended Night Signal into three levels: The Listening Ward, The Blackout and The Choir. Added bounded Web Audio synthesis with live-BPM double-thump scheduling, stage/intensity/proximity drone modulation, stereo apparitions and varied compressed jumpscare bursts. Added ordered objectives, a Level II second-stalker wake-up and 10-second 6-breaths/min recovery interludes that record entry/current BPM. Wrote the primary-study mapping in `Idea/Psychophysiological_Horror_Design.md`. Browser-verified Level I activation, recovery, Level II transition, default audio controls, exact viewport fit and zero runtime errors.
