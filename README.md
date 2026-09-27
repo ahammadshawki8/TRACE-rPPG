@@ -1,54 +1,103 @@
-# TRACE-rPPG
+# TRACE rPPG
 
-**Tone-stratified Robustness Across Compressed Encodings**
+**Tone-stratified Robustness Across Compressed Encodings, remote photoplethysmography**
 
-Contactless heart rate from ordinary face video, built from Fourier series, the
-Fourier transform and convolution. No trained model appears anywhere in the
-estimation path.
+Heart rate from an ordinary webcam, with nothing touching the skin. Every
+heartbeat pushes a little more blood into the face, the skin absorbs slightly
+more green light, and the camera sees a colour change of less than one percent.
+A classical signal-processing pipeline recovers that rhythm. It uses only
+convolution, the Fourier transform and the Fourier series, and no trained
+model anywhere in the path from pixels to BPM.
 
-The research question: **does video compression amplify the skin-tone accuracy
-gap in remote photoplethysmography (rPPG)?** Darker skin produces a weaker pulse
-signal because melanin absorbs more light; video codecs discard exactly the
-colour detail where that pulse lives. Both effects are documented separately.
-Their interaction had not been measured.
+Authors: Ahammad Shawki and S. M. Abu Fayeem.
 
-> Current results come from a **simulated pilot**: real codecs, a real face
-> detector and the real pipeline, applied to rendered faces whose skin-tone
-> physics is modelled. The same code runs unchanged on recorded participants.
+## The idea in one paragraph
 
-## Status
+There are three well-known ways to turn face colour into a pulse: **Green**
+(Verkruysse 2008), **CHROM** (de Haan 2013) and **POS** (Wang 2017). Each one
+fails in a different situation: Green is fooled by any brightness change, CHROM
+suffers on darker skin, and POS can lose the pulse when motion looks like it.
+Most systems pick one method and hope. **TRACE runs all three at once and,
+every half second, keeps the one whose spectrum it trusts most.** Trust comes
+from the spectrum itself: how much of the in-band power sits in one sharp peak
+and its harmonic, after masking the frequencies where a pulse-blind motion
+reference has power. When no method is trustworthy, TRACE says "low confidence"
+instead of showing a number.
 
-| Tier | What | State |
-|---|---|---|
-| T0 | Synthetic verification of the mathematics | done, 12/12 |
-| T1 | Dataset loaders, ground truth, face-video simulator | done, 8/8 |
-| T2 | Face tracking (Haar + phase correlation), RGB traces | done, 6/6 |
-| T3 | Green, ICA, CHROM, POS | done, 7/7 |
-| T4 | TRACE fusion (v1 failed held-out; v2 with a pulse-blind artifact reference) | done, 8/8 |
-| T5 | Compression harness with lossless controls | done, 8/8 |
-| T6 | Neural baselines (PhysNet, FactorizePhys; pretrained, inference only) | done, 9/9 |
-| T7 | Full grid, interaction statistics, figures | done on the simulated pilot (36 subjects, 23 conditions, 11 methods) |
-| T8 | Own data collection | protocol and consent form ready; recording not started |
-| T9 | HRV and LF/HF (the second Fourier transform) | done, 11/11 |
-| T10 | TRACE rPPG app | done; measure, live method fusion, theory walk-through, scenarios, volunteer collection, what's next |
+## Results so far
 
-`CLAUDE.md` is the detailed project memory: every measured number, every
-decision, and every failed attempt.
+Simulated volunteers (skin types I to VI, 10 conditions: still, talking,
+restless, dim, bright, flicker, screen glow, fast heart and more). TRACE was
+tuned on one set of simulated people and tested once on a separate set it
+had never seen (180 runs, 3,060 read-outs, true heart rate known exactly):
 
-## What the simulated pilot found
+| Method | Mean error (BPM) |
+|---|---|
+| Green | 23.28 |
+| CHROM | 17.02 |
+| POS | 12.10 |
+| **TRACE (dynamic selection)** | **9.95** |
 
-- Compression did **not** widen the skin-tone gap in mean error: darker skin was
-  already near its failure plateau at every bitrate, and compression pulled
-  lighter skin down to meet it.
-- At the signal level the mechanism does favour the hypothesis: on a still face,
-  H.264 at 100 kbps left pulse fidelity at 0.46 for lighter skin and about 0 for
-  darker skin (0.92 and 0.84 lossless).
-- TRACE (quality-weighted fusion with a pulse-blind artifact mask) had the lowest
-  error of all methods, classical or neural, on lossless and 400 kbps video, and
-  halved the lossless skin-tone gap of POS.
+- TRACE marks 87 percent of read-outs as confident; on those the error is
+  5.33 BPM, against 40.11 BPM on the ones it flags. The confidence gate is
+  doing real work.
+- Harmonic mistakes (reading double or half the true rate) fell from 10.1 to
+  5.9 percent of read-outs compared with the earlier weighted-average TRACE v2.
+- Known weaknesses, reported rather than hidden: a glowing screen lighting the
+  face defeats every method, and very fast heart rates got worse than with v2
+  (5.1 to 13.0 BPM).
 
-These are simulated; the real-data study is the next step. Details and every
-number are in `CLAUDE.md`.
+Real data is being added: a subset of **UBFC-rPPG** (contact pulse oximeter
+reference) and **our own volunteers** recorded with a smartwatch reference.
+The Scenarios screen in the app shows all three sources side by side as
+soon as they exist. See `instructions.md` for how the data is collected.
+
+These numbers are from simulation. The skin optics are modelled, but the
+face tracker, the codecs and the pipeline are the real code.
+
+## The app
+
+```bash
+.venv/Scripts/python.exe app/server.py      # then open http://127.0.0.1:8000
+```
+
+| Screen | What it shows |
+|---|---|
+| **Measure** | Live heart rate from your webcam or a simulated volunteer, a confidence ring, the pulse wave, and which method TRACE trusts right now |
+| **Methods** | Green, CHROM and POS side by side with their formulas, live trust bars, and a simulator panel to change skin type, heart rate, motion and light while you watch trust move |
+| **Collect** | Volunteer portal: consent, skin type, four 60 s clips per person, smartwatch readings at 0:20, 0:40 and 1:00, scored automatically |
+| **Scenarios** | The results hub: simulated, UBFC-rPPG and real volunteers, each against its own reference |
+| **What's next** | Beyond a number: telling a real face from a photo (prototype), heart rhythm, guided breathing, applications |
+| **How it works** | A hand-drawn slide deck of the theory, with live data inside the "Go deeper" panels |
+
+Frames never leave the computer. By default only the average skin colour of
+the forehead and cheeks is stored, not the video. Nothing on screen is a
+medical diagnosis.
+
+## The pipeline
+
+```mermaid
+flowchart LR
+    F[Webcam frames] --> R[Face tracking<br/>Haar + phase correlation]
+    R --> M[Mean R, G, B<br/>forehead and cheeks]
+    M --> D[Detrend<br/>convolution]
+    D --> G[Green]
+    D --> C[CHROM]
+    D --> P[POS]
+    G --> B[Band-pass 0.7 to 4 Hz<br/>convolution]
+    C --> B
+    P --> B
+    B --> S[FFT and quality<br/>Fourier transform]
+    S --> T[TRACE: keep the<br/>most trusted method]
+    T --> H[Harmonic check<br/>Fourier series]
+    H --> BPM[BPM + confidence]
+```
+
+| Course topic | Where it is used |
+|---|---|
+| Convolution | Detrending (moving average), the hand-built windowed-sinc band-pass filter, the face tracker's phase correlation |
+| Fourier transform | The spectrum that gives BPM, the quality score that drives TRACE, the second FFT of heart-rate variability |
+| Fourier series | A real pulse has harmonics at 2f and 3f; TRACE checks f/2 before trusting a tall peak so it never reports double the rate |
 
 ## Quick start
 
@@ -56,90 +105,59 @@ number are in `CLAUDE.md`.
 python -m venv .venv
 .venv/Scripts/python.exe -m pip install -r requirements.txt
 
-# acceptance checks, one per tier
-.venv/Scripts/python.exe scripts/step1_synthetic.py      # T0 mathematics
-.venv/Scripts/python.exe scripts/step2_ground_truth.py   # T1
-.venv/Scripts/python.exe scripts/step3_video.py          # T2
-.venv/Scripts/python.exe scripts/step4_methods.py        # T3
-.venv/Scripts/python.exe scripts/step5_fusion.py         # T4
-.venv/Scripts/python.exe scripts/step6_compression.py    # T5
-.venv/Scripts/python.exe scripts/step7_hrv.py            # T9
-.venv/Scripts/python.exe scripts/step8_neural.py         # T6 (needs .venv-nn)
+# acceptance checks
+.venv/Scripts/python.exe scripts/step1_synthetic.py      # the mathematics, 12 checks
+.venv/Scripts/python.exe scripts/step4_methods.py        # Green, CHROM, POS
+.venv/Scripts/python.exe scripts/step5_fusion.py         # TRACE fusion
+.venv/Scripts/python.exe scripts/step10_simulator.py     # live simulator and scenarios
+.venv/Scripts/python.exe scripts/step11_collect.py       # volunteer portal
 
-# the experiment: simulated pilot, then statistics and figures
-.venv/Scripts/python.exe scripts/run_grid.py --max-subjects 36
-.venv/Scripts/python.exe scripts/analyze_grid.py
-.venv/Scripts/python.exe scripts/build_app_assets.py
-.venv/Scripts/python.exe scripts/build_dashboard_data.py   # evaluation numbers shown in the app
+# the simulated scenario sweep shown on the Scenarios screen
+.venv/Scripts/python.exe scripts/sim_scenarios.py
 
-# on real recordings in the UBFC layout, which may live on another drive
-set TRACE_UBFC_DIR=D:/datasets/ubfc                    # the acceptance scripts read this
-.venv/Scripts/python.exe scripts/make_labels_template.py D:/datasets/ubfc   # then rate each subject
-.venv/Scripts/python.exe scripts/run_grid.py --dataset D:/datasets/ubfc --tag ubfc --work-root D:/trace-scratch
-.venv/Scripts/python.exe scripts/analyze_grid.py --tag ubfc
-
-# live demo (webcam or simulated volunteer), then open http://127.0.0.1:8000
-.venv/Scripts/python.exe app/server.py
+# real recordings in the UBFC layout (may live on another drive)
+set TRACE_UBFC_DIR=D:\datasets\ubfc
+.venv/Scripts/python.exe scripts/step2_ground_truth.py   # the reference parses
+.venv/Scripts/python.exe scripts/eval_real_fusion.py --dataset D:\datasets\ubfc
 ```
 
-Neural baselines live in a separate environment so the core stays classical:
-
-```bash
-python -m venv .venv-nn
-.venv-nn/Scripts/python.exe -m pip install torch --index-url https://download.pytorch.org/whl/cpu
-.venv-nn/Scripts/python.exe -m pip install numpy scipy "opencv-python-headless<5" neurokit2
-git clone --depth 1 https://github.com/ubicomplab/rPPG-Toolbox third_party/rPPG-Toolbox
-```
-
-Requirements: Python 3.14, ffmpeg with libx264, libx265 and libvpx on the path.
-
-Subject folders are found recursively, so a download keeps its own nesting.
-Public datasets ship no skin-type labels, so a skin-tone comparison needs a
-`fitzpatrick.csv` (subject, type) beside the data; `make_labels_template.py`
-writes the blank file. Keep `--work-root` on the same drive as a large dataset:
-each subject's encodes are transient but large.
+Requirements: Python 3.14, ffmpeg on the path, a webcam for live use.
 
 ## Layout
 
 ```
 src/tracerppg/      the pipeline package
-  synth.py            synthetic pulses and heart rhythms with known answers
   preprocess.py       detrending, hand-built FIR, zero-phase filtering
   spectral.py         windowed FFT, interpolation, quality, harmonic defence
-  datasets.py         UBFC loaders, uniform resampling, windows, ground truth
-  simulate.py         face-video simulator with controllable melanin
-  video.py, roi.py    ffmpeg decoding; Haar + phase-correlation tracking
-  methods.py          green, ICA, CHROM, POS
-  fusion.py           TRACE v1 and v2
-  compress.py         codec conditions and the encoder wrapper
-  hrv.py              beats, RR, SDNN, RMSSD, LF/HF
-  metrics.py, stats.py  agreement metrics; the interaction model; power
-  grid.py             the subject x condition x method experiment
-scripts/            acceptance checks (stepN), grid, analysis, builders
-app/                FastAPI app: engine.py runs the pipeline, static/ is the UI
-results/            frozen parameters, tables, figures (raw outputs gitignored)
-pipeline-viz.html   Pipeline Bench, generated by scripts/build_viz.py
+  methods.py          Green, ICA, CHROM, POS
+  fusion.py           TRACE (v1, v2, v3)
+  roi.py, video.py    face tracking and RGB traces
+  simulate.py         face-video simulator with controllable skin, motion, light
+  datasets.py         UBFC loaders and ground truth
+  hrv.py              beats, RR intervals, SDNN, RMSSD, LF/HF
+app/                FastAPI server, engine, volunteer portal, results hub, UI
+scripts/            acceptance checks (stepN), tuning, sweeps, evaluation
+results/            frozen parameters and result tables (raw data never committed)
 ```
 
-## What the pipeline does
+`CLAUDE.md` is the detailed project memory with every measured number and
+every failed attempt (TRACE v1 failed on held-out data; v2 lost to POS in the
+live sweep; v3 is the version that holds up).
 
-1. Track the face (Haar initialisation, phase-correlation tracking) and
-   average forehead and cheek skin into R, G, B traces
-2. **Detrend** by convolution with a moving average, then subtract
-3. Combine channels (green, CHROM, POS)
-4. **Bandpass** 0.7 to 4 Hz with a windowed-sinc FIR built from a truncated sinc
-5. **FFT**, then locate the peak between bins by parabolic interpolation
-6. Check the sub-harmonic, so a suppressed fundamental does not double the rate
-7. **TRACE**: score each method from its own spectrum, mask frequencies where a
-   pulse-blind artifact reference has power, fuse, and flag low confidence
-8. **HRV**: time each beat, resample the intervals, take a second Fourier
-   transform for LF/HF
+## Honest limits
 
-## Note on scope
+- Results so far are simulated; real data is being collected.
+- Low light, heavy motion and screen glow still defeat the method.
+- Darker skin gives a fainter pulse. It is fainter, not gone, and we report
+  error by skin type rather than one average.
+- The photo-versus-face check is a prototype and not yet reliable.
+- Heart rate and heart-rate variability here are wellness indicators, never a
+  diagnosis.
 
-The compression-by-skin-tone result is a measurement, not a claim made in
-advance. If the error curves for lighter and darker skin fan apart as bitrate
-falls, the disadvantage compounds; if they stay parallel, compression is
-demographically neutral. Both outcomes are reportable.
+## Data and licences
 
-Heart-rate variability output is a wellness indicator, never a diagnosis.
+UBFC-rPPG: Bobbia et al., "Unsupervised skin tissue segmentation for remote
+photoplethysmography", Pattern Recognition Letters, 2017. Used for research
+only under its terms and never redistributed. Volunteer data stays on the
+recording computer, is stored under a code rather than a name, and is deleted
+on request or when the project ends.
