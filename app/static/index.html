@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Caveat:wght@500;700&display=swap">
-<link rel="stylesheet" href="/static/styles.css?v=22">
+<link rel="stylesheet" href="/static/styles.css?v=23">
 </head>
 <body>
 
@@ -243,15 +243,12 @@
 
         <div class="stage" id="stage">
 
-          <section class="slide" data-n="1" aria-label="TRACE rPPG">
+          <section class="slide" data-n="1" aria-label="A camera can feel your pulse">
             <div class="s-text">
-              <span class="s-step">OUR PROJECT</span>
-              <h2 class="title-big">TRACE rPPG</h2>
-              <dl class="acronym">
-                <div><dt>TRACE</dt><dd><b>T</b>one-stratified <b>R</b>obustness <b>A</b>cross <b>C</b>ompressed <b>E</b>ncodings</dd></div>
-                <div><dt>rPPG</dt><dd><b>r</b>emote <b>p</b>hoto<b>p</b>lethysmo<b>g</b>raphy: reading the pulse with light, from a distance</dd></div>
-              </dl>
-              <p>Heart rate from an ordinary camera. No contact, no wires.</p>
+              <span class="s-step">TRACE rPPG</span>
+              <h2>A camera can feel your pulse.</h2>
+              <p>Every heartbeat makes your face a tiny bit redder. Too small for eyes, big enough for maths.</p>
+              <p class="fullname">TRACE: <b>T</b>one-stratified <b>R</b>obustness <b>A</b>cross <b>C</b>ompressed <b>E</b>ncodings. rPPG: <b>r</b>emote <b>p</b>hoto<b>p</b>lethysmo<b>g</b>raphy.</p>
             </div>
             <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat holds a magnifying glass over a face whose cheek pulses">
               <g filter="url(#wobble)">
@@ -275,23 +272,31 @@
             <div class="s-text">
               <span class="s-step">WHY THIS PROBLEM</span>
               <h2>Measuring a pulse still needs wires.</h2>
-              <p>Finger clips, chest straps and sticky electrodes work, but not when the doctor is on a video call, the patient is a newborn with fragile skin, or the person is driving. In all of these a camera is already pointing at the face.</p>
-              <p>Existing camera methods also pick one way of reading colour and hope it holds. Each one fails in a different situation, and most were never checked on darker skin.</p>
+              <p>Clips, straps and electrodes work, but not when</p>
+              <ul class="recipes">
+                <li>the doctor is on a video call,</li>
+                <li>the patient is a newborn with fragile skin,</li>
+                <li>the person is driving.</li>
+              </ul>
+              <p>In each case a camera is already looking at the face. We wanted to see how far that camera alone can go.</p>
               <div class="jump"><button type="button" class="btn primary small" data-goto="measure"><svg><use href="#i-play"/></svg>Let's show it in action</button></div>
             </div>
-            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat tangled in wires and clips on the left; Beat free in front of a laptop camera on the right">
+            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="A finger clip with a tangled cable on the left, crossed out; a laptop camera watching Beat on the right">
               <g filter="url(#wobble)">
-                <g transform="translate(110,200) scale(1.6)"><use href="#beat"/></g>
-                <path class="red-ink" d="M86,150 C40,120 30,200 70,210 C110,220 140,140 110,120 C80,100 60,170 100,190 M130,176 C170,160 160,230 120,236 M72,236 C50,250 60,270 90,262"/>
-                <rect class="red-ink" x="126" y="166" width="16" height="12" rx="3"/>
-                <path class="ink" d="M230,150 L262,150 M252,140 L262,150 L252,160"/>
-                <rect class="ink" x="330" y="120" width="120" height="78" rx="6"/><path class="ink" d="M318,206 L462,206 L450,196 L330,196"/>
-                <circle class="blue-ink" cx="390" cy="128" r="3"/>
-                <path class="blue-ink dash" d="M388,134 L330,196"/>
-                <g class="bob" transform="translate(300,262) scale(1.2)"><use href="#beat"/></g>
-                <path class="blue-ink" d="M420,236 l8,8 l16,-18"/>
+                <path class="ink" d="M26,150 C26,136 36,130 50,130 L128,130 C140,130 146,138 146,150 C146,162 140,170 128,170 L50,170 C36,170 26,164 26,150Z"/>
+                <rect class="red-ink" x="86" y="112" width="52" height="76" rx="12"/>
+                <path class="red-ink" d="M138,150 C176,150 176,210 136,214 C96,218 92,256 132,262 C160,266 176,250 190,262"/>
+                <path class="red-ink" d="M54,98 L160,204 M160,98 L54,204" style="stroke-width:3.5"/>
+                <path class="ink dash" d="M214,150 L252,150"/><path class="ink" d="M244,142 L254,150 L244,158"/>
+                <rect class="ink" x="296" y="46" width="150" height="94" rx="8"/>
+                <path class="ink" d="M284,150 L458,150 L446,140 L296,140"/>
+                <circle class="blue-ink" cx="371" cy="56" r="4"/>
+                <path class="blue-ink dash" d="M364,64 L338,196 M378,64 L404,196"/>
+                <g class="bob" transform="translate(371,270) scale(1.3)"><use href="#beat"/></g>
+                <path class="heart" d="M424,214 c-6,-9 -18,-3 -10,7 l10,10 l10,-10 c8,-10 -4,-16 -10,-7Z"/>
               </g>
-              <g class="labels"><text class="hand red" x="30" y="66">clips, straps, wires</text><text class="hand blue" x="336" y="96">just a camera</text></g>
+              <g class="labels"><text class="hand red" x="40" y="84">clip, wire, strap</text>
+                <text class="hand blue" x="318" y="30">just a camera</text></g>
             </svg>
           </section>
 
@@ -300,8 +305,8 @@
               <span class="s-step">THE IDEA</span>
               <h2>Blood drinks green light.</h2>
               <p>Each beat pushes a little more blood into the skin. More blood soaks up more green light, so less bounces back to the camera.</p>
-              <details class="deeper"><summary>Go deeper</summary><div class="deeper-body">
-                <p>Haemoglobin absorbs green (about 540 nm) most strongly. The camera's green channel therefore carries the strongest pulse, under 1 percent of the pixel value. Melanin absorbs light too, which is why darker skin gives a weaker signal.</p></div></details>
+              <details class="deeper"><summary>Go deeper</summary>
+                <p>Haemoglobin absorbs green (about 540 nm) most strongly. The camera's green channel therefore carries the strongest pulse, under 1 percent of the pixel value. Melanin absorbs light too, which is why darker skin gives a weaker signal.</p></details>
             </div>
             <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="A lamp shines on skin; Beat pumps blood into a vessel under the skin">
               <g filter="url(#wobble)">
@@ -330,10 +335,10 @@
               <h2>Grab the colour, 30 times a second.</h2>
               <p>We find the face, then average the forehead and both cheeks in every frame. One colour per frame becomes a signal over time.</p>
               <span class="topic ft">FOURIER SHIFT THEOREM, FOR TRACKING</span>
-              <details class="deeper"><summary>Go deeper</summary><div class="deeper-body">
+              <details class="deeper"><summary>Go deeper</summary>
                 <p>A Haar detector finds the face once. After that, phase correlation tracks it: a shift in the image is a linear phase in its Fourier transform, so the peak of the inverse FFT gives the movement to a fraction of a pixel.</p>
                 <p class="formula mono">g[n] = mean green of the skin in frame n</p>
-                <div class="live-chart"><span class="mono">LIVE: RAW GREEN, 10 S</span><canvas class="chart" id="c-s1" style="--h:90px"></canvas></div></div></details>
+                <div class="live-chart"><span class="mono">LIVE: RAW GREEN, 10 S</span><canvas class="chart" id="c-s1" style="--h:90px"></canvas></div></details>
             </div>
             <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat scoops colour from the forehead and cheeks of a face frame into a row of jars">
               <g filter="url(#wobble)">
@@ -362,10 +367,10 @@
               <h2>Flatten the slow hills.</h2>
               <p>Lighting drifts slowly and hides the pulse. We slide a 2 second average along the signal and subtract it: the hills go, the heartbeat ripples stay.</p>
               <span class="topic conv">CONVOLUTION</span>
-              <details class="deeper"><summary>Go deeper</summary><div class="deeper-body">
+              <details class="deeper"><summary>Go deeper</summary>
                 <p class="formula mono">d[n] = g[n] - (g * h)[n],  h = 2 s moving average</p>
                 <p>Convolving with a moving average is a low-pass filter. Subtracting it leaves a high-pass. Its first null sits at 0.49 Hz, safely below the slowest heart rate we look for (0.7 Hz).</p>
-                <div class="live-chart"><span class="mono">LIVE: AFTER DETREND</span><canvas class="chart" id="c-s2" style="--h:90px"></canvas></div></div></details>
+                <div class="live-chart"><span class="mono">LIVE: AFTER DETREND</span><canvas class="chart" id="c-s2" style="--h:90px"></canvas></div></details>
             </div>
             <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat pushes a sliding window along a hilly signal; behind it the signal is flat with small ripples">
               <g filter="url(#wobble)">
@@ -388,10 +393,10 @@
               <h2>Only heart speeds get in.</h2>
               <p>A filter lets through rhythms between 42 and 240 beats per minute. Breathing is too slow, sensor noise is too fast: both are turned away.</p>
               <span class="topic conv">CONVOLUTION</span>
-              <details class="deeper"><summary>Go deeper</summary><div class="deeper-body">
+              <details class="deeper"><summary>Go deeper</summary>
                 <p class="formula mono">y[n] = sum h[k] d[n - k],  pass 0.7 to 4 Hz</p>
                 <p>A windowed-sinc FIR filter, built by hand. It runs forwards and backwards (zero phase) so beats are not delayed, which matters when we time them.</p>
-                <div class="live-chart"><span class="mono">LIVE: AFTER BAND-PASS</span><canvas class="chart" id="c-s3" style="--h:90px"></canvas></div></div></details>
+                <div class="live-chart"><span class="mono">LIVE: AFTER BAND-PASS</span><canvas class="chart" id="c-s3" style="--h:90px"></canvas></div></details>
             </div>
             <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat guards a gate: slow waves and fast jitter are turned away, medium waves pass">
               <g filter="url(#wobble)">
@@ -422,11 +427,11 @@
                 <li><b>POS</b> looks along a direction at right angles to your own skin tone, re-aimed every 1.6 seconds.</li>
               </ul>
               <div class="jump"><button type="button" class="btn ghost small" data-goto="methods"><svg><use href="#i-merge"/></svg>See them live: Methods</button></div>
-              <details class="deeper"><summary>Go deeper</summary><div class="deeper-body">
+              <details class="deeper"><summary>Go deeper</summary>
                 <p class="formula mono">GREEN  S = G / mean(G) - 1</p>
                 <p class="formula mono">CHROM  X = 3R - 2G,  Y = 1.5R + G - 1.5B,  S = X - (std X / std Y) Y</p>
                 <p class="formula mono">POS    S1 = G - B,  S2 = G + B - 2R,  h = S1 + (std S1 / std S2) S2</p>
-                <p>Green is from Verkruysse 2008, CHROM from de Haan 2013, POS from Wang 2017. The mixing weights come from the physics of light reflecting off skin, not from training.</p></div></details>
+                <p>Green is from Verkruysse 2008, CHROM from de Haan 2013, POS from Wang 2017. The mixing weights come from the physics of light reflecting off skin, not from training.</p></details>
             </div>
             <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Three recipe cards, each mixing red, green and blue jugs differently">
               <g filter="url(#wobble)">
@@ -453,11 +458,11 @@
               <h2>A prism for rhythms.</h2>
               <p>The Fourier transform splits the wiggle into its rhythms, like a prism splits light. The tallest bar is the heartbeat.</p>
               <span class="topic ft">FOURIER TRANSFORM</span> <span class="topic fs">FOURIER SERIES</span>
-              <details class="deeper"><summary>Go deeper</summary><div class="deeper-body">
+              <details class="deeper"><summary>Go deeper</summary>
                 <p class="formula mono">Y(f) = sum y[n] e^(-j 2 pi f n / fs),   BPM = 60 x f_peak</p>
                 <p>A sharp pulse is a Fourier series: a fundamental plus harmonics at 2f, 3f. If the harmonic ever looks taller, we check half the frequency before trusting it, so we never report double the real rate.</p>
                 <div class="live-chart"><span class="mono">LIVE: SPECTRUM</span><canvas class="chart" id="c-s4" style="--h:110px"></canvas></div>
-                <p class="mono live-bpm"><span id="s5-bpm">--</span> BPM <span class="muted" id="s5-f"></span></p></div></details>
+                <p class="mono live-bpm"><span id="s5-bpm">--</span> BPM <span class="muted" id="s5-f"></span></p></details>
             </div>
             <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="A wiggly beam enters a prism and comes out as bars; Beat plants a flag on the tallest bar">
               <g filter="url(#wobble)">
@@ -483,8 +488,8 @@
               <h2>TRACE picks the sharpest peak.</h2>
               <p>Every half second each method's spectrum is scored: one clean peak scores high, a mess scores low. Frequencies that match head motion are masked first. The winner gives the heart rate.</p>
               <div class="jump"><button type="button" class="btn ghost small" data-goto="methods"><svg><use href="#i-merge"/></svg>Watch it choose: Methods</button></div>
-              <details class="deeper"><summary>Go deeper</summary><div class="deeper-body">
-                <p>Quality = power in the peak and its harmonic divided by all power in the heart band (Parseval: power in the spectrum equals energy in time). A motion reference, blind to blood, marks the frequencies to suppress. On 3,060 simulated readings never used for tuning, selecting per window beat every single method.</p></div></details>
+              <details class="deeper"><summary>Go deeper</summary>
+                <p>Quality = power in the peak and its harmonic divided by all power in the heart band (Parseval: power in the spectrum equals energy in time). A motion reference, blind to blood, marks the frequencies to suppress. On 3,060 simulated readings never used for tuning, selecting per window beat every single method.</p></details>
             </div>
             <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat judges three spectrum cards and gives a ribbon to the one with a single sharp peak; a red stencil covers a motion peak">
               <g filter="url(#wobble)">
@@ -510,11 +515,11 @@
               <h2>Three pairs of glasses.</h2>
               <p>A lamp flickers, a cloud passes, a screen glows: brightness changes all the time. Green cannot tell that from a pulse and is fooled. CHROM and POS mix colours so that brightness cancels out, and the pulse stays.</p>
               <div class="jump"><button type="button" class="btn ghost small" data-goto="methods"><svg><use href="#i-merge"/></svg>See them live: Methods</button></div>
-              <details class="deeper"><summary>Go deeper</summary><div class="deeper-body">
+              <details class="deeper"><summary>Go deeper</summary>
                 <p class="formula mono">GREEN  S = G / mean(G) - 1</p>
                 <p class="formula mono">CHROM  X = 3R - 2G,  Y = 1.5R + G - 1.5B,  S = X - (std X / std Y) Y</p>
                 <p class="formula mono">POS    S1 = G - B,  S2 = G + B - 2R,  h = S1 + (std S1 / std S2) S2</p>
-                <p>Both CHROM and POS are fixed projections from the physics of skin reflection, not learned from data.</p></div></details>
+                <p>Both CHROM and POS are fixed projections from the physics of skin reflection, not learned from data.</p></details>
             </div>
             <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="A torch shines on three pairs of glasses; the green pair sees a messy signal, CHROM and POS see a clean pulse">
               <g filter="url(#wobble)">
@@ -542,8 +547,8 @@
               <h2>Stay on the face, ignore the sway.</h2>
               <p>First the box follows the face, so we keep reading the same skin. Then a second signal that sees motion but not blood tells TRACE which rhythms are sway, and those are masked out before choosing.</p>
               <div class="evidence" id="deck-motion"></div>
-              <details class="deeper"><summary>Go deeper</summary><div class="deeper-body">
-                <p>Tracking uses phase correlation: a shift between frames is a linear phase in the Fourier transform, so the peak of the inverse FFT gives the movement to a fraction of a pixel. The motion reference is the brightness direction with the blood direction removed, so it sees shading and sway but not the pulse. Heavy, fast motion is still the hardest case, and the numbers show it.</p></div></details>
+              <details class="deeper"><summary>Go deeper</summary>
+                <p>Tracking uses phase correlation: a shift between frames is a linear phase in the Fourier transform, so the peak of the inverse FFT gives the movement to a fraction of a pixel. The motion reference is the brightness direction with the blood direction removed, so it sees shading and sway but not the pulse. Heavy, fast motion is still the hardest case, and the numbers show it.</p></details>
             </div>
             <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat holds a tracking box on a swaying face; a red stencil masks the sway peak in a spectrum">
               <g filter="url(#wobble)">
@@ -575,8 +580,8 @@
                 <li>POS aims at each person's own skin tone, and we test on all six skin types</li>
               </ul>
               <div class="evidence skin-table" id="deck-skin"></div>
-              <details class="deeper"><summary>Go deeper</summary><div class="deeper-body">
-                <p>The skin types are the Fitzpatrick scale, I (always burns) to VI (never burns). Darker skin is still harder, and we report that openly: the table shows TRACE's error by skin type on the simulated volunteers, and the Scenarios screen adds real volunteers as they are recorded.</p></div></details>
+              <details class="deeper"><summary>Go deeper</summary>
+                <p>The skin types are the Fitzpatrick scale, I (always burns) to VI (never burns). Darker skin is still harder, and we report that openly: the table shows TRACE's error by skin type on the simulated volunteers, and the Scenarios screen adds real volunteers as they are recorded.</p></details>
             </div>
             <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Six skin tones; the pulse is a large ripple on light skin and a small ripple on dark skin, and Beat listens to the faint one">
               <g>
