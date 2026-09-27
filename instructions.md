@@ -41,7 +41,20 @@ D:\datasets\ubfc\
 Keep each `vid.avi` and its `ground_truth.txt` together in the same folder.
 Do not rename them.
 
-### A2. Download: route 1, Kaggle (recommended)
+### A2. Download: route 0, the project script (easiest, no account)
+
+The Kaggle mirror serves single files without signing in, so one command
+fetches 14 spread-out subjects (about 24 GB), resumes after interruptions and
+prints overall progress with an ETA at every 10 percent:
+
+```powershell
+.venv\Scripts\python.exe scripts\download_ubfc.py --dest D:\datasets\ubfc
+```
+
+Choose your own subjects with `--subjects 1 3 5 ...`. Routes 1 and 2 below
+are the manual fallbacks.
+
+### A2b. Download: route 1, Kaggle by hand
 
 The Kaggle mirror is `malekdinarito/ubfc-rppg-dataset`. It is 73 GB in total,
 but you only download individual files.
