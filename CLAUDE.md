@@ -97,6 +97,7 @@ The teacher approved the pipeline and the idea and asked for less, not more: **p
 
 ### 2.2 Next tasks (need people, data, or decisions)
 
+0. **Scenarios becomes the results hub (user, 2026-09-28):** one screen for the simulated sweep, the UBFC subset (~10 subjects, about 20 GB, `eval_real_fusion.py`) and the 20 to 30 real volunteers from Collect (`collect.study()`), each clearly labelled by source.
 0a. **Done: fusion fixed as TRACE v3 (Section 2.1d).** Next: collect 20 to 30 real volunteers in the portal, and UBFC subjects (`eval_real_fusion.py`), to check v3 on real faces.
 0b. (superseded) **Decide how to fix the fusion (Section 2.1c).** Options: sharper selection (higher gamma or winner-take-all) and a harmonic continuity check, tuned on one set of simulated seeds and tested on a fresh set (invariant 14), with the sweep as the benchmark. Needs traces saved per run so fusion variants rerun without re-rendering.
 0. **Fusion evidence (current focus, Section 2.0).** Build an experiment and a showcase that demonstrate the per-window quality weighting across green, CHROM and POS: when each method wins, how the weights follow it, and TRACE vs each single method with the artifact-mask ablation. Wait for the user's direction on shape. (need people, data, or decisions)

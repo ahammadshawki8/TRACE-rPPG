@@ -58,13 +58,14 @@ function moveIndicator() {
 function go(v) {
   view = v;
   $$(".view").forEach(s => s.classList.toggle("active", s.dataset.view === v));
-  $$(".nav button").forEach(b => b.classList.toggle("active", b.dataset.view === v));
+  // Any rail button with a destination counts, in the main list or the footer.
+  $$(".rail button[data-view]").forEach(b => b.classList.toggle("active", b.dataset.view === v));
   $("#view-title").textContent = TITLES[v];
   $("#ctx-view").textContent = TITLES[v].toUpperCase();
   moveIndicator(); renderAll();
   window.scrollTo({ top: 0 });
 }
-$$(".nav button").forEach(b => b.addEventListener("click", () => go(b.dataset.view)));
+$$(".rail button[data-view]").forEach(b => b.addEventListener("click", () => go(b.dataset.view)));
 $$("[data-goto]").forEach(c => {
   c.addEventListener("click", () => go(c.dataset.goto));
   c.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(c.dataset.goto); } });
@@ -90,14 +91,14 @@ function send(o) {
   else outbox.push(o);
 }
 
-function startSource() {
-  const v = document.querySelector('input[name="source"]:checked').value;
-  simSource = v === "sim" ? { ...simSettings } : null;
+function startSource(kind = "sim") {
+  simSource = kind === "sim" ? { ...simSettings } : null;
   send(simSource ? { cmd: "start", source: "sim", options: simSource } : { cmd: "start", source: "webcam" });
   $$("img.feed").forEach(img => { img.src = `/video.mjpg?${Date.now()}`; });
   wHistory.length = 0;
 }
-$("#start").addEventListener("click", () => { startSource(); hrv = null; renderHrv(); });
+// The two source cards on the landing start a session directly.
+$$(".source-card[data-source]").forEach(b => b.addEventListener("click", () => { startSource(b.dataset.source); hrv = null; renderHrv(); }));
 $("#stop").addEventListener("click", () => send({ cmd: "stop" }));
 
 /* ================================================================== live state */
@@ -704,12 +705,9 @@ $("#pip-show").addEventListener("click", () => { pipClosed = false; renderPip();
 })();
 
 /* ================================================================== landing */
-// Decorative only: the idle landing shows the simulator's own renders of the
-// six skin types and a stylised pulse wave. No number is shown, so nothing
-// here can be mistaken for a measurement.
-const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Decorative only: a stylised pulse line over the landing photo. No number is
+// shown, so nothing here can be mistaken for a measurement.
 (function landing() {
-  // A pulse-shaped wave: sharp systolic peak, smaller dicrotic bump, two copies side by side so it can scroll.
   const pts = [];
   for (let x = 0; x <= 400; x += 2) {
     const ph = (x % 100) / 100;
@@ -717,17 +715,6 @@ const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
     pts.push(`${x},${(52 - y * 40).toFixed(1)}`);
   }
   $("#land-wave").setAttribute("d", "M" + pts.join(" L"));
-  const imgs = $$("#scan-faces img"), tag = $("#scan-tag");
-  let k = 0;
-  imgs[0].classList.add("on");
-  if (REDUCED) return;
-  setInterval(() => {
-    if (view !== "measure" || $("#measure-idle").hidden) return;
-    imgs[k].classList.remove("on");
-    k = (k + 1) % imgs.length;
-    imgs[k].classList.add("on");
-    tag.textContent = `SKIN TYPE ${["I", "II", "III", "IV", "V", "VI"][k]}`;
-  }, 2600);
 })();
 
 /* ================================================================== boot */
