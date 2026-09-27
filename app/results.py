@@ -1,11 +1,13 @@
 """The results hub: every evaluation the project has, in one common shape.
 
-Three sources, each against its own reference:
+Four sources, each against its own reference:
     simulated    the live simulator's scenario sweep; reference = the exact
                  simulated heart rate (app/static/lab/scenarios.json)
     ubfc         UBFC-rPPG recordings; reference = a contact pulse oximeter
                  recorded in sync with the video (results/real_fusion_ubfc.json,
                  written by scripts/eval_real_fusion.py)
+    ubfcphys     UBFC-Phys rest and talking tasks; reference = a wrist BVP
+                 sensor (results/real_fusion_ubfcphys.json)
     volunteers   real volunteers from the Collect screen; reference = a
                  smartwatch reading per 20 s window (collect.study())
 
@@ -56,30 +58,67 @@ def simulated() -> dict:
     }
 
 
+def _pick(a: dict) -> dict:  # the scorer calls TRACE v3 "v3"; v2 is kept for the record
+    return {"green": a["green"]["mae"], "chrom": a["chrom"]["mae"], "pos": a["pos"]["mae"], "trace": a["v3"]["mae"]}
+
+
+def _real(p: Path, reference: str, note: str) -> dict:
+    """One contact-referenced dataset scored by scripts/eval_real_fusion.py."""
+    r = json.loads(p.read_text())
+    o = r["overall"]
+    rows = [_row(subj, a["n"], _pick(a), {"trace": a["v3"]["within5"]}, a.get("mean_weights_v3"))
+            for subj, a in sorted(r["subjects"].items(), key=lambda kv: int("".join(c for c in kv[0] if c.isdigit()) or 0))]
+    c = o.get("v3_confident", {})
+    return {
+        "available": True, "reference": reference,
+        "subjects": len(r["subjects"]), "readings": o["n"],
+        "overall": {"mae": _pick(o), "within5": {m: o[k]["within5"] for m, k in zip(METHODS, ("green", "chrom", "pos", "v3"))},
+                    "confident": c.get("share"), "mae_confident": c.get("mae"), "mae_flagged": o.get("v3_flagged_mae"),
+                    "v2_mae": o["v2"]["mae"]},
+        "note": note,
+        "breakdowns": [{"title": "BY SUBJECT", "rows": rows}],
+        "_raw": r,
+    }
+
+
 def ubfc() -> dict:
     import os
     p = Path(os.environ.get("TRACE_UBFC_RESULTS", str(ROOT / "results" / "real_fusion_ubfc.json")))
     if not p.exists():
-        return {"available": False, "how_to": "Download UBFC-rPPG subjects (for example to D:/datasets/ubfc), then run: "
+        return {"available": False, "how_to": "Download UBFC-rPPG subjects (scripts/download_ubfc.py), then run: "
                                               ".venv/Scripts/python.exe scripts/eval_real_fusion.py --dataset D:/datasets/ubfc"}
-    r = json.loads(p.read_text())
-    o = r["overall"]
+    out = _real(p, "contact pulse oximeter (CMS50E), synchronised",
+                "UBFC-rPPG, Bobbia et al. 2017. People sit still in good light, and most have lighter skin: "
+                "it tests real faces, not motion or the skin-tone range.")
+    out.pop("_raw")
+    return out
 
-    def pick(a):  # the scorer calls TRACE v3 "v3"; v2 is kept for the record
-        return {"green": a["green"]["mae"], "chrom": a["chrom"]["mae"], "pos": a["pos"]["mae"], "trace": a["v3"]["mae"]}
 
-    rows = [_row(subj, a["n"], pick(a), {"trace": a["v3"]["within5"]}, a.get("mean_weights_v3"))
-            for subj, a in sorted(r["subjects"].items(), key=lambda kv: int("".join(c for c in kv[0] if c.isdigit()) or 0))]
-    c = o.get("v3_confident", {})
-    return {
-        "available": True, "reference": "contact pulse oximeter (CMS50E), synchronised",
-        "subjects": len(r["subjects"]), "readings": o["n"],
-        "overall": {"mae": pick(o), "within5": {m: o[k]["within5"] for m, k in zip(METHODS, ("green", "chrom", "pos", "v3"))},
-                    "confident": c.get("share"), "mae_confident": c.get("mae"), "mae_flagged": o.get("v3_flagged_mae"),
-                    "v2_mae": o["v2"]["mae"]},
-        "note": "UBFC-rPPG, Bobbia et al. 2017. Mostly lighter skin, so it tests real faces, not the skin-tone range.",
-        "breakdowns": [{"title": "BY SUBJECT", "rows": rows}],
-    }
+TASKS = {"T1": "rest", "T2": "talking", "T3": "arithmetic"}
+
+
+def ubfcphys() -> dict:
+    """UBFC-Phys: the same people at rest (T1) and giving a speech (T2), so the
+    task breakdown is a paired, real-data view of what motion does to each method."""
+    p = ROOT / "results" / "real_fusion_ubfcphys.json"
+    if not p.exists():
+        return {"available": False, "how_to": "Run scripts/download_ubfc_phys.py, then: "
+                                              ".venv/Scripts/python.exe scripts/eval_real_fusion.py --dataset D:/datasets/ubfcphys --tag ubfcphys"}
+    out = _real(p, "wrist pulse sensor (Empatica E4 BVP), synchronised",
+                "UBFC-Phys, Meziati Sabour et al. 2021. The same people at rest and while giving a speech "
+                "(talking, head motion, expressions). The wrist reference is noisier than a finger clip.")
+    subs = out.pop("_raw")["subjects"]
+    by_task = []
+    for code, name in TASKS.items():
+        group = {k: a for k, a in subs.items() if k.endswith("_" + code)}
+        if not group:
+            continue
+        n = sum(a["n"] for a in group.values())
+        mae = {m: sum(_pick(a)[m] * a["n"] for a in group.values()) / n for m in METHODS}
+        w5 = sum(a["v3"]["within5"] * a["n"] for a in group.values()) / n
+        by_task.append(_row(name, n, mae, {"trace": w5}, extra={"people": len(group)}))
+    out["breakdowns"].insert(0, {"title": "BY TASK", "rows": by_task})
+    return out
 
 
 def volunteers() -> dict:
@@ -109,7 +148,7 @@ def volunteers() -> dict:
 
 def everything() -> dict:
     out = {}
-    for key, fn in (("simulated", simulated), ("ubfc", ubfc), ("volunteers", volunteers)):
+    for key, fn in (("simulated", simulated), ("ubfc", ubfc), ("ubfcphys", ubfcphys), ("volunteers", volunteers)):
         try:
             out[key] = fn()
         except Exception as exc:  # one broken source must not hide the others
