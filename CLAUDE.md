@@ -48,7 +48,7 @@ This file is the persistent memory of the project. Every session starts by readi
 
 ## 2. Where We Left Off
 
-**Last updated:** 2026-09-27
+**Last updated:** 2026-09-28
 
 ### 2.1 Status
 
@@ -96,6 +96,8 @@ The teacher approved the pipeline and the idea and asked for less, not more: **p
 - step10 12/14 (fails: talking TRACE 10.6 vs green 26.9 on 3 volunteers misses the < 5 bar; one held-out photo accepted), step11 11/11, T0 12/12, T4 8/8.
 
 ### 2.2 Next tasks (need people, data, or decisions)
+
+**Presentation is on 2026-09-29.** Today (2026-09-28) the user collects UBFC (about 10 subjects to `D:\datasets\ubfc`) and 20 to 30 volunteers, following `instructions.md`. Then: run `eval_real_fusion.py`, check Scenarios, and fill every `[__]` in `speech.md` (UBFC and volunteer numbers) plus the README results section with the measured values. `speech.md` is the Bengali talk script (6 min core, 12 max) with Q&A preparation; the deck has 15 slides (title, why, idea, six pipeline steps, three challenges, proof, what's next, syllabus).
 
 0. **Scenarios becomes the results hub (user, 2026-09-28):** one screen for the simulated sweep, the UBFC subset (~10 subjects, about 20 GB, `eval_real_fusion.py`) and the 20 to 30 real volunteers from Collect (`collect.study()`), each clearly labelled by source.
 0a. **Done: fusion fixed as TRACE v3 (Section 2.1d).** Next: collect 20 to 30 real volunteers in the portal, and UBFC subjects (`eval_real_fusion.py`), to check v3 on real faces.
@@ -848,6 +850,7 @@ The `Idea/` planning documents were removed on 2026-09-27 (see git history befor
 
 Newest first. One entry per session: date, what was done, what was verified, where it stopped.
 
+- **2026-09-28:** Presentation deck finalised: previous first slide restored with the full name as one small line, Go deeper back inline (the text column tightens while it is open, so no slide scrolls; checked on all 15), a calmer why-this-problem slide that jumps to Measure, a what's-next slide before the syllabus. README rewritten around TRACE v3 and the app; added `speech.md` (Bengali script) and `instructions.md` (UBFC download and volunteer recording). T0 12/12.
 - **2026-09-27 (late):** TRACE v3 (per-window selection) tuned and tested on separate simulated cohorts and adopted (2.1d). Volunteer collection portal with names, manage/edit/withdraw, open folder, 20 s watch readings, audit log; fixed scoring for 20.7 fps webcams and a Windows file lock that blocked withdrawal. What's next screen replaces Summary and Heart rhythm (liveness prototype, HRV with beat-to-beat heart rate, guided breathing, applications). Renamed the app TRACE rPPG. Commits from now on as ahammadshawki8. Fixed commands being dropped before the WebSocket opened. step10 12/14, step11 11/11, T0 12/12, T4 8/8; browser-verified every screen.
 - **2026-09-27 (night):** Built the live simulator (`simulate.LiveSimulator`, controls: skin I to VI, heart rate, motion, light, flicker, screen glow), the offline evaluator (`simeval.py`), the scenario sweep and a Scenarios screen with Try-it buttons. Found and fixed a tracker crash under motion (wild phase-correlation shift re-anchored off-image); found that a reused noise bank fooled the tracker, reverted to fresh noise (13.8 ms/frame). step10 11/12 (talking check fails on its single seed), T0 12/12, T4 8/8, T2 5/6: the 99 percent box-coverage check fails at 98.9 percent on type VI with the original tracker too (pre-existing, start-up frames on dark skin). Sweep finding in 2.1c. Moved `p_correct` into `fusion.py`.
 - **2026-09-27 (evening):** User asked for English only and much less on screen: an academic product plus parts of theory. Cut the app to five screens (Measure, Methods, How it works, Heart rhythm, Summary); removed Bangla, the stepper, pipeline card, compression lab, experiments, research tiers and event log. Engine now also sends `stages` (raw, detrended, filtered green) so How it works shows the live signal at each theory step without JavaScript math. Methods keeps one evaluation card from `results.json` (MAE green 22.8, CHROM 20.6, POS 18.0, TRACE 15.2, simulated). Browser-verified all screens and 390 px width, zero console errors.
