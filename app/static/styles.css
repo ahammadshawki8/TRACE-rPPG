@@ -940,6 +940,13 @@ table.learned tr.ceiling td { color: var(--ink-3); }
 .minibar::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w); background: var(--c); border-radius: 4px; }
 .result-card .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .result-card .against { margin: -4px 0 12px; font-size: 10.5px; letter-spacing: .1em; }
+/* Collect: every volunteer's recordings table gets the same column widths, so
+   rows line up across volunteers whether or not a clip kept its video. */
+table.clips { table-layout: fixed; width: 100%; min-width: 900px; }
+table.clips .c-when { width: 15%; } table.clips .c-light { width: 15%; } table.clips .c-motion { width: 15%; }
+table.clips .c-num { width: 8%; } table.clips .c-score { width: 11%; } table.clips .c-files { width: 22%; } table.clips .c-del { width: 6%; }
+table.clips select { max-width: 100%; }
+table.clips th:nth-child(2), table.clips th:nth-child(3), table.clips td:nth-child(2), table.clips td:nth-child(3) { text-align: left; }
 @media (max-width: 900px) {
   .res-sources, .result-grid { grid-template-columns: 1fr; }
   .src-trace .big-n { font-size: 32px; }

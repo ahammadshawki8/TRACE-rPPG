@@ -156,7 +156,7 @@ function colManage() {
           ${armed ? `<span class="warnline">Delete ${v.code} and all recordings?</span><button class="btn small danger-btn" type="button" data-delvol-yes="${v.code}">Delete</button><button class="btn ghost small" type="button" data-cancel>Keep</button>`
                   : `<button class="btn ghost small" type="button" data-delvol="${v.code}"><svg><use href="#i-trash"/></svg>Withdraw</button>`}
         </span></header>
-      ${cl.length ? `<div class="table-scroll"><table class="data"><thead><tr><th>RECORDED</th><th>LIGHTING</th><th>MOTION</th><th>SECONDS</th><th>READINGS</th><th>TRACE VS WATCH</th><th>FILES</th><th></th></tr></thead><tbody>${
+      ${cl.length ? `<div class="table-scroll"><table class="data clips"><colgroup><col class="c-when"><col class="c-light"><col class="c-motion"><col class="c-num"><col class="c-num"><col class="c-score"><col class="c-files"><col class="c-del"></colgroup><thead><tr><th>RECORDED</th><th>LIGHTING</th><th>MOTION</th><th>SECONDS</th><th>READINGS</th><th>TRACE VS WATCH</th><th>FILES</th><th></th></tr></thead><tbody>${
         cl.slice().reverse().map(c => { const key = `${v.code}/${c.clip}`, sc = scored[key] || {}, carm = COL.confirm === `c:${key}`;
           const sel = (k, vals) => `<select data-editclip="${key}" data-k="${k}" aria-label="${k}">${vals.map(x => `<option ${x === c.condition[k] ? "selected" : ""}>${x}</option>`).join("")}</select>`;
           return `<tr><td>${(c.recorded_at || "").replace("T", " ").slice(0, 16)}</td><td>${sel("lighting", o.lighting)}</td><td>${sel("motion", o.motion)}</td>
