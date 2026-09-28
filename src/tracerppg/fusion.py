@@ -104,6 +104,25 @@ def weights_from_quality(q: dict[str, float], gamma: float) -> dict[str, float]:
     return {n: float(x) for n, x in zip(names, w)}
 
 
+def selection_scores(per: dict[str, MethodWindow], edge_bpm: float = 0.0, edge_penalty: float = 1.0,
+                     prior: dict[str, float] | None = None) -> dict[str, float]:
+    """The numbers TRACE ranks methods by: quality, times the optional v4 prior
+    and band-edge penalty. With the defaults this is exactly the quality."""
+    out = {}
+    for n, m in per.items():
+        s = m.quality * (prior or {}).get(n, 1.0)
+        if edge_bpm and m.bpm < edge_bpm and not any(abs(m.bpm - o.bpm) <= 5.0 for k, o in per.items() if k != n):
+            s *= edge_penalty
+        out[n] = s
+    return out
+
+
+def fuse_kwargs(params: dict) -> dict:
+    """fuse() keyword arguments from a frozen parameter file (any version)."""
+    return {"mask_k": float(params.get("mask_k", DEFAULT_MASK_K)), "edge_bpm": float(params.get("edge_bpm", 0.0)),
+            "edge_penalty": float(params.get("edge_penalty", 1.0)), "prior": params.get("prior")}
+
+
 def fuse(
     segments: dict[str, np.ndarray],
     fs: float,
@@ -112,12 +131,24 @@ def fuse(
     artifact: np.ndarray | None = None,
     mask_k: float = DEFAULT_MASK_K,
     mask_mode: str = "power",
+    edge_bpm: float = 0.0,
+    edge_penalty: float = 1.0,
+    prior: dict[str, float] | None = None,
 ) -> FusionResult:
     """Fuse one analysis window of several methods' band-limited pulses.
 
     With `artifact` (the band-limited pulse-blind reference for the same
     window) this is TRACE v2 (`mask_mode="power"`) or v3 (`"wiener"`);
     without it, TRACE v1.
+
+    v4 options (all off by default, so v1 to v3 reproduce exactly). They only
+    change which method is trusted, never a method's own spectrum or BPM:
+    `edge_bpm` / `edge_penalty` scale down the score of a method whose peak
+    sits below `edge_bpm` unless another method agrees within 5 BPM. On weak
+    real pulses (darker skin) leftover slow drift makes a false peak near the
+    bottom of the band, 45 to 50 BPM, in one method at a time. `prior`
+    multiplies each method's score (for example POS 1.3), so TRACE leaves the
+    usually best method only when another is clearly sharper.
 
     The v3 mask is a Wiener gain, P_m / (P_m + P_a): each frequency is kept
     in proportion to how much of the method's own power exceeds the artifact
@@ -151,7 +182,7 @@ def fuse(
             q = spectral_snr(freqs, pm, pk) * (1.0 - a_frac) ** 2
             per[name] = MethodWindow(bpm=pk * 60.0, quality=q, power=pm, artifact=a_frac)
             masked[name] = pm
-        w = weights_from_quality({n: m.quality for n, m in per.items()}, gamma)
+        w = weights_from_quality(selection_scores(per, edge_bpm, edge_penalty, prior), gamma)
         fused = np.zeros_like(freqs)
         for n, pm in masked.items():
             fused += w[n] * pm / max(float(np.max(pm[mask])), 1e-30)

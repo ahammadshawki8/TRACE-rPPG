@@ -56,22 +56,26 @@ def simulated() -> dict:
     }
 
 
-def _pick(a: dict) -> dict:  # the scorer calls TRACE v3 "v3"; v2 is kept for the record
-    return {"green": a["green"]["mae"], "chrom": a["chrom"]["mae"], "pos": a["pos"]["mae"], "trace": a["v3"]["mae"]}
+def _tv(a: dict) -> str:  # the newest TRACE version the scorer wrote; older ones are kept for the record
+    return "v4" if "v4" in a else "v3"
+
+
+def _pick(a: dict) -> dict:
+    return {"green": a["green"]["mae"], "chrom": a["chrom"]["mae"], "pos": a["pos"]["mae"], "trace": a[_tv(a)]["mae"]}
 
 
 def _real(p: Path, reference: str, note: str) -> dict:
     """One contact-referenced dataset scored by scripts/eval_real_fusion.py."""
     r = json.loads(p.read_text())
     o = r["overall"]
-    rows = [_row(subj, a["n"], _pick(a), {"trace": a["v3"]["within5"]}, a.get("mean_weights_v3"))
+    rows = [_row(subj, a["n"], _pick(a), {"trace": a[_tv(a)]["within5"]}, a.get("mean_weights_v3"))
             for subj, a in sorted(r["subjects"].items(), key=lambda kv: int("".join(c for c in kv[0] if c.isdigit()) or 0))]
-    c = o.get("v3_confident", {})
+    c = o.get(f"{_tv(o)}_confident", {})
     return {
         "available": True, "reference": reference,
         "subjects": len(r["subjects"]), "readings": o["n"],
-        "overall": {"mae": _pick(o), "within5": {m: o[k]["within5"] for m, k in zip(METHODS, ("green", "chrom", "pos", "v3"))},
-                    "confident": c.get("share"), "mae_confident": c.get("mae"), "mae_flagged": o.get("v3_flagged_mae"),
+        "overall": {"mae": _pick(o), "within5": {m: o[k]["within5"] for m, k in zip(METHODS, ("green", "chrom", "pos", _tv(o)))},
+                    "confident": c.get("share"), "mae_confident": c.get("mae"), "mae_flagged": o.get(f"{_tv(o)}_flagged_mae"),
                     "v2_mae": o["v2"]["mae"]},
         "note": note,
         "breakdowns": [{"title": "BY SUBJECT", "rows": rows}],
@@ -87,7 +91,8 @@ def ubfc() -> dict:
                                               ".venv/Scripts/python.exe scripts/eval_real_fusion.py --dataset D:/datasets/ubfc"}
     out = _real(p, "contact pulse oximeter (CMS50E), synchronised",
                 "UBFC-rPPG, Bobbia et al. 2017. People sit still in good light, and most have lighter skin: "
-                "it tests real faces, not motion or the skin-tone range.")
+                "it tests real faces, not motion or the skin-tone range. TRACE v4 was tuned on these 22 subjects "
+                "(with simulated faces), so this tab shows fit, not proof; the volunteers are the held-out test.")
     out.pop("_raw")
     return out
 
@@ -117,9 +122,45 @@ def volunteers() -> dict:
     }
 
 
+def learned() -> dict:
+    """Classical against learned, on exactly the same volunteer watch readings.
+
+    Option 1: two pretrained neural networks (rPPG-Toolbox, trained on PURE)
+    read the saved volunteer videos (scripts/nn_volunteers.py). Option 2: a
+    small learned selector picks green, CHROM or POS per window, trained only
+    on UBFC-rPPG and simulated data (scripts/ml_select.py). The oracle is the
+    ceiling: it looks at the watch, so it is not a method. None of these ever
+    changes a number TRACE reports.
+    """
+    res = ROOT / "results"
+    ml_p, nn_p = res / "ml_volunteers.json", res / "nn_volunteers.json"
+    if not ml_p.exists():
+        return {"available": False}
+    ml = json.loads(ml_p.read_text())
+    nn = json.loads(nn_p.read_text()) if nn_p.exists() else None
+    rows = [
+        {"key": "green", "label": "Green", "kind": "classical", "note": "one colour channel"},
+        {"key": "chrom", "label": "CHROM", "kind": "classical", "note": "colour differences"},
+        {"key": "pos", "label": "POS", "kind": "classical", "note": "the baseline to beat"},
+        {"key": "trace", "label": "TRACE", "kind": "trace", "note": "picks the sharpest method each window"},
+        {"key": "ml", "label": "TRACE + ML selector", "kind": "learned",
+         "note": "gradient-boosted trees choose the method; trained on UBFC and simulation only"},
+    ]
+    for r in rows:
+        r["mae"], r["within5"] = ml["mae"][r["key"]], ml["within5"][r["key"]]
+    if nn and nn.get("n_readings") == ml["n_readings"]:
+        for key, label in (("factorizephys", "FactorizePhys (neural)"), ("physnet", "PhysNet (neural)")):
+            rows.append({"key": key, "label": label, "kind": "neural", "mae": nn["mae"][key], "within5": nn["within5"][key],
+                         "note": "pretrained deep network, reads the face video; trained on PURE"})
+    rows.append({"key": "oracle", "label": "Oracle (ceiling)", "kind": "ceiling", "mae": ml["mae"]["oracle"],
+                 "within5": ml["within5"]["oracle"], "note": "the best of the three per window, chosen by looking at the watch"})
+    return {"available": True, "n_people": ml["n_people"], "n_readings": ml["n_readings"], "rows": rows,
+            "trace_version": ml.get("trace_version")}
+
+
 def everything() -> dict:
     out = {}
-    for key, fn in (("simulated", simulated), ("ubfc", ubfc), ("volunteers", volunteers)):
+    for key, fn in (("simulated", simulated), ("ubfc", ubfc), ("volunteers", volunteers), ("learned", learned)):
         try:
             out[key] = fn()
         except Exception as exc:  # one broken source must not hide the others

@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Caveat:wght@500;700&display=swap">
-<link rel="stylesheet" href="/static/styles.css?v=26">
+<link rel="stylesheet" href="/static/styles.css?v=27">
 </head>
 <body>
 
@@ -624,6 +624,36 @@
             </svg>
           </section>
 
+          <section class="slide" data-n="learned" aria-label="Would a learned model do better?">
+            <div class="s-text">
+              <span class="s-step">CLASSICAL VS LEARNED</span>
+              <h2>Would a learned model do better?</h2>
+              <p>We tried two ways, on the same volunteer readings, and never let either change what TRACE reports.</p>
+              <ul class="recipes">
+                <li><b>Option 1, deep networks:</b> PhysNet and FactorizePhys, trained on another dataset, read the face video directly.</li>
+                <li><b>Option 2, a learned chooser:</b> a small model picks green, CHROM or POS each window, trained on public and simulated data only.</li>
+              </ul>
+              <div class="evidence" id="deck-learned"></div>
+              <details class="deeper"><summary>Go deeper</summary>
+                <p>The chooser is a gradient-boosted tree model fed each method's heart rate, spectral quality, motion share and how well the methods agree. It never saw our volunteers. The oracle peeks at the watch and picks the closest method each window: no real method can beat it, so it shows how much room is left.</p></details>
+              <div class="jump"><button type="button" class="btn ghost small" data-goto="scenarios"><svg><use href="#i-grid"/></svg>Full table: Scenarios</button></div>
+            </div>
+            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat with a rule book races a small robot to a heart">
+              <g filter="url(#wobble)">
+                <path class="ink" d="M20,250 L460,250"/>
+                <g class="bob" transform="translate(120,248) scale(1.5)"><use href="#beat"/></g>
+                <rect class="ink" x="140" y="150" width="46" height="34" rx="4"/><path class="ink" d="M163,150 L163,184 M146,160 L158,160 M146,168 L158,168 M168,160 L180,160 M168,168 L180,168"/>
+                <rect class="ink" x="292" y="176" width="60" height="58" rx="10"/><rect class="ink" x="306" y="146" width="32" height="26" rx="6"/>
+                <circle class="blue-ink" cx="316" cy="159" r="4"/><circle class="blue-ink" cx="328" cy="159" r="4"/>
+                <path class="ink" d="M322,146 L322,132 M292,200 L274,214 M352,200 L370,214 M306,234 L306,250 M338,234 L338,250"/>
+                <circle class="orange-ink" cx="322" cy="128" r="4"/>
+                <path class="heart" d="M226,96 c-8,-12 -24,-4 -14,10 l14,14 l14,-14 c10,-14 -6,-22 -14,-10Z"/>
+                <path class="ink dash" d="M150,120 C170,100 190,96 206,98 M300,120 C280,100 262,96 246,98"/>
+              </g>
+              <g class="labels"><text class="hand orange" x="96" y="140">rules from physics</text><text class="hand blue" x="300" y="112">learned</text></g>
+            </svg>
+          </section>
+
           <section class="slide" data-n="next" aria-label="More than a heart rate">
             <div class="s-text">
               <span class="s-step">WHAT'S NEXT</span>
@@ -837,7 +867,7 @@
   <img id="pip-img" alt="Live camera preview">
 </div>
 
-<script src="/static/app.js?v=23"></script>
+<script src="/static/app.js?v=25"></script>
 <script src="/static/collect.js?v=4"></script>
 </body>
 </html>

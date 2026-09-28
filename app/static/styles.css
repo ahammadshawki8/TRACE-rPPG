@@ -787,6 +787,7 @@ table.glance tr.empty td { color: var(--ink-3); }
 .evidence .ev b { font-size: 1.1cqw; }
 .evidence .ev span, .evidence .ev em { font-size: .9cqw; }
 .skin-row b { font-size: 1.1cqw; } .skin-row span, .skin-table > em { font-size: .8cqw; }
+.evidence-foot { font-style: normal; font-size: .8cqw; letter-spacing: .08em; color: var(--soft); }
 .deeper summary { font-size: 1.7cqw; }
 .fullname { font-size: 1cqw !important; color: var(--soft) !important; max-width: 34cqw !important; line-height: 1.5; }
 .fullname b { color: var(--orange); }

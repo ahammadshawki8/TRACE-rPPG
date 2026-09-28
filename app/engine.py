@@ -21,7 +21,7 @@ import cv2
 import numpy as np
 
 from tracerppg.datasets import resample_uniform
-from tracerppg.fusion import artifact_reference, band_limited_pulses, fuse, p_correct, weights_from_quality
+from tracerppg.fusion import artifact_reference, band_limited_pulses, fuse, fuse_kwargs, p_correct, weights_from_quality
 from tracerppg.hrv import DISCLAIMER, HRV_METHOD, MIN_HRV_SECONDS, clean_rr, hrv_from_pulse
 from tracerppg.roi import REGIONS, FaceTracker, skin_mean
 from tracerppg.spectral import HR_BAND, estimate_bpm
@@ -393,12 +393,21 @@ class LiveEngine:
         recent = t >= now - self.window_s
         if (buffered >= MIN_S and recent.sum() > FS * MIN_S and now - t[-1] < .5
                 and np.max(np.diff(t[recent])) < .5):
-            m = t >= now - self.window_s
-            tu, cols = self._uniform(t[m], rgb[m])
-            pulses = band_limited_pulses(cols, FS)
-            art = artifact_reference(cols, FS)
-            fr = fuse(pulses, FS, float(self.params["gamma"]), float(self.params["confidence"]),
-                      artifact=art, mask_k=float(self.params.get("mask_k", 4.0)))
+            def window(span: float):
+                m = t >= now - span
+                tu, cols = self._uniform(t[m], rgb[m])
+                pulses = band_limited_pulses(cols, FS)
+                fr = fuse(pulses, FS, float(self.params["gamma"]), float(self.params["confidence"]),
+                          artifact=artifact_reference(cols, FS), **fuse_kwargs(self.params))
+                return tu, cols, pulses, fr
+
+            tu, cols, pulses, fr = window(self.window_s)
+            # v4: a weak read-out is redone over a longer window when the buffer holds it (simeval.analyse).
+            lq, lw = float(self.params.get("long_quality", 0.0)), float(self.params.get("long_window_s", 0.0))
+            if lq and lw > self.window_s and fr.quality < lq and buffered >= lw:
+                longer = window(lw)
+                if longer[3].quality > fr.quality:
+                    tu, cols, pulses, fr = longer
             band = (fr.freqs >= 0.6) & (fr.freqs <= HR_BAND[1])
             fp = fr.fused_power[band]
             fp = fp / fp.max() if fp.max() > 0 else fp

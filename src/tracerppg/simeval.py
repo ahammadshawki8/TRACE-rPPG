@@ -15,7 +15,7 @@ from pathlib import Path
 import numpy as np
 
 from .datasets import resample_uniform
-from .fusion import artifact_reference, band_limited_pulses, fuse, p_correct, weights_from_quality
+from .fusion import artifact_reference, band_limited_pulses, fuse, fuse_kwargs, p_correct, weights_from_quality
 from .roi import FaceTracker, skin_mean
 from .simulate import LiveSimulator
 
@@ -25,11 +25,12 @@ METHODS = ("green", "chrom", "pos")
 
 
 def frozen_params(version: int | None = None) -> dict:
-    """The fusion parameters in force: v3 (results/fusion_params_v3.json,
-    per-window selection) if it exists, else v2. Pass version=2 for v2."""
+    """The fusion parameters in force: the newest frozen file (v4, then v3,
+    per-window selection), else v2. Pass version=2, 3 or 4 for that version."""
     res = Path(__file__).resolve().parents[2] / "results"
-    if version != 2 and (res / "fusion_params_v3.json").exists():
-        return json.loads((res / "fusion_params_v3.json").read_text())
+    for v in (4, 3):
+        if version in (None, v) and (res / f"fusion_params_v{v}.json").exists():
+            return json.loads((res / f"fusion_params_v{v}.json").read_text())
     p = res / "fusion_params.json"
     return json.loads(p.read_text()) if p.exists() else {"gamma": 1.0, "mask_k": 4.0, "confidence": 0.24}
 
@@ -58,7 +59,28 @@ def stream(sim: LiveSimulator, seconds: float, schedule: dict[float, dict] | Non
 
 
 def analyse(t: np.ndarray, rgb: np.ndarray, t_end: float, params: dict, win: float = WINDOW_S) -> dict | None:
-    """One read-out, as the engine makes it, from the `win` seconds before `t_end`."""
+    """One read-out, as the engine makes it, from the `win` seconds before `t_end`.
+
+    v4: when the 20 s read-out's quality is below `long_quality` and the
+    recording already holds `long_window_s` seconds, the read-out is redone
+    over that longer window. A weak pulse (darker skin, dim light) gains from
+    more beats, and a longer window resolves rhythms more finely (1/T). The
+    longer read-out is used only if its quality is higher."""
+    r = _analyse(t, rgb, t_end, params, win)
+    lq, lw = float(params.get("long_quality", 0.0)), float(params.get("long_window_s", 0.0))
+    if r is not None and lq and lw > win and r["quality"] < lq and t_end - lw >= t[0] - 0.05:
+        r2 = _analyse(t, rgb, t_end, params, lw)
+        if r2 is not None and r2["quality"] > r["quality"]:
+            # Only TRACE's read-out moves to the longer window. The single
+            # methods stay on the standard 20 s window, so the green, CHROM and
+            # POS baselines are the same whichever TRACE version is in force.
+            r2["window_s"] = lw
+            r2["methods_long"], r2["methods"] = r2["methods"], r["methods"]
+            return r2
+    return r
+
+
+def _analyse(t: np.ndarray, rgb: np.ndarray, t_end: float, params: dict, win: float) -> dict | None:
     m = (t > t_end - win) & (t <= t_end)
     # Judge coverage by time, not by frame count: real webcams often deliver
     # fewer than 30 fps (one delivered 20.7), and the signal is resampled onto
@@ -70,7 +92,7 @@ def analyse(t: np.ndarray, rgb: np.ndarray, t_end: float, params: dict, win: flo
     cols = np.column_stack([resample_uniform(t[m], rgb[m, c], FS)[1] for c in range(3)])
     pulses = band_limited_pulses(cols, FS)
     fr = fuse(pulses, FS, float(params["gamma"]), float(params["confidence"]),
-              artifact=artifact_reference(cols, FS), mask_k=float(params.get("mask_k", 4.0)))
+              artifact=artifact_reference(cols, FS), **fuse_kwargs(params))
     return {
         "bpm": fr.bpm, "quality": fr.quality, "confident": bool(fr.confident), "p_correct": p_correct(fr.quality, params),
         "weights": dict(fr.weights),

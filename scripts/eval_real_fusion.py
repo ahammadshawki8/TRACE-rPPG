@@ -23,6 +23,7 @@ from _common import ROOT, UBFC_DIR
 from tracerppg.datasets import load_dataset, reference_hr, resample_uniform
 from tracerppg.fusion import artifact_reference, band_limited_pulses, fuse, harmonic_continuity
 from tracerppg.roi import Traces, extract_traces
+from tracerppg.simeval import analyse, frozen_params
 
 FS, WIN, HOP = 30.0, 20.0, 2.5
 METHODS = ("green", "chrom", "pos")
@@ -36,6 +37,17 @@ def traces_for(rec, cache_dir) -> Traces:
     tr = extract_traces(rec.video_path)
     tr.save(p)
     return tr
+
+
+V4 = frozen_params(4) if (ROOT / "results" / "fusion_params_v4.json").exists() else None
+
+
+def v4_readout(t, rgb, te) -> dict:
+    """TRACE v4 through simeval.analyse, exactly as the app and the volunteer scoring read it."""
+    if V4 is None:
+        return {}
+    a = analyse(t, rgb, te, V4)
+    return {} if a is None else {"v4": a["bpm"], "v4_conf": bool(a["confident"])}
 
 
 def evaluate(rec, tr: Traces, v2: dict, v3: dict) -> list[dict]:
@@ -61,6 +73,7 @@ def evaluate(rec, tr: Traces, v2: dict, v3: dict) -> list[dict]:
         prev = b3
         rows.append({"t": float(te), "ref": float(ref), "v2": f2.bpm, "v2_conf": bool(f2.confident),
                      "v3": b3, "v3_conf": bool(f3.quality >= v3["confidence"]),
+                     **v4_readout(t, rgb, te),
                      **{k: f2.per_method[k].bpm for k in METHODS},
                      **{f"w_{k}": f3.weights[k] for k in METHODS}})
     return rows
@@ -70,10 +83,11 @@ def summary(rows: list[dict]) -> dict | None:
     if not rows:
         return None
     out = {"n": len(rows)}
-    for k in (*METHODS, "v2", "v3"):
+    versions = ("v2", "v3", "v4") if all("v4" in r for r in rows) else ("v2", "v3")
+    for k in (*METHODS, *versions):
         e = np.array([abs(r[k] - r["ref"]) for r in rows])
         out[k] = {"mae": float(e.mean()), "within5": float((e <= 5).mean())}
-    for v in ("v2", "v3"):
+    for v in versions:
         c = np.array([r[f"{v}_conf"] for r in rows])
         e = np.array([abs(r[v] - r["ref"]) for r in rows])
         out[f"{v}_confident"] = {"share": float(c.mean()), "mae": float(e[c].mean()) if c.any() else None}
@@ -108,12 +122,16 @@ def main(root, tag: str) -> None:
             continue
         per[rec.subject] = s
         allrows += rows
-        print(f"  {rec.subject:10s} " + " ".join(f"{k} {s[k]['mae']:5.1f}" for k in (*METHODS, "v2", "v3")))
+        print(f"  {rec.subject:10s} " + " ".join(f"{k} {s[k]['mae']:5.1f}" for k in (*METHODS, "v2", "v3", "v4") if k in s))
     tot = summary(allrows)
     print(f"\n  {len(recs)} subjects, {tot['n']} windows. MAE / within 5 BPM against the contact oximeter:")
-    for k in (*METHODS, "v2", "v3"):
+    for k in (*METHODS, "v2", "v3", "v4"):
+        if k not in tot:
+            continue
         print(f"    {k:6s} {tot[k]['mae']:6.2f}  {tot[k]['within5']:.0%}")
-    for v in ("v2", "v3"):
+    for v in ("v2", "v3", "v4"):
+        if f"{v}_confident" not in tot:
+            continue
         c = tot[f"{v}_confident"]
         print(f"    {v} confident on {c['share']:.0%}: MAE {c['mae']}")
     (ROOT / "results" / f"real_fusion_{tag}.json").write_text(json.dumps({"overall": tot, "subjects": per}, indent=1))
