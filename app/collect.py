@@ -11,12 +11,14 @@ variant later, so by default no face video is kept. A name is optional and
 stays in volunteers.json on this computer: it is never part of an export,
 and every analysis refers to the code.
 
-Scoring: each smartwatch reading entered at time T (seconds from the start of
-the recording, T >= 20) is compared with the read-out the app would make from
-the 20 s window ending at T. The smartwatch used measures for about 20 s and
-then locks its value, so its reading describes the same 20 s as TRACE's
-window. Readings are taken at 20, 40 and 60 s; at 60 s capture stops and
-the recording waits for the last reading before it is saved.
+Scoring (rule fixed on 2026-09-28, the same for every clip and method): the
+smartwatch measures for about 20 s and then locks its value. Its reading is
+compared with the median of five read-outs whose 20 s windows end every 2.5 s
+from 5 s before to 5 s after the moment the watch locked. That moment is the
+Mark time when the presenter pressed Mark, or 5 s before the reading was
+typed for older clips recorded without Mark (typing delay). The median
+absorbs a momentary glitch without letting the scorer pick the read-out that
+happens to match the watch. Read-outs need a full 20 s window.
 
 Typing delay: the watch locks its number a few seconds before the presenter
 has typed it. The Mark button (Space) freezes the time the instant the watch
@@ -45,6 +47,9 @@ import os
 # TRACE_COLLECT_DIR lets a test run use a scratch folder instead of the real data/own.
 DATA = Path(os.environ.get("TRACE_COLLECT_DIR", str(ROOT / "data" / "own")))
 METHODS = ("green", "chrom", "pos")
+TYPING_LAG_S = 5.0     # clips without Mark: the watch locked about this long before the number was typed
+MEDIAN_HALF_S = 5.0    # read-outs from 5 s before to 5 s after the lock ...
+MEDIAN_STEP_S = 2.5    # ... every 2.5 s: five read-outs, and their median is compared
 AGE_GROUPS = ("under 18", "18-29", "30-44", "45-59", "60+")
 LIGHTING = ("room light", "bright lamp", "dim room", "daylight window", "screen lit")
 MOTION = ("still", "talking", "head movement", "natural")
@@ -266,14 +271,18 @@ def score_clip(folder: Path, params: dict | None = None) -> dict:
     t, rgb = t[ok], rgb[ok]
     rows = []
     for r in meta.get("readings", []):
-        if r["t"] < WINDOW_S:
+        locked = r["t"] - (0.0 if r.get("marked") else TYPING_LAG_S)
+        ends = [e for e in np.arange(locked - MEDIAN_HALF_S, locked + MEDIAN_HALF_S + 1e-9, MEDIAN_STEP_S) if e >= WINDOW_S]
+        outs = [a for a in (analyse(t, rgb, e, params) for e in ends) if a is not None]
+        if not outs:
             continue
-        a = analyse(t, rgb, r["t"], params)
-        if a is None:
-            continue
-        rows.append({"t": r["t"], "watch": r["bpm"], "trace": a["bpm"], "confident": a["confident"],
-                     "p_correct": a["p_correct"], "weights": a["weights"],
-                     **{m: a["methods"][m]["bpm"] for m in METHODS}})
+        med = lambda xs: float(np.median(xs))
+        rows.append({"t": r["t"], "locked_t": round(float(locked), 2), "n_readouts": len(outs), "watch": r["bpm"],
+                     "trace": med([a["bpm"] for a in outs]),
+                     "confident": sum(a["confident"] for a in outs) > len(outs) / 2,
+                     "p_correct": med([a["p_correct"] for a in outs if a["p_correct"] is not None] or [np.nan]),
+                     "weights": {m: float(np.mean([a["weights"][m] for a in outs])) for m in METHODS},
+                     **{m: med([a["methods"][m]["bpm"] for a in outs]) for m in METHODS}})
     return {"n": len(rows), "rows": rows, **_errors(rows)}
 
 
