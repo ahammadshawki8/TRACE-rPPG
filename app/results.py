@@ -107,6 +107,7 @@ def volunteers() -> dict:
         return [_row(fmt(k), a["n"], a["mae"], a["within5"], a.get("mean_weights"), {"people": a["volunteers"]}) for k, a in g.items()]
 
     roman = "I II III IV V VI".split()
+    skin_of = {c["volunteer"]: c["fitzpatrick"] for c in s["clips"]}
     return {
         "available": True, "reference": "smartwatch reading over the same 20 s",
         "subjects": s["n_volunteers_scored"], "readings": s["n_readings"],
@@ -118,6 +119,8 @@ def volunteers() -> dict:
             {"title": "BY LIGHTING", "rows": rows(s["by_lighting"])},
             {"title": "BY SKIN TYPE", "rows": rows(s["by_skin"], lambda k: f"Type {roman[int(k) - 1]}" if k.isdigit() else k)},
             {"title": "BY AGE GROUP", "rows": rows(s["by_age"])},
+            # Codes only: a volunteer's optional name never leaves collect.py.
+            {"title": "BY VOLUNTEER", "rows": rows(s["by_volunteer"], lambda k: f"{k} (type {roman[int(skin_of.get(k, 0)) - 1]})" if skin_of.get(k) else k)},
         ],
     }
 

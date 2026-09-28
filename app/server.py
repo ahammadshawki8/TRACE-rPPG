@@ -101,9 +101,7 @@ def collect_open(code: str, clip: str, what: str = "folder"):
 
 @app.get("/api/collect/study")
 def collect_study():
-    s = collect.study()
-    s.pop("rows")
-    return s
+    return {k: v for k, v in collect.study().items() if k != "rows"}  # study() is cached: never mutate it
 
 
 @app.get("/api/collect/study.csv")

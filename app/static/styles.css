@@ -907,3 +907,39 @@ table.glance tr.empty td { color: var(--ink-3); }
   .slide.appendix { grid-template-columns: 1fr; }
   .refs { columns: 1; font-size: 12px; } .refs h3 { font-size: 11px; } .credits dd { font-size: 24px; } .credits dt { font-size: 11px; }
 }
+
+/* Scenarios: one card per source on top (TRACE against the POS baseline), then that source's details. */
+.res-sources { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); }
+.src-card { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 10px; align-content: start; padding: 18px 20px;
+  border-radius: var(--r-lg); background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow);
+  transition: border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease), background var(--t-fast); }
+.src-card:hover { border-color: var(--line-2); transform: translateY(-1px); }
+.src-card:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+.src-card[aria-selected="true"] { border-color: color-mix(in srgb, var(--lime) 55%, transparent); background: color-mix(in srgb, var(--lime) 4%, var(--panel)); }
+.src-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.src-top b { font-size: 16px; font-weight: 600; color: var(--ink); }
+.src-blurb { font-size: 12.5px; color: var(--ink-2); line-height: 1.45; min-height: 2.9em; }
+.src-nums { display: flex; align-items: flex-end; gap: 22px; flex-wrap: wrap; }
+.src-nums .lbl { display: block; font-size: 10px; letter-spacing: .14em; color: var(--ink-3); margin-bottom: 2px; }
+.src-trace .big-n { font-size: 40px; line-height: 1; color: var(--lime); }
+.src-base .mid-n { font-size: 24px; line-height: 1; color: var(--c); }
+.src-unit { font-size: 10px; letter-spacing: .12em; color: var(--ink-3); margin-left: auto; align-self: flex-end; }
+.src-foot { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 10.5px; letter-spacing: .08em; color: var(--ink-3);
+  border-top: 1px solid var(--line); padding-top: 10px; }
+.src-foot .good { color: var(--lime); } .src-foot .warn { color: var(--amber); }
+.src-card.empty .src-none { font-size: 11px; letter-spacing: .12em; color: var(--ink-3); }
+.result-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 28px; align-items: center; }
+.res-section { margin-top: 10px; }
+.res-section h3 { margin: 0; font-size: 18px; font-weight: 600; color: var(--ink); }
+.res-section p { margin: 4px 0 0; font-size: 13px; color: var(--ink-2); }
+table.learned .barcol { width: 22%; }
+table.learned .kind { font-size: 10.5px; letter-spacing: .1em; color: var(--ink-3); }
+table.learned tr.trace td { color: var(--ink); font-weight: 600; }
+table.learned tr.ceiling td { color: var(--ink-3); }
+.minibar { display: block; height: 6px; border-radius: 4px; background: var(--panel-3); position: relative; overflow: hidden; }
+.minibar::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w); background: var(--c); border-radius: 4px; }
+.study-link .btn-row { display: flex; gap: 8px; }
+@media (max-width: 900px) {
+  .res-sources, .result-grid { grid-template-columns: 1fr; }
+  .src-trace .big-n { font-size: 32px; }
+}

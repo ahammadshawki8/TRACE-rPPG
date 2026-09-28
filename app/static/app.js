@@ -67,9 +67,11 @@ function go(v) {
   window.scrollTo({ top: 0 });
 }
 $$(".rail button[data-view]").forEach(b => b.addEventListener("click", () => go(b.dataset.view)));
+// data-res-tab also picks which source Scenarios opens on (for example the volunteers).
+const goFrom = c => { if (c.dataset.resTab) { hubTab = c.dataset.resTab; localSet("res-tab", hubTab); hubKey = ""; } go(c.dataset.goto); };
 $$("[data-goto]").forEach(c => {
-  c.addEventListener("click", () => go(c.dataset.goto));
-  c.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(c.dataset.goto); } });
+  c.addEventListener("click", () => goFrom(c));
+  c.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goFrom(c); } });
 });
 
 /* ================================================================== server link */
@@ -178,7 +180,7 @@ function renderAll() {
   renderSimPanel();
   renderPip();
   if (view === "measure") renderMeasure();
-  if (view === "methods") { renderFusion(); drawHistory(); renderEval(); }
+  if (view === "methods") { renderFusion(); drawHistory(); }
   if (view === "scenarios" && hubDirty()) renderScenarios();
   if (view === "signal") { renderSignal(); renderDeckEvidence(); }
   if (view === "next") { updateHrvRing(); renderLiveness(); renderUses(); }
@@ -397,14 +399,6 @@ function drawHistory() {
   ctx.textAlign = "left"; ctx.fillText("-60 S", 0, h - 2); ctx.textAlign = "right"; ctx.fillText("NOW", pw, h - 2);
 }
 
-function renderEval() {
-  if (!scenarios) return;
-  const O = scenarios.overall, C = MCOL(), mx = Math.max(O.mae.green, O.mae.chrom, O.mae.pos, O.mae.trace) * 1.05;
-  $("#eval-bars").innerHTML =
-    METHODS.map(m => wbar(MNAME[m], O.mae[m], mx, C[m], fmt(O.mae[m], 1))).join("") +
-    wbar("TRACE", O.mae.trace, mx, css("--lime"), fmt(O.mae.trace, 1), "trace");
-  $("#eval-foot").textContent = `Average error in BPM over ${O.n.toLocaleString()} simulated readings: ${scenarios.scenarios.length} conditions x 6 skin types. Lower is better. Details on the Scenarios screen.`;
-}
 
 /* ================================================================== simulator panel */
 // Mean cheek colour the simulator renders for each skin type (CLAUDE.md 11.1).
@@ -500,10 +494,15 @@ function renderSimPanel() {
 /* ================================================================== scenarios: the results hub */
 // Everything here is read from /api/results (app/results.py). Three sources,
 // each against its own reference; the page never recomputes a number.
+// Layout: one card per source on top (TRACE against the POS baseline, click
+// to open), then that source's result card and its details in reading order.
 const SOURCES = [
-  ["simulated", "Simulated", "RUNS"],
-  ["ubfc", "UBFC-rPPG dataset", "SUBJECTS"],
-  ["volunteers", "Real volunteers", "VOLUNTEERS"],
+  { key: "simulated", name: "Simulated faces", unit: "RUNS", tag: "HELD-OUT TEST", tagClass: "good",
+    blurb: "Exact true heart rate; skin, motion and light varied on purpose" },
+  { key: "ubfc", name: "Public dataset", unit: "SUBJECTS", tag: "TUNING DATA", tagClass: "warn",
+    blurb: "UBFC-rPPG, finger pulse oximeter; people sitting still" },
+  { key: "volunteers", name: "Our volunteers", unit: "PEOPLE", tag: "REAL PEOPLE", tagClass: "good",
+    blurb: "Our webcam and a smartwatch, recorded on the Collect screen" },
 ];
 let hub = null, hubTab = localGet("res-tab") || "simulated", hubKey = "", scnSkin = "all";
 async function loadHub() {
@@ -522,50 +521,71 @@ function maeCells(mae) {
   const best = Math.min(...COLS.map(m => mae[m] ?? Infinity));
   return COLS.map(m => `<td class="${mae[m] === best ? "best" : ""}">${fmt(mae[m], 1)}</td>`).join("");
 }
-function renderGlance() {
-  $("#res-glance").innerHTML = `<thead><tr><th>SOURCE</th><th>REFERENCE</th><th>SIZE</th>${COLS.map(m => `<th>${COLNAME[m]}</th>`).join("")}<th>TRACE WITHIN 5</th></tr></thead><tbody>${
-    SOURCES.map(([k, name, unit]) => { const s = hub?.[k] || {};
-      return `<tr class="${s.available ? "" : "empty"}"><td><button type="button" class="linkish" data-tab="${k}">${name}</button></td>
-        <td class="how">${s.available ? esc(s.reference) : "not yet collected"}</td>
-        <td>${s.available ? `${s.subjects} ${unit} / ${s.readings}` : "--"}</td>
-        ${maeCells(s.available ? s.overall.mae : null)}<td>${s.available ? pct(s.overall.within5?.trace) : "--"}</td></tr>`; }).join("")}</tbody>`;
-  $$("#res-glance [data-tab]").forEach(b => b.addEventListener("click", () => { hubTab = b.dataset.tab; localSet("res-tab", hubTab); renderScenarios(); }));
+function setHubTab(k) { hubTab = k; localSet("res-tab", k); hubKey = ""; renderScenarios(); }
+function renderSources() {
+  const C = MCOL();
+  $("#res-sources").innerHTML = SOURCES.map(src => {
+    const s = hub?.[src.key] || {}, on = src.key === hubTab;
+    if (!s.available) return `<button type="button" role="tab" class="src-card empty" aria-selected="${on}" data-tab="${src.key}">
+      <span class="src-top"><b>${src.name}</b></span><span class="src-blurb">${src.blurb}</span>
+      <span class="src-none mono">NOT YET COLLECTED</span></button>`;
+    const m = s.overall.mae, d = m.pos - m.trace;
+    const verdict = Math.abs(d) < 0.05 ? "TIED WITH POS" : d > 0 ? `${fmt(d, 1)} BPM BETTER THAN POS` : `${fmt(-d, 1)} BPM BEHIND POS`;
+    return `<button type="button" role="tab" class="src-card" aria-selected="${on}" data-tab="${src.key}">
+      <span class="src-top"><b>${src.name}</b><span class="pill small ${src.tagClass}">${src.tag}</span></span>
+      <span class="src-blurb">${src.blurb}</span>
+      <span class="src-nums">
+        <span class="src-trace"><span class="mono lbl">TRACE</span><span class="mono big-n">${fmt(m.trace, 1)}</span></span>
+        <span class="src-base" style="--c:${C.pos}"><span class="mono lbl">POS</span><span class="mono mid-n">${fmt(m.pos, 1)}</span></span>
+        <span class="src-unit mono">BPM MEAN ERROR</span>
+      </span>
+      <span class="src-foot mono"><span class="${d > 0.05 ? "good" : d < -0.05 ? "warn" : ""}">${verdict}</span><span>${s.subjects} ${src.unit} / ${s.readings.toLocaleString()} READINGS</span></span>
+    </button>`;
+  }).join("");
+  $$("#res-sources [data-tab]").forEach(b => b.addEventListener("click", () => setHubTab(b.dataset.tab)));
+}
+function resultCard(s, src) {
+  const O = s.overall, C = MCOL(), mx = Math.max(...COLS.map(m => O.mae[m])) * 1.05;
+  return `<article class="card span-12 result-card">
+    <header class="card-h"><span class="label mono">${src.name.toUpperCase()} / MEAN ERROR IN BPM, LOWER IS BETTER</span><span class="mono muted">AGAINST: ${esc(s.reference).toUpperCase()}</span></header>
+    <div class="result-grid">
+      <div class="wbars">${COLS.map(m => wbar(COLNAME[m], O.mae[m], mx, m === "trace" ? css("--lime") : C[m], fmt(O.mae[m], 1), m === "trace" ? "trace" : "")).join("")}</div>
+      <dl class="kv">
+        <div><dt class="mono">TRACE WITHIN 5 BPM</dt><dd class="mono">${pct(O.within5?.trace)}</dd></div>
+        <div><dt class="mono">POS WITHIN 5 BPM</dt><dd class="mono">${pct(O.within5?.pos)}</dd></div>
+        <div><dt class="mono">TRACE MARKED CONFIDENT</dt><dd class="mono">${pct(O.confident)}</dd></div>
+        <div><dt class="mono">ERROR WHEN CONFIDENT</dt><dd class="mono">${O.mae_confident == null ? "--" : fmt(O.mae_confident, 1) + " BPM"}</dd></div>
+        ${O.mae_flagged == null ? "" : `<div><dt class="mono">ERROR WHEN FLAGGED</dt><dd class="mono">${fmt(O.mae_flagged, 1)} BPM</dd></div>`}
+      </dl>
+    </div>
+    ${s.note ? `<p class="foot">${esc(s.note)}</p>` : ""}
+  </article>`;
+}
+function sectionTitle(text, sub) {
+  return `<div class="span-12 res-section"><h3>${text}</h3>${sub ? `<p>${sub}</p>` : ""}</div>`;
 }
 function renderScenarios() {
-  if (!hub) { $("#res-body").innerHTML = `<div class="empty-state small"><p>Loading results.</p></div>`; return; }
-  renderGlance();
-  $("#res-tabs").innerHTML = SOURCES.map(([k, name]) => `<button type="button" role="tab" aria-selected="${k === hubTab}" data-tab="${k}">
-    <i class="avail ${hub[k]?.available ? "on" : ""}"></i>${name}</button>`).join("");
-  $$("#res-tabs [data-tab]").forEach(b => b.addEventListener("click", () => { hubTab = b.dataset.tab; localSet("res-tab", hubTab); renderScenarios(); }));
-  const s = hub[hubTab] || {}, unit = SOURCES.find(x => x[0] === hubTab)[2];
-  $("#res-note").textContent = s.available ? s.note || "" : "";
+  if (!hub) { $("#res-body").innerHTML = `<div class="card"><div class="empty-state small"><p>Loading results.</p></div></div>`; return; }
+  renderSources();
+  const src = SOURCES.find(x => x.key === hubTab) || SOURCES[0], s = hub[src.key] || {};
   const body = $("#res-body");
   if (!s.available) {
-    body.innerHTML = `<div class="card"><div class="empty-state"><div><svg><use href="#i-grid"/></svg><p class="t">No ${SOURCES.find(x => x[0] === hubTab)[1].toLowerCase()} results yet.</p><p class="mono how-to"></p></div></div></div>`;
+    body.innerHTML = `<div class="card"><div class="empty-state"><div><svg><use href="#i-grid"/></svg><p class="t">No ${src.name.toLowerCase()} results yet.</p><p class="mono how-to"></p></div></div></div>`;
     body.querySelector(".how-to").textContent = s.how_to || "";
     return;
   }
-  const O = s.overall, C = MCOL(), mx = Math.max(...COLS.map(m => O.mae[m])) * 1.05;
-  let html = `<div class="bento">
-    <article class="card span-7">
-      <header class="card-h"><span class="label mono">MEAN ERROR / BPM</span><span class="mono muted">AGAINST: ${esc(s.reference).toUpperCase()}</span></header>
-      <div class="wbars">${COLS.map(m => wbar(COLNAME[m], O.mae[m], mx, m === "trace" ? css("--lime") : C[m], fmt(O.mae[m], 1), m === "trace" ? "trace" : "")).join("")}</div>
-      ${O.v2_mae != null ? `<p class="foot">TRACE v2 (the older blend) on the same data: ${fmt(O.v2_mae, 1)} BPM.</p>` : ""}
-    </article>
-    <article class="card span-5">
-      <header class="card-h"><span class="label mono">SUMMARY</span></header>
-      <dl class="kv">
-        <div><dt class="mono">${unit}</dt><dd class="mono">${s.subjects}</dd></div>
-        <div><dt class="mono">READINGS</dt><dd class="mono">${s.readings.toLocaleString()}</dd></div>
-        <div><dt class="mono">TRACE WITHIN 5 BPM</dt><dd class="mono">${pct(O.within5?.trace)}</dd></div>
-        <div><dt class="mono">MARKED CONFIDENT</dt><dd class="mono">${pct(O.confident)}</dd></div>
-        <div><dt class="mono">ERROR WHEN CONFIDENT</dt><dd class="mono">${O.mae_confident == null ? "--" : fmt(O.mae_confident, 1) + " BPM"}</dd></div>
-        <div><dt class="mono">ERROR WHEN FLAGGED</dt><dd class="mono">${O.mae_flagged == null ? "--" : fmt(O.mae_flagged, 1) + " BPM"}</dd></div>
-      </dl>
-    </article>`;
-  if (hubTab === "simulated") html += simulatedSection(s);
-  for (const b of s.breakdowns || []) html += breakdownCard(b);
-  if (hubTab === "volunteers" && hub.learned?.available) html += learnedCard(hub.learned);
+  const bd = t => (s.breakdowns || []).find(b => b.title === t);
+  let html = `<div class="bento">` + resultCard(s, src);
+  if (src.key === "simulated") {
+    html += sectionTitle("Which method wins where", "Each condition can be recreated live: start a simulated volunteer, then press Try it.") + simulatedSection(s);
+  } else if (src.key === "ubfc") {
+    html += sectionTitle("Subject by subject", "Error per recording against the finger oximeter. Best of the four in green.") + splitBreakdown(bd("BY SUBJECT"));
+  } else {
+    if (hub.learned?.available) html += sectionTitle("Classical vs learned", "Would machine learning do better? The same watch readings, scored the same way.") + learnedCard(hub.learned);
+    html += sectionTitle("Where it works and where it struggles", "Real volunteers grouped by skin type, motion, lighting and age.");
+    for (const t of ["BY SKIN TYPE", "BY MOTION", "BY LIGHTING", "BY AGE GROUP"]) if (bd(t)) html += breakdownCard(bd(t), "span-6");
+    if (bd("BY VOLUNTEER")) html += sectionTitle("Volunteer by volunteer", "Codes only; names stay on the Collect screen. SELECTED shows how often TRACE chose green, CHROM and POS.") + breakdownCard(bd("BY VOLUNTEER"));
+  }
   body.innerHTML = html + "</div>";
   body.querySelectorAll("[data-try]").forEach(b => b.addEventListener("click", () => tryScenario(+b.dataset.try)));
   body.querySelectorAll("[data-skin]").forEach(b => b.addEventListener("click", () => { scnSkin = b.dataset.skin; hubKey = ""; renderScenarios(); }));
@@ -579,18 +599,25 @@ function kindColor(r) {
 function learnedCard(L) {
   const mx = Math.max(...L.rows.map(r => r.mae)) * 1.05;
   return `<article class="card span-12">
-    <header class="card-h"><span class="label mono">CLASSICAL VS LEARNED / SAME ${L.n_readings} WATCH READINGS, ${L.n_people} PEOPLE</span><span class="mono muted">MEAN ERROR IN BPM, LOWER IS BETTER</span></header>
-    <div class="wbars">${L.rows.map(r => wbar(r.label, r.mae, mx, kindColor(r), fmt(r.mae, 1), r.kind === "trace" ? "trace" : "")).join("")}</div>
-    <div class="table-scroll"><table class="data"><thead><tr><th>METHOD</th><th>KIND</th><th>MEAN ERROR</th><th>WITHIN 5 BPM</th><th>WHAT IT IS</th></tr></thead><tbody>${
-      L.rows.map(r => `<tr><td>${esc(r.label)}</td><td>${r.kind.toUpperCase()}</td><td>${fmt(r.mae, 2)}</td><td>${pct(r.within5)}</td><td class="how">${esc(r.note)}</td></tr>`).join("")}</tbody></table></div>
-    <p class="foot">Option 1: a pretrained deep network, FactorizePhys, reads the same face videos. Option 2: a small learned model chooses among green, CHROM and POS, trained only on UBFC-rPPG and simulated faces, never on these volunteers. Neither changes what TRACE reports; they are here to compare. The oracle is not a method: it peeks at the watch, so it shows the best any chooser could do with these three methods.</p>
+    <header class="card-h"><span class="label mono">SAME ${L.n_readings} WATCH READINGS, ${L.n_people} PEOPLE / MEAN ERROR IN BPM</span><span class="mono muted">LOWER IS BETTER</span></header>
+    <div class="table-scroll"><table class="data learned"><thead><tr><th>METHOD</th><th>KIND</th><th class="barcol"></th><th>ERROR</th><th>WITHIN 5 BPM</th><th>WHAT IT IS</th></tr></thead><tbody>${
+      L.rows.map(r => `<tr class="${r.kind}"><td><span class="who" style="--c:${kindColor(r)}"><i></i>${esc(r.label)}</span></td><td class="mono kind">${r.kind.toUpperCase()}</td>
+        <td class="barcol"><span class="minibar" style="--c:${kindColor(r)};--w:${Math.min(100, r.mae / mx * 100).toFixed(1)}%"></span></td>
+        <td class="mono">${fmt(r.mae, 2)}</td><td class="mono">${pct(r.within5)}</td><td class="how">${esc(r.note)}</td></tr>`).join("")}</tbody></table></div>
+    <p class="foot">Option 1, a pretrained deep network (FactorizePhys), reads the same face videos. Option 2, a small learned model, chooses among green, CHROM and POS; it was trained only on UBFC-rPPG and simulated faces, never on these volunteers. Neither changes what TRACE reports. The oracle is not a method: it peeks at the watch, so it shows the best any chooser could do with these three methods.</p>
   </article>`;
 }
-function breakdownCard(b) {
-  const selCol = b.rows.some(r => r.selected);
-  return `<article class="card span-12"><header class="card-h"><span class="label mono">${b.title}</span></header>
+function breakdownCard(b, span = "span-12") {
+  const selCol = b.rows.some(r => r.selected) && span === "span-12";
+  return `<article class="card ${span}"><header class="card-h"><span class="label mono">${b.title}</span></header>
     <div class="table-scroll"><table class="data"><thead><tr><th>${b.title.replace("BY ", "")}</th><th>READINGS</th>${b.rows.some(r => r.people) ? "<th>PEOPLE</th>" : ""}${COLS.map(m => `<th>${COLNAME[m]}</th>`).join("")}<th>TRACE WITHIN 5</th>${selCol ? "<th>SELECTED G / C / P (%)</th>" : ""}</tr></thead><tbody>${
       b.rows.map(r => `<tr><td>${esc(r.label)}</td><td>${r.n}</td>${b.rows.some(x => x.people) ? `<td>${r.people ?? "--"}</td>` : ""}${maeCells(r.mae)}<td>${pct(r.within5?.trace)}</td>${selCol ? `<td>${r.selected ? METHODS.map(m => fmt(r.selected[m] * 100)).join(" / ") : "--"}</td>` : ""}</tr>`).join("")}</tbody></table></div></article>`;
+}
+// A long table (UBFC subjects) split into two side-by-side halves.
+function splitBreakdown(b) {
+  if (!b) return "";
+  const half = Math.ceil(b.rows.length / 2);
+  return breakdownCard({ ...b, rows: b.rows.slice(0, half) }, "span-6") + breakdownCard({ ...b, rows: b.rows.slice(half) }, "span-6");
 }
 function simulatedSection(s) {
   const C = MCOL(), canTry = state.running && state.source === "sim";
@@ -603,17 +630,24 @@ function simulatedSection(s) {
       <td><button type="button" class="btn ghost small" data-try="${i}" ${canTry ? "" : "disabled"} title="${canTry ? "Apply to the live volunteer" : "Start a simulated volunteer first"}">Try it</button></td></tr>`;
   }).join("");
   const heat = v => `rgba(255, 107, 120, ${Math.min(0.85, v / 30).toFixed(2)})`;
+  const skinRows = ((s.breakdowns || []).find(b => b.title === "BY SKIN TYPE") || {}).rows || [];
   return `<article class="card span-12">
-      <header class="card-h"><span class="label mono">WHICH METHOD WINS WHERE</span>
+      <header class="card-h"><span class="label mono">CONDITIONS / MEAN ERROR IN BPM</span>
         <div class="seg small">${skins.map(k => `<button type="button" data-skin="${k}" aria-checked="${String(k) === String(scnSkin)}">${k === "all" ? "All skin" : ROMAN[k]}</button>`).join("")}</div></header>
       <div class="table-scroll"><table class="data scn"><thead><tr><th>CONDITION</th><th>HOW TO CAUSE IT</th>${COLS.map(m => `<th>${COLNAME[m]}</th>`).join("")}<th>SELECTED MOST</th><th>CONFIDENT</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
       <p class="foot">${s.seeds} volunteers x ${s.seconds} s per skin type and condition, one reading every 2.5 s. Best of the four in green.</p>
     </article>
-    <article class="card span-12">
+    ${sectionTitle("Every skin tone", "TRACE's error for each skin type (Fitzpatrick I to VI) in each condition, and the overall comparison per skin type.")}
+    <article class="card span-7">
       <header class="card-h"><span class="label mono">TRACE ERROR BY SKIN TYPE AND CONDITION / BPM</span></header>
       <div class="table-scroll"><table class="data heat"><thead><tr><th>CONDITION</th>${[1, 2, 3, 4, 5, 6].map(k => `<th>${ROMAN[k]}</th>`).join("")}</tr></thead><tbody>${
         s.scenarios.map(sc => `<tr><td>${sc.label}</td>${[1, 2, 3, 4, 5, 6].map(k => { const v = sc.by_skin[k].mae.trace; return `<td style="background:${heat(v)}">${fmt(v, 1)}</td>`; }).join("")}</tr>`).join("")}</tbody></table></div>
       <p class="foot">Redder cells are worse.</p>
+    </article>
+    <article class="card span-5">
+      <header class="card-h"><span class="label mono">BY SKIN TYPE / ALL CONDITIONS</span></header>
+      <div class="table-scroll"><table class="data"><thead><tr><th>TYPE</th>${COLS.map(m => `<th>${COLNAME[m]}</th>`).join("")}<th>TRACE W5</th></tr></thead><tbody>${
+        skinRows.map(r => `<tr><td>${esc(r.label.replace("Type ", ""))}</td>${maeCells(r.mae)}<td>${pct(r.within5?.trace)}</td></tr>`).join("")}</tbody></table></div>
     </article>`;
 }
 function tryScenario(i) {

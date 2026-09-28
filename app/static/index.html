@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Caveat:wght@500;700&display=swap">
-<link rel="stylesheet" href="/static/styles.css?v=27">
+<link rel="stylesheet" href="/static/styles.css?v=28">
 </head>
 <body>
 
@@ -213,15 +213,10 @@
           <p>Projects the colour onto a plane orthogonal to skin tone, re-tuned every 1.6 s, so the pulse survives slow changes in lighting and skin colour.</p>
         </article>
 
-        <article class="card span-8 chart-card">
-          <header class="card-h"><span class="label mono">TRUST OVER THE LAST 60 S</span></header>
+        <article class="card span-12 chart-card">
+          <header class="card-h"><span class="label mono">TRUST OVER THE LAST 60 S</span><button type="button" class="btn ghost small" data-goto="scenarios"><svg><use href="#i-grid"/></svg>How well it works: Scenarios</button></header>
           <canvas class="chart" id="c-hist" style="--h:170px" aria-label="Share of each method in the fusion over time"></canvas>
           <p class="foot">Change motion or lighting in the simulator panel above and watch trust move away from the method the change corrupts.</p>
-        </article>
-        <article class="card span-4">
-          <header class="card-h"><span class="label mono">HOW WELL IT WORKS</span><span class="pill small sim">SIMULATED</span></header>
-          <div class="wbars" id="eval-bars"></div>
-          <p class="foot" id="eval-foot"></p>
         </article>
       </div>
     </section>
@@ -746,15 +741,7 @@
     <!-- ============================================================ SCENARIOS (results hub) -->
     <section class="view" data-view="scenarios" aria-labelledby="view-title">
       <div class="bento">
-        <article class="card span-12">
-          <header class="card-h"><span class="label mono">AT A GLANCE / MEAN ERROR IN BPM AGAINST EACH SOURCE'S REFERENCE</span><span class="mono muted">LOWER IS BETTER</span></header>
-          <div class="table-scroll"><table class="data glance" id="res-glance"></table></div>
-        </article>
-
-        <article class="card span-12 res-head">
-          <div class="seg res-tabs" id="res-tabs" role="tablist" aria-label="Results source"></div>
-          <p class="foot" id="res-note"></p>
-        </article>
+        <div class="span-12 res-sources" id="res-sources" role="tablist" aria-label="Results source"></div>
 
         <div class="span-12" id="res-body"></div>
       </div>
@@ -778,10 +765,10 @@
 
         <article class="card span-12" id="col-last" hidden></article>
 
-        <article class="card span-12">
-          <header class="card-h"><span class="label mono">STUDY RESULTS / TRACE AND EACH METHOD AGAINST THE SMARTWATCH</span>
-            <a class="btn ghost small" href="/api/collect/study.csv" download>Export CSV</a></header>
-          <div id="col-study"></div>
+        <article class="card span-12 study-link">
+          <header class="card-h"><span class="label mono">STUDY RESULTS</span>
+            <span class="btn-row"><a class="btn ghost small" href="/api/collect/study.csv" download>Export CSV</a><button type="button" class="btn small" data-goto="scenarios" data-res-tab="volunteers"><svg><use href="#i-grid"/></svg>Open in Scenarios</button></span></header>
+          <p class="foot">Every volunteer's readings are scored against the smartwatch on the Scenarios screen (Our volunteers): TRACE against POS, classical against learned, and the breakdown by skin type, motion, lighting, age and volunteer.</p>
         </article>
 
         <article class="card span-12">
@@ -867,7 +854,7 @@
   <img id="pip-img" alt="Live camera preview">
 </div>
 
-<script src="/static/app.js?v=26"></script>
-<script src="/static/collect.js?v=4"></script>
+<script src="/static/app.js?v=27"></script>
+<script src="/static/collect.js?v=5"></script>
 </body>
 </html>

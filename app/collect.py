@@ -300,8 +300,29 @@ def _errors(rows: list[dict]) -> dict:
     }
 
 
+_study_cache: tuple | None = None
+
+
+def _study_key() -> tuple:
+    """Changes whenever a recording, a volunteer record or the frozen TRACE parameters change."""
+    files = [*DATA.glob("*/*/meta.json"), *DATA.glob("*/*/trace.npz"), DATA / "volunteers.json",
+             *(ROOT / "results").glob("fusion_params*.json")]
+    return tuple(sorted((str(f), f.stat().st_mtime_ns) for f in files if f.exists()))
+
+
 def study() -> dict:
-    """Everything recorded so far, scored and grouped."""
+    """Everything recorded so far, scored and grouped. Scoring every clip takes
+    a few seconds, so the result is kept until a file it depends on changes."""
+    global _study_cache
+    key = _study_key()
+    if _study_cache is not None and _study_cache[0] == key:
+        return _study_cache[1]
+    out = _study()
+    _study_cache = (key, out)
+    return out
+
+
+def _study() -> dict:
     per_clip, all_rows = [], []
     for meta in clips():
         folder = DATA / meta["volunteer"] / meta["clip"]
@@ -324,4 +345,5 @@ def study() -> dict:
     return {"volunteers": len(volunteers()), "clips": per_clip, "n_readings": len(all_rows),
             "n_volunteers_scored": len({r["volunteer"] for r in all_rows}),
             "overall": _errors(all_rows), "by_motion": group("motion"), "by_lighting": group("lighting"),
-            "by_skin": group("fitzpatrick"), "by_age": group("age_group"), "rows": all_rows}
+            "by_skin": group("fitzpatrick"), "by_age": group("age_group"),
+            "by_volunteer": group("volunteer"), "rows": all_rows}

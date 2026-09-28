@@ -32,7 +32,7 @@ async function colLoad() {
 
 function colRenderStatic() {
   if (!COL.data) return;
-  colStrip(); colVolunteer(); colControls(); colStudy(); colManage();
+  colStrip(); colVolunteer(); colControls(); colManage();  // study results live on Scenarios
 }
 
 /* ------------------------------------------------------------ summary strip */
@@ -139,30 +139,6 @@ function colControls() {
 }
 
 /* ------------------------------------------------------------ study results */
-function colStudy() {
-  const s = COL.study, box = $("#col-study");
-  if (!s || !s.n_readings) {
-    box.innerHTML = `<div class="empty-state small"><p>Results appear here after the first recording with a smartwatch reading at 0:20 or later.</p></div>`; return;
-  }
-  const C = MCOL(), O = s.overall, cols = [...METHODS, "trace"], mx = Math.max(...cols.map(m => O.mae[m])) * 1.05;
-  const table = (title, g) => `<div class="table-scroll"><table class="data"><thead><tr><th>${title}</th><th>READINGS</th><th>PEOPLE</th>${cols.map(m => `<th>${m === "trace" ? "TRACE" : MNAME[m]}</th>`).join("")}<th>TRACE WITHIN 5</th><th>SELECTED G / C / P (%)</th></tr></thead><tbody>${
-    Object.entries(g).map(([k, a]) => { const best = Math.min(...cols.map(m => a.mae[m]));
-      return `<tr><td>${title === "SKIN TYPE" ? ROMAN[+k] || k : k}</td><td>${a.n}</td><td>${a.volunteers}</td>${cols.map(m => `<td class="${a.mae[m] === best ? "best" : ""}">${fmt(a.mae[m], 1)}</td>`).join("")}<td>${pct(a.within5.trace)}</td><td>${METHODS.map(m => fmt(a.mean_weights[m] * 100)).join(" / ")}</td></tr>`; }).join("")}</tbody></table></div>`;
-  box.innerHTML = `
-    <div class="study-top">
-      <div class="wbars">${cols.map(m => wbar(m === "trace" ? "TRACE" : MNAME[m], O.mae[m], mx, m === "trace" ? css("--lime") : C[m], `${fmt(O.mae[m], 1)} BPM`, m === "trace" ? "trace" : "")).join("")}</div>
-      <dl class="kv">
-        <div><dt class="mono">VOLUNTEERS SCORED</dt><dd class="mono">${s.n_volunteers_scored}</dd></div>
-        <div><dt class="mono">WATCH READINGS</dt><dd class="mono">${s.n_readings}</dd></div>
-        <div><dt class="mono">TRACE WITHIN 5 BPM</dt><dd class="mono">${pct(O.within5.trace)}</dd></div>
-        <div><dt class="mono">MARKED CONFIDENT</dt><dd class="mono">${pct(O.confident)}</dd></div>
-        <div><dt class="mono">ERROR WHEN CONFIDENT</dt><dd class="mono">${O.mae_confident == null ? "--" : fmt(O.mae_confident, 1) + " BPM"}</dd></div>
-      </dl>
-    </div>
-    <p class="foot">Mean absolute difference from the smartwatch, in BPM, real volunteers. Each watch reading covers about the same 20 s as the TRACE read-out it is compared with, but the two devices still average differently, so a few BPM of difference is expected even when both are right.</p>
-    ${table("MOTION", s.by_motion)}${table("LIGHTING", s.by_lighting)}${table("SKIN TYPE", s.by_skin)}${table("AGE GROUP", s.by_age)}`;
-}
-
 /* ------------------------------------------------------------ manage volunteers and recordings */
 function colManage() {
   const box = $("#col-manage"), vols = Object.values(COL.data.volunteers);
