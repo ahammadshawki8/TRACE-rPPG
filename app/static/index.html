@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Caveat:wght@500;700&display=swap">
-<link rel="stylesheet" href="/static/styles.css?v=32">
+<link rel="stylesheet" href="/static/styles.css?v=33">
 </head>
 <body>
 
@@ -418,8 +418,8 @@
               <h2>Meet Green, CHROM and POS.</h2>
               <p>Each frame gives three numbers: red, green, blue. The three methods are three recipes for mixing them into one pulse signal.</p>
               <ul class="recipes">
-                <li><b>Green</b> uses only the green channel. Simple, but anything that changes brightness looks like a pulse.</li>
-                <li><b>CHROM</b> subtracts two colour differences that both cancel white light, so brightness changes drop out.</li>
+                <li><b>Green</b> uses only the green channel. Simple, but a flickering lamp, a passing cloud or a glowing screen changes brightness, and Green mistakes it for a pulse.</li>
+                <li><b>CHROM</b> subtracts two colour differences that both cancel white light, so those brightness changes drop out.</li>
                 <li><b>POS</b> looks along a direction at right angles to your own skin tone, re-aimed every 1.6 seconds.</li>
               </ul>
               <div class="jump"><button type="button" class="btn ghost small" data-goto="methods"><svg><use href="#i-merge"/></svg>See them live: Methods</button></div>
@@ -533,46 +533,14 @@
             </svg>
           </section>
 
-          <section class="slide" data-n="6" aria-label="Challenge 1: lighting">
+          <section class="slide" data-n="motion" aria-label="Challenge 1: motion">
             <div class="s-text">
-              <span class="s-step">CHALLENGE 1 / LIGHTING</span>
-              <h2>Three pairs of glasses.</h2>
-              <p>A lamp flickers, a cloud passes, a screen glows: brightness changes all the time. Green cannot tell that from a pulse and is fooled. CHROM and POS mix colours so that brightness cancels out, and the pulse stays.</p>
-              <div class="jump"><button type="button" class="btn ghost small" data-goto="methods"><svg><use href="#i-merge"/></svg>See them live: Methods</button></div>
-              <details class="deeper"><summary>Go deeper</summary>
-                <p class="formula mono">GREEN  S = G / mean(G) - 1</p>
-                <p class="formula mono">CHROM  X = 3R - 2G,  Y = 1.5R + G - 1.5B,  S = X - (std X / std Y) Y</p>
-                <p class="formula mono">POS    S1 = G - B,  S2 = G + B - 2R,  h = S1 + (std S1 / std S2) S2</p>
-                <p>Both CHROM and POS are fixed projections from the physics of skin reflection, not learned from data.</p></details>
-            </div>
-            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="A torch shines on three pairs of glasses; the green pair sees a messy signal, CHROM and POS see a clean pulse">
-              <g filter="url(#wobble)">
-                <path class="ink" d="M40,60 q16,-14 32,0 M72,60 l14,0 M86,60 q16,-14 32,0 M24,60 l16,0 M118,60 l16,0"/>
-                <path class="ink" d="M190,60 q16,-14 32,0 M222,60 l14,0 M236,60 q16,-14 32,0 M174,60 l16,0 M268,60 l16,0"/>
-                <path class="ink" d="M340,60 q16,-14 32,0 M372,60 l14,0 M386,60 q16,-14 32,0 M324,60 l16,0 M418,60 l16,0"/>
-                
-                <path class="red-ink" d="M28,150 l10,-26 l8,40 l10,-30 l8,18 l10,-34 l8,44 l10,-22 l8,16 l10,-12 l8,6 l10,-20"/>
-                
-                <path class="orange-ink" d="M178,146 q12,-20 24,0 q12,20 24,0 q12,-20 24,0 q12,20 24,0"/>
-                <path class="orange-ink" d="M328,146 q12,-20 24,0 q12,20 24,0 q12,-20 24,0 q12,20 24,0"/>
-                <path class="blue-ink" d="M214,186 l8,8 l16,-18 M364,186 l8,8 l16,-18"/>
-                <path class="ink" d="M456,240 l-26,-14 l0,-14 l26,-14 Z"/>
-                <path class="orange-ink dash" d="M428,220 L300,250 M428,214 L160,234"/>
-                <g class="bob" transform="translate(70,262) scale(1.2)"><use href="#beat"/><path class="ink" d="M-11,-18 l22,0" /></g>
-                
-              </g>
-                <g class="labels"><text class="hand" x="56" y="98">GREEN</text><text class="hand" x="206" y="98">CHROM</text><text class="hand" x="364" y="98">POS</text><text class="hand red" x="34" y="196">fooled</text><text class="hand orange" x="330" y="286">light and motion</text></g>
-            </svg>
-          </section>
-
-          <section class="slide" data-n="motion" aria-label="Challenge 2: motion">
-            <div class="s-text">
-              <span class="s-step">CHALLENGE 2 / MOTION</span>
-              <h2>Stay on the face, ignore the sway.</h2>
-              <p>First the box follows the face, so we keep reading the same skin. Then a second signal that sees motion but not blood tells TRACE which rhythms are sway, and those are masked out before choosing.</p>
+              <span class="s-step">CHALLENGE 1 / MOTION</span>
+              <h2>Ignore the sway.</h2>
+              <p>The face box already follows the head (step 1), but a swaying head makes rhythms of its own. A second signal that sees motion but not blood tells TRACE which rhythms are sway, and those are masked out before it chooses.</p>
               <div class="evidence" id="deck-motion"></div>
               <details class="deeper"><summary>Go deeper</summary>
-                <p>Tracking uses phase correlation: a shift between frames is a linear phase in the Fourier transform, so the peak of the inverse FFT gives the movement to a fraction of a pixel. The motion reference is the brightness direction with the blood direction removed, so it sees shading and sway but not the pulse. Heavy, fast motion is still the hardest case, and the numbers show it.</p></details>
+                <p>The motion reference is the change in overall brightness with the blood colour direction removed, so it sees shading and sway but not the pulse. Each method's spectrum is multiplied by (1 - motion power / its peak)^4, which cuts the sway peaks before scoring. Heavy, fast motion is still the hardest case, and the numbers show it.</p></details>
             </div>
             <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat holds a tracking box on a swaying face; a red stencil masks the sway peak in a spectrum">
               <g filter="url(#wobble)">
@@ -593,9 +561,9 @@
             </svg>
           </section>
 
-          <section class="slide" data-n="skin" aria-label="Challenge 3: skin tone">
+          <section class="slide" data-n="skin" aria-label="Challenge 2: skin tone">
             <div class="s-text">
-              <span class="s-step">CHALLENGE 3 / SKIN TONE</span>
+              <span class="s-step">CHALLENGE 2 / SKIN TONE</span>
               <h2>Every skin tone, same heartbeat.</h2>
               <p>Melanin absorbs light too, so on darker skin the pulse is fainter, not gone. We make every tone count the same way:</p>
               <ul class="recipes">
@@ -626,39 +594,14 @@
             </svg>
           </section>
 
-          <section class="slide" data-n="tuned" aria-label="Tuned fairly">
-            <div class="s-text">
-              <span class="s-step">HOW WE TUNED IT</span>
-              <h2>Practice on one set, exam on another.</h2>
-              <p>We never changed how Green, CHROM or POS read a pulse. We only tuned how TRACE chooses between them, using a public dataset and simulated faces. Then we froze it and tested it on faces it had never seen.</p>
-              <details class="deeper"><summary>Go deeper</summary>
-                <p class="formula mono pre">preference for POS   1, 1.15, 1.3, 1.5, 2   chose 1.3
-low-peak rule        off, 50, 55 BPM         chose 55
-longer window if     off, 0.15, 0.25         chose 0.25</p>
-                <p>75 combinations were each scored on 410 UBFC-rPPG windows (finger oximeter) and 1,080 simulated windows (exact truth); the lowest average error won. Frozen, it was tested once on 3,060 simulated readings never used for tuning (TRACE 8.0 BPM against POS 12.1) and on our volunteers, who were never used to choose anything.</p></details>
-            </div>
-            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat practises on two stacks of faces, locks a padlock, then sits an exam on new faces">
-              <g filter="url(#wobble)">
-                <rect class="ink" x="24" y="70" width="120" height="130" rx="10"/>
-                <path class="ink" d="M40,96 h88 M40,116 h88 M40,136 h60 M40,156 h74 M40,176 h50"/>
-                <rect class="ink" x="336" y="70" width="120" height="130" rx="10"/>
-                <path class="blue-ink" d="M354,104 l10,10 l18,-20 M354,148 l10,10 l18,-20"/>
-                <path class="ink" d="M396,108 h44 M396,152 h44"/>
-                <rect class="ink" x="222" y="116" width="36" height="30" rx="5"/><path class="ink" d="M230,116 v-10 a10,10 0 0 1 20,0 v10"/>
-                <path class="ink dash" d="M152,134 L212,134 M268,134 L328,134"/><path class="ink" d="M320,126 l10,8 l-10,8"/>
-                <g class="bob" transform="translate(240,262) scale(1.2)"><use href="#beat"/></g>
-              </g>
-              <g class="labels"><text class="hand orange" x="34" y="56">practice</text><text class="hand" x="30" y="226">UBFC + simulated</text>
-                <text class="hand blue" x="352" y="56">exam</text><text class="hand" x="340" y="226">faces never seen</text><text class="hand" x="208" y="84">frozen</text></g>
-            </svg>
-          </section>
-
           <section class="slide" data-n="9" aria-label="Proof from three sources">
             <div class="s-text">
               <span class="s-step">HOW WE KNOW</span>
               <h2>Proof from three sources.</h2>
               <p>Every decision TRACE makes is checked against three kinds of truth: simulated faces where the answer is exact, a public dataset with a clip-on finger sensor, and our own volunteers with a smartwatch.</p>
               <div class="evidence" id="deck-evidence"></div>
+              <details class="deeper"><summary>Go deeper</summary>
+                <p>Only the way TRACE chooses was tuned (its preference for POS, the low-peak rule and when to use a longer window), on the public dataset and on simulated faces. Then it was frozen and tested once on simulated faces it had never seen and on our volunteers, who were never used to choose anything. That is why the public dataset counts as practice, not proof.</p></details>
               <div class="jump"><button type="button" class="btn ghost small" data-goto="collect"><svg><use href="#i-users"/></svg>Collect</button><button type="button" class="btn ghost small" data-goto="scenarios"><svg><use href="#i-grid"/></svg>All results: Scenarios</button></div>
             </div>
             <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat carries a heart across a gap on a bridge made of three planks: simulated, dataset, volunteers">
