@@ -853,6 +853,8 @@ The `Idea/` planning documents were removed on 2026-09-27 (see git history befor
 
 ## 17.4 Using data on another drive
 
+**The project's `data/` folder is a directory junction to `D:\TRACE-rPPG-data` (2026-09-29, C drive was full).** Everything under `data/` (volunteer recordings `data/own`, trace caches, replays, work files) physically lives on D; code keeps using `ROOT / "data"` unchanged, and git still ignores it. If the repo is cloned elsewhere, `data/` is just a normal folder again. Deleting the junction with Explorer is safe (`rmdir data` removes only the link), but never delete `D:\TRACE-rPPG-data`.
+
 `TRACE_UBFC_DIR` points the acceptance scripts at a dataset anywhere (default `data/ubfc`). `run_grid.py --dataset <path> --work-root <path>` keeps both the data and the transient encodes off the C drive. `datasets.load_dataset` searches recursively and reads an optional `fitzpatrick.csv` (subject, type) beside the data, which is what makes a skin-tone comparison possible on datasets that ship no labels. Verified on 2026-09-12 with a nested fake dataset and a separate scratch root.
 
 ## 18. Session Log
