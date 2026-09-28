@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Caveat:wght@500;700&display=swap">
-<link rel="stylesheet" href="/static/styles.css?v=31">
+<link rel="stylesheet" href="/static/styles.css?v=32">
 </head>
 <body>
 
@@ -485,7 +485,9 @@
               <p>Every half second each method's spectrum is scored: one clean peak scores high, a mess scores low. Frequencies that match head motion are masked first. The winner gives the heart rate.</p>
               <div class="jump"><button type="button" class="btn ghost small" data-goto="methods"><svg><use href="#i-merge"/></svg>Watch it choose: Methods</button></div>
               <details class="deeper"><summary>Go deeper</summary>
-                <p>Quality = power in the peak and its harmonic divided by all power in the heart band (Parseval: power in the spectrum equals energy in time). A motion reference, blind to blood, marks the frequencies to suppress. On 3,060 simulated readings never used for tuning, selecting per window beat every single method.</p></details>
+                <p class="formula mono">quality = (power at peak + harmonic) / (all power 42 to 240 BPM) x (1 - motion share)^2</p>
+                <p class="formula mono">score = quality x preference x edge rule; the highest score wins</p>
+                <p>Quality uses Parseval: power in the spectrum equals energy in time, so it is the share of the pulse signal's energy in one rhythm. A motion reference, blind to blood, masks frequencies that are really sway. POS gets a 1.3 preference because it is the most reliable method on its own, so TRACE leaves it only when another method is clearly sharper. A lone peak below 55 BPM that no other method confirms is ignored: on weak signals it is usually slow drift, not a heartbeat.</p></details>
             </div>
             <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat judges three spectrum cards and gives a ribbon to the one with a single sharp peak; a red stencil covers a motion peak">
               <g filter="url(#wobble)">
@@ -502,6 +504,32 @@
                 
               </g>
                 <g class="labels"><text class="hand red" x="30" y="206">motion masked</text><text class="hand" x="36" y="50">GREEN</text><text class="hand" x="200" y="50">CHROM</text><text class="hand" x="370" y="50">POS</text><text class="hand blue" x="352" y="206">sharpest: chosen</text><text class="hand" x="270" y="252">every half second</text></g>
+            </svg>
+          </section>
+
+          <section class="slide" data-n="sure" aria-label="How sure is TRACE?">
+            <div class="s-text">
+              <span class="s-step">STEP 7 / HOW SURE</span>
+              <h2>TRACE says how sure it is.</h2>
+              <p>A clean, sharp peak is usually right; a messy one often is not. So every reading comes with a confidence. When TRACE is unsure it says "hold still" instead of showing a number. When it is very sure, the reading locks for three seconds with a buzz.</p>
+              <div class="jump"><button type="button" class="btn ghost small" data-goto="measure"><svg><use href="#i-play"/></svg>See the ring: Measure</button></div>
+              <details class="deeper"><summary>Go deeper</summary>
+                <p class="formula mono">P(within 5 BPM) = 1 / (1 + e^-(-1.94 + 8.27 x quality))</p>
+                <p>The curve is a logistic fit on UBFC-rPPG and simulated readings: for each quality score, how often was TRACE within 5 BPM of the truth? At 50 percent (quality 0.23) the reading counts as confident; at 95 percent (quality 0.59) it locks. Confidence never changes which method is chosen, only how much to trust the answer. On the held-out simulated test, confident readings were off by 5.7 BPM and flagged ones by 50. On real volunteers the gate is still too generous, which the final tuning will address.</p></details>
+            </div>
+            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="A confidence ring: a messy peak gives a low ring and hold still, a sharp peak gives a full ring and a lock">
+              <g filter="url(#wobble)">
+                <circle class="ink" cx="130" cy="130" r="62"/>
+                <path class="orange-ink" d="M130,68 A62,62 0 0 1 188,150" style="stroke-width:5"/>
+                <circle class="ink" cx="350" cy="130" r="62"/>
+                <path class="blue-ink" d="M350,68 A62,62 0 1 1 349,68" style="stroke-width:5"/>
+                <path class="ink" d="M80,252 l12,-2 l8,-22 l8,18 l10,-12 l8,15 l10,-20 l8,17 l16,-2"/>
+                <path class="blue-ink" d="M300,252 l36,0 l12,-40 l12,40 l40,0"/>
+                <rect class="ink" x="336" y="116" width="28" height="22" rx="4"/><path class="ink" d="M342,116 v-8 a8,8 0 0 1 16,0 v8"/>
+                <path class="ink" d="M400,92 l14,-10 M404,110 l18,-4 M400,76 l8,-16"/>
+              </g>
+              <g class="labels"><text class="hand orange" x="92" y="136">unsure</text><text class="hand orange" x="70" y="282">messy peak: "hold still"</text>
+                <text class="hand blue" x="302" y="282">sharp peak: locked</text><text class="hand blue" x="428" y="84">buzz</text></g>
             </svg>
           </section>
 
@@ -595,6 +623,33 @@
               <g class="labels"><text class="hand small" x="54" y="92">I</text><text class="hand small" x="126" y="92">II</text><text class="hand small" x="196" y="92">III</text>
                 <text class="hand small" x="268" y="92">IV</text><text class="hand small" x="342" y="92">V</text><text class="hand small" x="412" y="92">VI</text>
                 <text class="hand" x="40" y="118">lighter skin: strong ripple</text><text class="hand" x="40" y="206">darker skin: fainter, not gone</text></g>
+            </svg>
+          </section>
+
+          <section class="slide" data-n="tuned" aria-label="Tuned fairly">
+            <div class="s-text">
+              <span class="s-step">HOW WE TUNED IT</span>
+              <h2>Practice on one set, exam on another.</h2>
+              <p>We never changed how Green, CHROM or POS read a pulse. We only tuned how TRACE chooses between them, using a public dataset and simulated faces. Then we froze it and tested it on faces it had never seen.</p>
+              <details class="deeper"><summary>Go deeper</summary>
+                <p class="formula mono pre">preference for POS   1, 1.15, 1.3, 1.5, 2   chose 1.3
+low-peak rule        off, 50, 55 BPM         chose 55
+longer window if     off, 0.15, 0.25         chose 0.25</p>
+                <p>75 combinations were each scored on 410 UBFC-rPPG windows (finger oximeter) and 1,080 simulated windows (exact truth); the lowest average error won. Frozen, it was tested once on 3,060 simulated readings never used for tuning (TRACE 8.0 BPM against POS 12.1) and on our volunteers, who were never used to choose anything.</p></details>
+            </div>
+            <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat practises on two stacks of faces, locks a padlock, then sits an exam on new faces">
+              <g filter="url(#wobble)">
+                <rect class="ink" x="24" y="70" width="120" height="130" rx="10"/>
+                <path class="ink" d="M40,96 h88 M40,116 h88 M40,136 h60 M40,156 h74 M40,176 h50"/>
+                <rect class="ink" x="336" y="70" width="120" height="130" rx="10"/>
+                <path class="blue-ink" d="M354,104 l10,10 l18,-20 M354,148 l10,10 l18,-20"/>
+                <path class="ink" d="M396,108 h44 M396,152 h44"/>
+                <rect class="ink" x="222" y="116" width="36" height="30" rx="5"/><path class="ink" d="M230,116 v-10 a10,10 0 0 1 20,0 v10"/>
+                <path class="ink dash" d="M152,134 L212,134 M268,134 L328,134"/><path class="ink" d="M320,126 l10,8 l-10,8"/>
+                <g class="bob" transform="translate(240,262) scale(1.2)"><use href="#beat"/></g>
+              </g>
+              <g class="labels"><text class="hand orange" x="34" y="56">practice</text><text class="hand" x="30" y="226">UBFC + simulated</text>
+                <text class="hand blue" x="352" y="56">exam</text><text class="hand" x="340" y="226">faces never seen</text><text class="hand" x="208" y="84">frozen</text></g>
             </svg>
           </section>
 

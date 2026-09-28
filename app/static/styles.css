@@ -796,6 +796,7 @@ table.glance tr.empty td { color: var(--ink-3); }
 .deeper { padding-top: .6cqw; }
 .deeper p { margin: .5cqw 0 0; font-size: 1.02cqw; line-height: 1.45; }
 .deeper .formula { font-size: .9cqw !important; padding: .5cqw .8cqw; }
+.deeper .formula.pre { white-space: pre; overflow: hidden; }
 .deeper .live-chart { margin-top: .6cqw; padding: .6cqw .9cqw; }
 .deeper .live-chart .chart { height: 7cqw; }
 .deeper .live-chart span { font-size: .75cqw; }
