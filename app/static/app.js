@@ -583,7 +583,7 @@ function learnedCard(L) {
     <div class="wbars">${L.rows.map(r => wbar(r.label, r.mae, mx, kindColor(r), fmt(r.mae, 1), r.kind === "trace" ? "trace" : "")).join("")}</div>
     <div class="table-scroll"><table class="data"><thead><tr><th>METHOD</th><th>KIND</th><th>MEAN ERROR</th><th>WITHIN 5 BPM</th><th>WHAT IT IS</th></tr></thead><tbody>${
       L.rows.map(r => `<tr><td>${esc(r.label)}</td><td>${r.kind.toUpperCase()}</td><td>${fmt(r.mae, 2)}</td><td>${pct(r.within5)}</td><td class="how">${esc(r.note)}</td></tr>`).join("")}</tbody></table></div>
-    <p class="foot">Option 1: two pretrained neural networks read the same face videos. Option 2: a small learned model chooses among green, CHROM and POS, trained only on UBFC-rPPG and simulated faces, never on these volunteers. Neither changes what TRACE reports; they are here to compare. The oracle is not a method: it peeks at the watch, so it shows the best any chooser could do with these three methods.</p>
+    <p class="foot">Option 1: a pretrained deep network, FactorizePhys, reads the same face videos. Option 2: a small learned model chooses among green, CHROM and POS, trained only on UBFC-rPPG and simulated faces, never on these volunteers. Neither changes what TRACE reports; they are here to compare. The oracle is not a method: it peeks at the watch, so it shows the best any chooser could do with these three methods.</p>
   </article>`;
 }
 function breakdownCard(b) {
@@ -901,7 +901,7 @@ function renderDeckLearned() {
     return `<div class="ev"><b>${name}</b><span class="mono">${ref}</span><em class="mono">${rs.map(r => `${esc(r.label.replace(" (neural)", "").replace(" (ceiling)", "").toUpperCase())} ${fmt(r.mae, 1)}`).join("  /  ")} BPM</em></div>`;
   };
   box.innerHTML = line(["pos", "trace"], "Classical", "POS is the baseline")
-    + line(["factorizephys", "physnet"], "Option 1", "deep networks")
+    + line(["factorizephys"], "Option 1", "deep network")
     + line(["ml", "oracle"], "Option 2", "learned chooser, ceiling")
     + `<em class="mono evidence-foot">MEAN ERROR VS SMARTWATCH, ${L.n_readings} READINGS, ${L.n_people} PEOPLE</em>`;
 }

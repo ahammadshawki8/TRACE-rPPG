@@ -125,8 +125,8 @@ def volunteers() -> dict:
 def learned() -> dict:
     """Classical against learned, on exactly the same volunteer watch readings.
 
-    Option 1: two pretrained neural networks (rPPG-Toolbox, trained on PURE)
-    read the saved volunteer videos (scripts/nn_volunteers.py). Option 2: a
+    Option 1: a pretrained neural network (FactorizePhys, rPPG-Toolbox, trained
+    on PURE) reads the saved volunteer videos (scripts/nn_volunteers.py). Option 2: a
     small learned selector picks green, CHROM or POS per window, trained only
     on UBFC-rPPG and simulated data (scripts/ml_select.py). The oracle is the
     ceiling: it looks at the watch, so it is not a method. None of these ever
@@ -149,7 +149,8 @@ def learned() -> dict:
     for r in rows:
         r["mae"], r["within5"] = ml["mae"][r["key"]], ml["within5"][r["key"]]
     if nn and nn.get("n_readings") == ml["n_readings"]:
-        for key, label in (("factorizephys", "FactorizePhys (neural)"), ("physnet", "PhysNet (neural)")):
+        # PhysNet is computed for the record but not shown: it did not transfer to our faces (33.9 BPM).
+        for key, label in (("factorizephys", "FactorizePhys (neural)"),):
             rows.append({"key": key, "label": label, "kind": "neural", "mae": nn["mae"][key], "within5": nn["within5"][key],
                          "note": "pretrained deep network, reads the face video; trained on PURE"})
     rows.append({"key": "oracle", "label": "Oracle (ceiling)", "kind": "ceiling", "mae": ml["mae"]["oracle"],
