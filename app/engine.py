@@ -232,6 +232,10 @@ class LiveEngine:
             return {"error": "No recording running, or the value is not a heart rate."}
         return rec.watch_reading(bpm)
 
+    def rec_mark(self) -> dict:
+        rec = self.recorder
+        return {"error": "No recording running."} if rec is None else rec.mark()
+
     def rec_stop(self, save: bool = True) -> dict | None:
         with self.rec_lock:
             rec, self.recorder = self.recorder, None
@@ -378,7 +382,8 @@ class LiveEngine:
         if rec is not None:
             state["rec"] = {"active": True, "volunteer": rec.volunteer, "clip": rec.clip, "elapsed": round(rec.elapsed, 1),
                             "capture_done": rec.capture_done,
-                            "duration": rec.duration, "readings": rec.readings, "condition": rec.condition}
+                            "duration": rec.duration, "readings": rec.readings, "condition": rec.condition,
+                            "mark": rec.pending_mark}
         elif self.last_recording is not None:
             state["rec"] = {"active": False, "last": {k: v for k, v in self.last_recording.items() if k != "camera"}}
         if self.hrv_start is not None:

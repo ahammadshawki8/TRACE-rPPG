@@ -192,10 +192,14 @@ For each clip:
    table and still, even in the talking and movement clips.
 2. Click **Start camera**. Wait until FACE, LIGHT and STILL show ready.
 3. Start a heart-rate measurement on the watch **and** click **Start recording** at the same moment.
-4. The watch measures for about 20 seconds and then shows a number. At
-   **0:20** type that number into **SMARTWATCH READING** and press Enter.
-5. Restart the watch measurement straight away. At **0:40** type the next reading.
-6. Restart again. At **1:00** capture stops and waits. Type the last reading.
+4. The watch measures for about 20 seconds and then shows a number. **The
+   instant it shows the number, press Mark (or Space).** That freezes the
+   time. Then type the number calmly and press Enter: typing speed no longer
+   matters.
+5. Restart the watch measurement straight away and repeat: Mark, type, restart.
+   Readings count from 0:20 on, so a 90 s clip fits three of them.
+6. At 1:30 capture stops and waits. If the watch is showing a last number,
+   Mark it, type it, then click **Save recording**.
 7. The result appears under **Just recorded**, a table of watch against TRACE,
    Green, CHROM and POS. You are done with that clip.
 

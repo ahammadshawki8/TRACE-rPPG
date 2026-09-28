@@ -1,19 +1,20 @@
 "use strict";
 /* TRACE rPPG: volunteer data collection.
    Records real volunteers from the webcam while the presenter types in the
-   smartwatch reading. The watch measures for about 20 s and then locks, so
-   readings are taken at 0:20, 0:40 and 1:00, each matching TRACE's 20 s
-   window. The server stores the skin-colour trace (no video unless chosen),
+   smartwatch reading. The watch measures for about 20 s and then locks. The
+   presenter presses Mark (Space) the instant the watch shows its number and
+   types it afterwards, so typing delay never shifts the comparison window.
+   Readings are accepted at any time from 0:20 on. The server stores the skin-colour trace (no video unless chosen),
    the conditions and the readings, and scores every reading against the
    app's own read-out. Shares the helpers and the WebSocket of app.js. */
 
 const COL = {
   data: null, study: null, selected: localGet("col-volunteer") || "", form: null, formMsg: "",
-  lighting: "room light", motion: "still", duration: 60, watch: localGet("col-watch") || "", keepVideo: false,
+  lighting: "room light", motion: "still", duration: 90, watch: localGet("col-watch") || "", keepVideo: false,
   confirm: null, built: false, btnKey: "",
 };
 let colSeenLast = null;
-const READ_EVERY = 20; // seconds: the watch needs about 20 s per reading
+const MIN_READ_AT = 20; // seconds: TRACE needs a full 20 s window before a reading can be compared
 const PROTOCOL = [["room light", "still"], ["room light", "talking"], ["dim room", "still"], ["room light", "head movement"]];
 const SEX = ["female", "male", "other", "not given"];
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -44,7 +45,7 @@ function colStrip() {
       <div><span class="label mono">WATCH READINGS SCORED</span><b class="mono">${st.n_readings ?? 0}</b></div>
       <div class="grow"><span class="label mono">PROGRESS TO ${target} VOLUNTEERS</span><div class="bar"><i style="width:${Math.min(100, n / target * 100)}%"></i></div></div>
     </div>
-    <p class="foot">Per volunteer, record four 60 s clips: still in room light, talking, still in a dim room, and slow head movement. Start the watch with the recording and type its reading at 0:20, 0:40 and 1:00, restarting it after each. You read the watch; the volunteer keeps still. Only colour averages of the forehead and cheeks are stored unless the volunteer agrees to keep video.</p>`;
+    <p class="foot">Per volunteer, record four 90 s clips: still in room light, talking, still in a dim room, and slow head movement. Start the watch with the recording. Each time it shows a number, press Mark (Space) at once, type the number, then restart the watch. You read the watch; the volunteer keeps still. Only colour averages of the forehead and cheeks are stored unless the volunteer agrees to keep video.</p>`;
 }
 
 /* ------------------------------------------------------------ volunteer card */
@@ -124,7 +125,7 @@ function colControls() {
   box.innerHTML = `
     <div class="ctl"><span class="label mono">LIGHTING</span>${seg("lighting", o.lighting, COL.lighting)}</div>
     <div class="ctl"><span class="label mono">MOTION TASK</span>${seg("motion", o.motion, COL.motion)}</div>
-    <div class="ctl"><span class="label mono">LENGTH (S)</span>${seg("duration", [60, 80, 100, 120], COL.duration)}</div>
+    <div class="ctl"><span class="label mono">LENGTH (S)</span>${seg("duration", [60, 90, 120], COL.duration)}</div>
     <label class="field"><span class="label mono">SMARTWATCH MODEL</span><input id="col-watch-model" value="${esc(COL.watch)}" placeholder="for example: Galaxy Watch 6"></label>
     <label class="check"><input type="checkbox" id="col-keep" ${COL.keepVideo ? "checked" : ""}> Keep video too (volunteer agreed; about 100 MB per minute)</label>
     <div class="btn-row" id="col-buttons"></div>`;
@@ -251,12 +252,17 @@ function colDynamic() {
     live.innerHTML = `
       <div class="rec-bar"><span class="mono" id="col-time"></span><div class="bar"><i id="col-prog"></i></div><span class="mono" id="col-trace"></span></div>
       <form class="watch-entry" id="col-watch-form" autocomplete="off">
+        <button class="btn primary" type="button" id="col-mark" title="Press the instant the watch shows its number (Space)"><svg><use href="#i-check"/></svg>Mark (Space)</button>
         <label for="col-bpm" class="label mono">SMARTWATCH READING</label>
         <input id="col-bpm" type="number" inputmode="numeric" min="30" max="220" placeholder="BPM" aria-describedby="col-prompt">
         <button class="btn" type="submit">Log</button>
-        <span class="prompt mono" id="col-prompt"></span>
+        <span class="prompt mono" id="col-prompt" aria-live="polite"></span>
       </form>
       <ol class="slots mono" id="col-slots"></ol>`;
+    const mark = () => send({ cmd: "rec_mark" });
+    $("#col-mark").addEventListener("click", () => { mark(); $("#col-bpm").focus(); });
+    // Space marks the moment even while the number box has focus (a number field ignores spaces anyway).
+    $("#col-bpm").addEventListener("keydown", e => { if (e.key === " ") { e.preventDefault(); mark(); } });
     $("#col-watch-form").addEventListener("submit", e => {
       e.preventDefault();
       const v = +$("#col-bpm").value;
@@ -269,21 +275,21 @@ function colDynamic() {
     $("#col-time").textContent = `${mmss(rec.elapsed)} / ${mmss(rec.duration)}`;
     $("#col-prog").style.width = `${Math.min(100, rec.elapsed / rec.duration * 100)}%`;
     $("#col-trace").textContent = haveBpm() ? `TRACE ${fmt(s.bpm)} BPM${s.confident ? "" : " (LOW CONFIDENCE)"}` : "TRACE COLLECTING";
-    // One slot per 20 s of watch measurement: 0:20, 0:40, 1:00 for a 60 s clip.
-    const slots = [];
-    for (let at = READ_EVERY; at <= rec.duration + 0.01; at += READ_EVERY) slots.push(at);
-    const got = rec.readings.length, nextAt = slots[got];
-    const p = $("#col-prompt");
+    // Readings are free in time: the watch is restarted after each one, and Mark freezes the moment it locked.
+    const got = rec.readings.length, p = $("#col-prompt");
     let msg, due = false;
-    if (nextAt == null) msg = "ALL READINGS TAKEN. SAVE THE RECORDING.";
-    else if (rec.capture_done || rec.elapsed >= nextAt - 1) { due = true; msg = `ENTER THE WATCH READING FOR ${mmss(nextAt)}, THEN RESTART THE WATCH`; }
-    else msg = got === 0 && rec.elapsed < 3 ? `START THE WATCH NOW. FIRST READING AT ${mmss(nextAt)}` : `NEXT READING AT ${mmss(nextAt)} (IN ${Math.ceil(nextAt - rec.elapsed)} S)`;
+    if (COL.markError && performance.now() - COL.markError.at < 4000) { msg = COL.markError.text; due = true; }
+    else if (rec.mark != null) { due = true; msg = `MARKED AT ${mmss(rec.mark)}. TYPE THE NUMBER AND PRESS ENTER, THEN RESTART THE WATCH`; }
+    else if (rec.elapsed < MIN_READ_AT && !rec.capture_done) msg = got === 0 && rec.elapsed < 3 ? "START THE WATCH NOW" : `WATCH MEASURING. READINGS COUNT FROM ${mmss(MIN_READ_AT)}`;
+    else if (rec.capture_done) { due = true; msg = "CAPTURE FINISHED. MARK AND ENTER THE LAST READING IF THE WATCH IS SHOWING ONE, THEN SAVE"; }
+    else msg = "PRESS MARK (SPACE) THE MOMENT THE WATCH SHOWS ITS NUMBER";
     p.textContent = msg; p.classList.toggle("due", due);
-    const ol = $("#col-slots"), sig = slots.map((a, i) => rec.readings[i] ? rec.readings[i].bpm : "").join(",") + (due ? "!" : "");
+    const ol = $("#col-slots"), sig = rec.readings.map(r => `${r.t}:${r.bpm}`).join(",") + "|" + (rec.mark ?? "");
     if (ol.dataset.sig !== sig) {
       ol.dataset.sig = sig;
-      ol.innerHTML = slots.map((a, i) => { const r = rec.readings[i];
-        return `<li class="${r ? "got" : i === got && due ? "due" : ""}"><span>${mmss(a)}</span><b>${r ? fmt(r.bpm) : "--"}</b></li>`; }).join("");
+      ol.innerHTML = rec.readings.map(r => `<li class="got"><span>${mmss(r.t)}${r.marked ? "" : " *"}</span><b>${fmt(r.bpm)}</b></li>`).join("")
+        + (rec.mark != null ? `<li class="due"><span>${mmss(rec.mark)}</span><b>--</b></li>` : "")
+        + (got ? "" : `<li><span>READINGS</span><b>--</b></li>`);
     }
   }
   const checks = s.checks || {};
@@ -302,10 +308,11 @@ function colLast(r) {
       rows.map(x => { const d = dominantOf(x.weights);
         return `<tr><td>${mmss(x.t)}</td><td>${fmt(x.watch)}</td><td class="${Math.abs(x.trace - x.watch) <= 5 ? "best" : ""}">${fmt(x.trace, 1)}</td><td>${fmt(x.green, 1)}</td><td>${fmt(x.chrom, 1)}</td><td>${fmt(x.pos, 1)}</td><td>${x.confident ? "YES" : "NO"}</td><td>${MNAME[d]}</td></tr>`; }).join("")}</tbody></table></div>
       <p class="foot">TRACE within 5 BPM of the watch on ${pct(sc.within5?.trace)} of ${sc.n} readings. Face found on ${r.frames ? pct(r.face_frames / r.frames) : "--"} of frames.</p>`
-    : `<p class="foot">No watch readings at 0:20 or later, so nothing to score.</p>`}`;
+    : `<p class="foot">No watch readings from 0:20 on, so nothing to score.</p>`}`;
 }
 
 window.onRecMessage = msg => {
+  if (msg.type === "rec_ack" && msg.result && msg.result.mark_error) { COL.markError = { text: msg.result.mark_error, at: performance.now() }; return; }
   if (msg.type === "rec_ack" && msg.result && msg.result.error) { $("#col-live").innerHTML = `<p class="form-msg">${esc(msg.result.error)}</p>`; $("#col-live").dataset.mode = "err"; }
   if (msg.type === "rec_done") { if (msg.result && msg.result.clip) colSeenLast = msg.result.clip; colLast(msg.result); colLoad(); }
 };

@@ -17,6 +17,12 @@ the 20 s window ending at T. The smartwatch used measures for about 20 s and
 then locks its value, so its reading describes the same 20 s as TRACE's
 window. Readings are taken at 20, 40 and 60 s; at 60 s capture stops and
 the recording waits for the last reading before it is saved.
+
+Typing delay: the watch locks its number a few seconds before the presenter
+has typed it. The Mark button (Space) freezes the time the instant the watch
+shows its number; the reading typed afterwards is stamped with that mark, so
+typing speed no longer shifts the comparison window. Readings are accepted
+at any time from 20 s on (TRACE needs a full 20 s window).
 """
 
 from __future__ import annotations
@@ -177,6 +183,7 @@ class Recorder:
         self.frozen_at: float | None = None  # wall time when capture reached the planned length
         self.t, self.rgb, self.npx, self.box, self.readings = [], [], [], [], []
         self.last_t = 0.0
+        self.pending_mark: float | None = None  # capture time frozen by the Mark button
         self.video = None
         if keep_video:
             # Near-lossless 4:4:4, so the colour the pulse lives in is not subsampled.
@@ -213,8 +220,18 @@ class Recorder:
             except (BrokenPipeError, OSError):
                 self.video = None
 
+    def mark(self) -> dict:
+        """The watch has just shown its number: remember this moment."""
+        if self.last_t < WINDOW_S:
+            return {"mark_error": f"TOO EARLY: TRACE NEEDS {WINDOW_S:.0f} S OF VIDEO. MARK AGAIN WHEN THE WATCH SHOWS ITS NEXT NUMBER."}
+        self.pending_mark = round(self.last_t, 2)
+        return {"marked": self.pending_mark}
+
     def watch_reading(self, bpm: float) -> dict:
-        r = {"t": round(self.last_t, 2), "bpm": float(bpm)}
+        marked = self.pending_mark is not None
+        r = {"t": self.pending_mark if marked else round(self.last_t, 2), "bpm": float(bpm), "marked": marked,
+             "entered_t": round(self.last_t, 2)}
+        self.pending_mark = None
         self.readings.append(r)
         return r
 

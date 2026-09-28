@@ -151,6 +151,8 @@ async def ws(sock: WebSocket):
             elif cmd == "rec_watch":
                 r = engine.rec_watch(float(msg.get("bpm", 0)))
                 await sock.send_text(json.dumps({"type": "rec_ack", "result": r}))
+            elif cmd == "rec_mark":
+                await sock.send_text(json.dumps({"type": "rec_ack", "result": engine.rec_mark()}))
             elif cmd == "rec_stop":
                 r = await asyncio.to_thread(engine.rec_stop, bool(msg.get("save", True)))
                 await sock.send_text(json.dumps({"type": "rec_done", "result": r}, default=float))
