@@ -84,8 +84,12 @@ def main() -> None:
     with np.load(rec.dir / "trace.npz") as z:
         keep = np.all(np.isfinite(z["rgb"]), axis=1) & (z["npx"] > 200)  # as score_clip does
         tt, rr = z["t"][keep], z["rgb"][keep]
-    same = all(abs(analyse(tt, rr, r["t"], frozen_params())["bpm"] - r["trace"]) < 1e-9 for r in s["rows"])
-    check("each score is exactly the read-out the app makes for that window", same,
+    def lock_median(r):  # the scoring rule, restated independently: median read-out around the watch's lock time
+        lock = r["t"] - collect.TYPING_LAG_S
+        ends = [e for e in np.arange(lock - 5.0, lock + 5.0 + 1e-9, 2.5) if e >= 20.0]
+        return float(np.median([analyse(tt, rr, e, frozen_params())["bpm"] for e in ends]))
+    same = all(abs(lock_median(r) - r["trace"]) < 1e-9 for r in s["rows"])
+    check("each score is the median read-out around the moment the watch locked", same,
           f"TRACE vs simulated watch MAE {s['mae']['trace']:.1f} BPM on this one volunteer (accuracy itself is judged in step10 and the sweep)")
 
     st = collect.study()
