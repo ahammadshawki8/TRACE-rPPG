@@ -938,7 +938,8 @@ table.learned tr.trace td { color: var(--ink); font-weight: 600; }
 table.learned tr.ceiling td { color: var(--ink-3); }
 .minibar { display: block; height: 6px; border-radius: 4px; background: var(--panel-3); position: relative; overflow: hidden; }
 .minibar::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w); background: var(--c); border-radius: 4px; }
-.study-link .btn-row { display: flex; gap: 8px; }
+.result-card .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.result-card .against { margin: -4px 0 12px; font-size: 10.5px; letter-spacing: .1em; }
 @media (max-width: 900px) {
   .res-sources, .result-grid { grid-template-columns: 1fr; }
   .src-trace .big-n { font-size: 32px; }

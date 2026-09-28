@@ -547,7 +547,9 @@ function renderSources() {
 function resultCard(s, src) {
   const O = s.overall, C = MCOL(), mx = Math.max(...COLS.map(m => O.mae[m])) * 1.05;
   return `<article class="card span-12 result-card">
-    <header class="card-h"><span class="label mono">${src.name.toUpperCase()} / MEAN ERROR IN BPM, LOWER IS BETTER</span><span class="mono muted">AGAINST: ${esc(s.reference).toUpperCase()}</span></header>
+    <header class="card-h"><span class="label mono">${src.name.toUpperCase()} / MEAN ERROR IN BPM, LOWER IS BETTER</span>
+      <span class="btn-row">${src.key === "volunteers" ? `<a class="btn ghost small" href="/api/collect/study.csv" download title="Every watch reading with each method's read-out; volunteer codes only, never names"><svg><use href="#i-download"/></svg>Watch readings (CSV)</a>` : ""}<a class="btn ghost small" href="/api/results" download="trace-rppg-results.json" title="Every source's results, as shown on this screen"><svg><use href="#i-download"/></svg>All results (JSON)</a></span></header>
+    <p class="mono muted against">AGAINST: ${esc(s.reference).toUpperCase()}</p>
     <div class="result-grid">
       <div class="wbars">${COLS.map(m => wbar(COLNAME[m], O.mae[m], mx, m === "trace" ? css("--lime") : C[m], fmt(O.mae[m], 1), m === "trace" ? "trace" : "")).join("")}</div>
       <dl class="kv">
