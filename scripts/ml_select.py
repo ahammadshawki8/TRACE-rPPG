@@ -64,6 +64,20 @@ def main() -> None:
     final = model().fit(Xtr, ytr)
     choice = pick(final.predict_proba(Xte)[:, 1])
     bpm_te = Xte[:, 3].reshape(-1, 3)
+
+    # Trained on our own data too: leave one volunteer out. For each person the
+    # model learns from UBFC, the simulation and every other volunteer (labels:
+    # each method's read-out within 5 BPM of that person's watch), then chooses
+    # for the one person it never saw.
+    who = np.array([r["volunteer"] for r in meta])
+    watch = np.array([r["watch"] for r in meta])
+    yte = (np.abs(bpm_te - watch[:, None]) <= 5).ravel()
+    who_rows = np.repeat(who, 3)
+    choice_loo = np.zeros(len(meta), int)
+    for p in sorted(set(who)):
+        tr = who_rows != p
+        m = model().fit(np.vstack([Xtr, Xte[tr]]), np.concatenate([ytr, yte[tr]]))
+        choice_loo[who == p] = pick(m.predict_proba(Xte[who_rows == p])[:, 1])
     per = defaultdict(lambda: defaultdict(list))
     for i, r in enumerate(meta):
         key = (r["volunteer"], r["clip"], r["reading"])
@@ -74,8 +88,9 @@ def main() -> None:
             per[key][m].append(r[m])
         per[key]["trace"].append(r["trace"])
         per[key]["ml"].append(bpm_te[i, choice[i]])
+        per[key]["ml_loo"].append(bpm_te[i, choice_loo[i]])
         per[key]["oracle"].append(bpm_te[i, np.argmin(np.abs(bpm_te[i] - r["watch"]))])
-    cols = (*METHODS, "trace", "ml", "oracle")
+    cols = (*METHODS, "trace", "ml", "ml_loo", "oracle")
     err = {c: [] for c in cols}
     by_vol = defaultdict(lambda: {c: [] for c in cols})
     for k, d in per.items():
@@ -85,7 +100,7 @@ def main() -> None:
             by_vol[d["vol"]][c].append(e)
     n = len(err["pos"])
     print(f"\nVolunteers: {len(by_vol)} people, {n} watch readings (median of the five read-outs per reading)")
-    names = {"trace": "TRACE", "ml": "TRACE+ML selector", "oracle": "oracle (ceiling)"}
+    names = {"trace": "TRACE", "ml": "ML chooser (public data)", "ml_loo": "ML chooser (+ our volunteers)", "oracle": "oracle (ceiling)"}
     for c in cols:
         e = np.array(err[c])
         print(f"  {names.get(c, c):18s} MAE {e.mean():6.2f}  within 5 {np.mean(e <= 5):4.0%}")
@@ -96,9 +111,9 @@ def main() -> None:
            "mae": {c: float(np.mean(err[c])) for c in cols},
            "within5": {c: float(np.mean(np.array(err[c]) <= 5)) for c in cols},
            "per_person": {v: {c: float(np.mean(d[c])) for c in cols} for v, d in by_vol.items()},
-           "trained_on": "UBFC-rPPG (22 subjects, 410 windows) + simulated tuning cohort (1080 windows)",
+           "trained_on": "ml: UBFC-rPPG (22 subjects) + simulated tuning cohort; ml_loo: the same plus every other volunteer (leave one person out)",
            "model": "HistGradientBoostingClassifier(max_depth=3, 200 iterations), picks the method most likely within 5 BPM",
-           "trace_version": int(json.loads((ROOT / "results" / "fusion_params_v4.json").read_text())["version"]) if (ROOT / "results" / "fusion_params_v4.json").exists() else 3}
+           "trace_version": max(int(json.loads(f.read_text()).get("version", 2)) for f in (ROOT / "results").glob("fusion_params*.json"))}
     (ROOT / "results" / "ml_volunteers.json").write_text(json.dumps(out, indent=1))
 
 

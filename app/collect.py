@@ -40,7 +40,7 @@ from pathlib import Path
 
 import numpy as np
 
-from tracerppg.simeval import WINDOW_S, analyse, frozen_params
+from tracerppg.simeval import WINDOW_S, analyse, consistency_flags, frozen_params
 
 ROOT = Path(__file__).resolve().parents[1]
 import os
@@ -269,20 +269,32 @@ def score_clip(folder: Path, params: dict | None = None) -> dict:
         t, rgb, npx = z["t"], z["rgb"], z["npx"]
     ok = np.all(np.isfinite(rgb), axis=1) & (npx > 200)
     t, rgb = t[ok], rgb[ok]
-    rows = []
-    for r in meta.get("readings", []):
+    cons = params.get("consistency")
+    lock_ends = {}
+    for i, r in enumerate(meta.get("readings", [])):
         locked = r["t"] - (0.0 if r.get("marked") else TYPING_LAG_S)
-        ends = [e for e in np.arange(locked - MEDIAN_HALF_S, locked + MEDIAN_HALF_S + 1e-9, MEDIAN_STEP_S) if e >= WINDOW_S]
-        outs = [a for a in (analyse(t, rgb, e, params) for e in ends) if a is not None]
+        lock_ends[i] = (locked, [round(float(e), 2) for e in np.arange(locked - MEDIAN_HALF_S, locked + MEDIAN_HALF_S + 1e-9, MEDIAN_STEP_S)
+                                 if e >= WINDOW_S])
+    # Every read-out the scoring needs; with the consistency check also TRACE's own
+    # history on a 2.5 s grid, exactly as the app would have seen it live.
+    need = {e for _, es in lock_ends.values() for e in es}
+    if cons and cons.get("tol_bpm") and need:
+        need |= {round(float(e), 2) for e in np.arange(WINDOW_S, max(need) + 1e-9, MEDIAN_STEP_S)}
+    res = {e: analyse(t, rgb, e, params) for e in sorted(need)}
+    flags = consistency_flags([(e, a["bpm"], bool(a["confident"])) for e, a in res.items() if a is not None], cons)
+    rows = []
+    for i, r in enumerate(meta.get("readings", [])):
+        locked, ends = lock_ends[i]
+        outs = [(res[e], flags[e]) for e in ends if res.get(e) is not None]
         if not outs:
             continue
         med = lambda xs: float(np.median(xs))
         rows.append({"t": r["t"], "locked_t": round(float(locked), 2), "n_readouts": len(outs), "watch": r["bpm"],
-                     "trace": med([a["bpm"] for a in outs]),
-                     "confident": sum(a["confident"] for a in outs) > len(outs) / 2,
-                     "p_correct": med([a["p_correct"] for a in outs if a["p_correct"] is not None] or [np.nan]),
-                     "weights": {m: float(np.mean([a["weights"][m] for a in outs])) for m in METHODS},
-                     **{m: med([a["methods"][m]["bpm"] for a in outs]) for m in METHODS}})
+                     "trace": med([f[0] for _, f in outs]),
+                     "confident": sum(f[1] for _, f in outs) > len(outs) / 2,
+                     "p_correct": med([a["p_correct"] for a, _ in outs if a["p_correct"] is not None] or [np.nan]),
+                     "weights": {m: float(np.mean([a["weights"][m] for a, _ in outs])) for m in METHODS},
+                     **{m: med([a["methods"][m]["bpm"] for a, _ in outs]) for m in METHODS}})
     return {"n": len(rows), "rows": rows, **_errors(rows)}
 
 

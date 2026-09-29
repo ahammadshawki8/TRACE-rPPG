@@ -39,7 +39,7 @@ def traces_for(rec, cache_dir) -> Traces:
     return tr
 
 
-V4 = frozen_params(4) if (ROOT / "results" / "fusion_params_v4.json").exists() else None
+V4 = frozen_params() if (ROOT / "results" / "fusion_params_v4.json").exists() else None  # the newest frozen TRACE (v4 or later)
 
 
 def v4_readout(t, rgb, te) -> dict:
@@ -134,7 +134,9 @@ def main(root, tag: str) -> None:
             continue
         c = tot[f"{v}_confident"]
         print(f"    {v} confident on {c['share']:.0%}: MAE {c['mae']}")
-    (ROOT / "results" / f"real_fusion_{tag}.json").write_text(json.dumps({"overall": tot, "subjects": per}, indent=1))
+    # the "v4" columns hold the newest frozen TRACE; trace_version says which one
+    (ROOT / "results" / f"real_fusion_{tag}.json").write_text(json.dumps({"overall": tot, "subjects": per,
+        "trace_version": V4.get("version") if V4 else 3}, indent=1))
 
 
 if __name__ == "__main__":

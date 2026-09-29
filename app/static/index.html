@@ -624,11 +624,11 @@
               <p>We tried two ways, on the same volunteer readings, and never let either change what TRACE reports.</p>
               <ul class="recipes">
                 <li><b>Option 1, a deep network:</b> FactorizePhys (NeurIPS 2024), trained on another dataset, reads the face video directly.</li>
-                <li><b>Option 2, a learned chooser:</b> a small model picks green, CHROM or POS each window, trained on public and simulated data only.</li>
+                <li><b>Option 2, a learned chooser:</b> a small model picks green, CHROM or POS each window, trained on public data and then on our own volunteers too.</li>
               </ul>
               <div class="evidence" id="deck-learned"></div>
               <details class="deeper"><summary>Go deeper</summary>
-                <p>The chooser is a gradient-boosted tree model fed each method's heart rate, spectral quality, motion share and how well the methods agree. It never saw our volunteers. The oracle peeks at the watch and picks the closest method each window: no real method can beat it, so it shows how much room is left.</p></details>
+                <p>The chooser is a gradient-boosted tree model fed each method's heart rate, spectral quality, motion share and how well the methods agree. It is trained twice: on UBFC-rPPG and simulated faces only, and with our volunteers added, where each person is scored by a model trained without them. The oracle peeks at the watch and picks the closest method each window: no real method can beat it, so it shows how much room is left.</p></details>
               <div class="jump"><button type="button" class="btn ghost small" data-goto="scenarios"><svg><use href="#i-grid"/></svg>Full table: Scenarios</button></div>
             </div>
             <svg class="s-art" viewBox="0 0 480 300" role="img" aria-label="Beat with a rule book races a small robot to a heart">
@@ -846,7 +846,7 @@
   <img id="pip-img" alt="Live camera preview">
 </div>
 
-<script src="/static/app.js?v=28"></script>
+<script src="/static/app.js?v=29"></script>
 <script src="/static/collect.js?v=6"></script>
 </body>
 </html>

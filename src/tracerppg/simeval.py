@@ -25,12 +25,14 @@ METHODS = ("green", "chrom", "pos")
 
 
 def frozen_params(version: int | None = None) -> dict:
-    """The fusion parameters in force: the newest frozen file (v4, then v3,
-    per-window selection), else v2. Pass version=2, 3 or 4 for that version."""
+    """The fusion parameters in force: the newest frozen file (v5, v4, then v3,
+    per-window selection), else v2. Pass version=2 to 5 for that version."""
     res = Path(__file__).resolve().parents[2] / "results"
-    for v in (4, 3):
+    for v in (5, 4, 3):
         if version in (None, v) and (res / f"fusion_params_v{v}.json").exists():
             return json.loads((res / f"fusion_params_v{v}.json").read_text())
+    if version not in (None, 2):
+        raise FileNotFoundError(f"results/fusion_params_v{version}.json does not exist")
     p = res / "fusion_params.json"
     return json.loads(p.read_text()) if p.exists() else {"gamma": 1.0, "mask_k": 4.0, "confidence": 0.24}
 
@@ -78,6 +80,25 @@ def analyse(t: np.ndarray, rgb: np.ndarray, t_end: float, params: dict, win: flo
             r2["methods_long"], r2["methods"] = r2["methods"], r["methods"]
             return r2
     return r
+
+
+def consistency_flags(readouts: list[tuple[float, float, bool]], cons: dict | None) -> dict[float, tuple[float, bool]]:
+    """The live consistency check along one recording, backwards only.
+
+    `readouts` are (end time, TRACE bpm, confident) in time order. A read-out
+    further than cons["tol_bpm"] from the median of TRACE's own read-outs over
+    the previous cons["history_s"] seconds (at least three of them) is a glitch:
+    in "flag" mode it keeps its BPM but loses its confidence, in "hold" mode it
+    reports that median instead. app/engine.py applies the same rule live.
+    """
+    out = {}
+    for i, (e, b, c) in enumerate(readouts):
+        prev = [bb for ee, bb, _ in readouts[:i] if e - cons["history_s"] <= ee < e] if cons else []
+        if cons and cons.get("tol_bpm") and len(prev) >= 3 and abs(b - float(np.median(prev))) > cons["tol_bpm"]:
+            out[e] = (float(np.median(prev)) if cons.get("mode") == "hold" else b, False)
+        else:
+            out[e] = (b, c)
+    return out
 
 
 def _analyse(t: np.ndarray, rgb: np.ndarray, t_end: float, params: dict, win: float) -> dict | None:

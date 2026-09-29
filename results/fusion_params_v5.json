@@ -1,0 +1,59 @@
+{
+ "version": 5,
+ "gamma": Infinity,
+ "mask_k": 4.0,
+ "confidence": 0.2434374971951853,
+ "logistic": [
+  -2.0577847149455897,
+  8.453031018864289
+ ],
+ "continuity_rho": null,
+ "pbv_nominal": [
+  0.27,
+  0.8,
+  0.54
+ ],
+ "tuned_on": "UBFC-rPPG (410 windows) + simulated tuning cohort (1080 windows) + 20 volunteers (63 watch readings), equal weight",
+ "tested_on": "seeds 9000+ (x 3 volunteers), scored once",
+ "v2": {
+  "gamma": 1.0,
+  "mask_k": 4.0,
+  "confidence": 0.23955152037773392
+ },
+ "prior": {
+  "green": 0.8,
+  "chrom": 1.0,
+  "pos": 1.3
+ },
+ "edge_bpm": 55.0,
+ "edge_penalty": 0.0,
+ "long_quality": 0.25,
+ "long_window_s": 30.0,
+ "tuning": {
+  "ubfc_mae": 5.5384361912201525,
+  "sim_mae": 6.588008289173993,
+  "v3_ubfc_mae": 7.00794267132805,
+  "v3_sim_mae": 8.483403682271629
+ },
+ "evaluation": {
+  "volunteers_leave_one_out_mae": 4.624936555034295,
+  "volunteers_leave_one_out_within5": 0.8095238095238095,
+  "volunteers_in_sample_mae": 4.624936555034295,
+  "ubfc_mae": 5.538605693237246,
+  "sim_tune_mae": 6.760316911576658,
+  "v4_volunteers_mae": 5.118471058702798,
+  "pos_volunteers_mae": 5.6331845567936565,
+  "consistency_volunteers_confident_share": 0.76,
+  "consistency_volunteers_confident_mae": 2.89,
+  "consistency_volunteers_flagged_mae": 10.17,
+  "no_consistency_volunteers_confident_share": 0.94,
+  "no_consistency_volunteers_confident_mae": 4.78,
+  "no_consistency_volunteers_flagged_mae": 2.28
+ },
+ "consistency": {
+  "tol_bpm": 10.0,
+  "history_s": 30.0,
+  "mode": "flag",
+  "chosen_on": "UBFC-rPPG + simulated tuning cohort: lowest error among confident read-outs with at least 85 percent confident (scripts/tune_consistency.py); hold mode rejected, it made the volunteers worse"
+ }
+}

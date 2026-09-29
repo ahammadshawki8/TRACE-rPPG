@@ -170,6 +170,7 @@ class LiveEngine:
         self.hrv_start: float | None = None
         self.hrv_result: dict | None = None
         self.live_hist: deque = deque(maxlen=LIVENESS_READOUTS)
+        self.readouts: deque = deque()  # (time, raw TRACE bpm) for the consistency check
         self.window_s = WINDOW_S
 
     # ------------------------------------------------------------ control
@@ -408,6 +409,21 @@ class LiveEngine:
                 longer = window(lw)
                 if longer[3].quality > fr.quality:
                     tu, cols, pulses, fr = longer
+            # Consistency check (scripts/tune_consistency.py): a read-out that jumps more
+            # than tol BPM from TRACE's own read-outs over the last hist seconds is a
+            # glitch, not a heart; it is marked low confidence (and in "hold" mode the
+            # recent median is shown instead). It only looks backwards, never at a reference.
+            shown_bpm, shown_conf, jumped = fr.bpm, bool(fr.confident), False
+            cons = self.params.get("consistency")
+            if cons and cons.get("tol_bpm"):
+                prev = [b for tt, b in self.readouts if now - cons["history_s"] <= tt < now]
+                if len(prev) >= 3 and abs(fr.bpm - float(np.median(prev))) > cons["tol_bpm"]:
+                    jumped, shown_conf = True, False
+                    if cons.get("mode") == "hold":
+                        shown_bpm = float(np.median(prev))
+                self.readouts.append((now, fr.bpm))
+                while self.readouts and self.readouts[0][0] < now - cons["history_s"] - 1.0:
+                    self.readouts.popleft()
             band = (fr.freqs >= 0.6) & (fr.freqs <= HR_BAND[1])
             fp = fr.fused_power[band]
             fp = fp / fp.max() if fp.max() > 0 else fp
@@ -415,7 +431,7 @@ class LiveEngine:
             show = slice(-min(len(tu), int(10 * FS)), None)
             green_raw = cols[:, 1] / np.mean(cols[:, 1]) - 1.0
             state.update({
-                "bpm": round(fr.bpm, 1), "quality": round(fr.quality, 3), "confident": bool(fr.confident),
+                "bpm": round(shown_bpm, 1), "quality": round(fr.quality, 3), "confident": shown_conf, "jumped": jumped,
                 "weights": {k: round(v, 3) for k, v in fr.weights.items()},
                 # Each method's share of the summed quality scores: how much TRACE
                 # trusts it. v3 then selects the most trusted one (weights 1, 0, 0).

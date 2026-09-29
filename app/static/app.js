@@ -606,7 +606,7 @@ function learnedCard(L) {
       L.rows.map(r => `<tr class="${r.kind}"><td><span class="who" style="--c:${kindColor(r)}"><i></i>${esc(r.label)}</span></td><td class="mono kind">${r.kind.toUpperCase()}</td>
         <td class="barcol"><span class="minibar" style="--c:${kindColor(r)};--w:${Math.min(100, r.mae / mx * 100).toFixed(1)}%"></span></td>
         <td class="mono">${fmt(r.mae, 2)}</td><td class="mono">${pct(r.within5)}</td><td class="how">${esc(r.note)}</td></tr>`).join("")}</tbody></table></div>
-    <p class="foot">Option 1, a pretrained deep network (FactorizePhys), reads the same face videos. Option 2, a small learned model, chooses among green, CHROM and POS; it was trained only on UBFC-rPPG and simulated faces, never on these volunteers. Neither changes what TRACE reports. The oracle is not a method: it peeks at the watch, so it shows the best any chooser could do with these three methods.</p>
+    <p class="foot">Option 1, a pretrained deep network (FactorizePhys), reads the same face videos. Option 2, a small learned model, chooses among green, CHROM and POS; it is trained once on UBFC-rPPG and simulated faces, and once more with our volunteers added, each person scored by a model that never saw them. Neither changes what TRACE reports. The oracle is not a method: it peeks at the watch, so it shows the best any chooser could do with these three methods.</p>
   </article>`;
 }
 function breakdownCard(b, span = "span-12") {
@@ -938,8 +938,11 @@ function renderDeckLearned() {
   };
   box.innerHTML = line(["pos", "trace"], "Classical", "POS is the baseline")
     + line(["factorizephys"], "Option 1", "deep network")
-    + line(["ml", "oracle"], "Option 2", "learned chooser, ceiling")
-    + `<em class="mono evidence-foot">MEAN ERROR VS SMARTWATCH, ${L.n_readings} READINGS, ${L.n_people} PEOPLE</em>`;
+    + (() => {
+        const a = pick("ml"), b = pick("ml_loo");
+        return `<div class="ev"><b>Option 2</b><span class="mono">learned chooser</span><em class="mono">PUBLIC DATA ${fmt(a.mae, 1)}${b ? `  /  + OUR VOLUNTEERS ${fmt(b.mae, 1)}` : ""} BPM</em></div>`;
+      })()
+    + `<em class="mono evidence-foot">MEAN ERROR VS SMARTWATCH, ${L.n_readings} READINGS, ${L.n_people} PEOPLE. CEILING (PERFECT CHOOSER) ${fmt(pick("oracle").mae, 1)}</em>`;
 }
 function renderDeckEvidence() {
   renderDeckTables();

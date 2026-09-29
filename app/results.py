@@ -91,10 +91,21 @@ def ubfc() -> dict:
                                               ".venv/Scripts/python.exe scripts/eval_real_fusion.py --dataset D:/datasets/ubfc"}
     out = _real(p, "contact pulse oximeter (CMS50E), synchronised",
                 "UBFC-rPPG, Bobbia et al. 2017. People sit still in good light, and most have lighter skin: "
-                "it tests real faces, not motion or the skin-tone range. TRACE v4 was tuned on these 22 subjects "
-                "(with simulated faces), so this tab shows fit, not proof; the volunteers are the held-out test.")
+                "it tests real faces, not motion or the skin-tone range. TRACE's choosing rule was tuned on these 22 subjects "
+                "(with simulated faces), so this tab shows fit, not proof.")
     out.pop("_raw")
     return out
+
+
+def _loo_note() -> str:
+    """How the volunteers took part in tuning, from the frozen parameters themselves."""
+    p = ROOT / "results" / "fusion_params_v5.json"
+    if not p.exists():
+        return ""
+    ev = json.loads(p.read_text()).get("evaluation", {})
+    loo = ev.get("volunteers_leave_one_out_mae")
+    return ("TRACE v5's lower green preference was chosen with the volunteers only in a leave-one-person-out test; "
+            f"scoring every person with a version tuned without them gives {loo:.2f} BPM." if loo is not None else "")
 
 
 def volunteers() -> dict:
@@ -113,7 +124,8 @@ def volunteers() -> dict:
         "subjects": s["n_volunteers_scored"], "readings": s["n_readings"],
         "overall": {"mae": o["mae"], "within5": o["within5"], "confident": o.get("confident"),
                     "mae_confident": o.get("mae_confident"), "mae_flagged": None},
-        "note": "Real people. The watch and TRACE average differently, so a few BPM of difference is expected even when both are right.",
+        "note": "Real people against a smartwatch, which averages differently, so a few BPM of difference is expected even when both are right. "
+                + _loo_note(),
         "breakdowns": [
             {"title": "BY MOTION", "rows": rows(s["by_motion"])},
             {"title": "BY LIGHTING", "rows": rows(s["by_lighting"])},
@@ -146,16 +158,22 @@ def learned() -> dict:
         {"key": "chrom", "label": "CHROM", "kind": "classical", "note": "colour differences"},
         {"key": "pos", "label": "POS", "kind": "classical", "note": "the baseline to beat"},
         {"key": "trace", "label": "TRACE", "kind": "trace", "note": "picks the sharpest method each window"},
-        {"key": "ml", "label": "TRACE + ML selector", "kind": "learned",
+        {"key": "ml", "label": "ML chooser, public data", "kind": "learned",
          "note": "gradient-boosted trees choose the method; trained on UBFC and simulation only"},
     ]
+    if "ml_loo" in ml.get("mae", {}):
+        rows.append({"key": "ml_loo", "label": "ML chooser, + our volunteers", "kind": "learned",
+                     "note": "the same model also trained on every other volunteer, scored on the one left out"})
     for r in rows:
         r["mae"], r["within5"] = ml["mae"][r["key"]], ml["within5"][r["key"]]
-    if nn and nn.get("n_readings") == ml["n_readings"]:
-        # PhysNet is computed for the record but not shown: it did not transfer to our faces (33.9 BPM).
-        for key, label in (("factorizephys", "FactorizePhys (neural)"),):
-            rows.append({"key": key, "label": label, "kind": "neural", "mae": nn["mae"][key], "within5": nn["within5"][key],
-                         "note": "pretrained deep network, reads the face video; trained on PURE"})
+    if nn:
+        # PhysNet is computed for the record but not shown: it did not transfer to our faces.
+        # The network needs the saved video, so its count can be smaller (a volunteer who kept no video).
+        same = nn.get("n_readings") == ml["n_readings"]
+        rows.append({"key": "factorizephys", "label": "FactorizePhys (neural)", "kind": "neural",
+                     "mae": nn["mae"]["factorizephys"], "within5": nn["within5"]["factorizephys"],
+                     "note": "pretrained deep network, reads the face video; trained on PURE"
+                             + ("" if same else f" ({nn['n_people']} people, {nn['n_readings']} readings: needs the saved video)")})
     rows.append({"key": "oracle", "label": "Oracle (ceiling)", "kind": "ceiling", "mae": ml["mae"]["oracle"],
                  "within5": ml["within5"]["oracle"], "note": "the best of the three per window, chosen by looking at the watch"})
     return {"available": True, "n_people": ml["n_people"], "n_readings": ml["n_readings"], "rows": rows,

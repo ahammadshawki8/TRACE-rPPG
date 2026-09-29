@@ -1,18 +1,18 @@
 {
- "n_people": 12,
- "n_readings": 36,
+ "n_people": 19,
+ "n_readings": 59,
  "mae": {
-  "physnet": 33.92537462031078,
-  "factorizephys": 9.67819743661127
+  "physnet": 29.878694268289888,
+  "factorizephys": 10.007625436252686
  },
  "within5": {
-  "physnet": 0.08333333333333333,
-  "factorizephys": 0.6388888888888888
+  "physnet": 0.06779661016949153,
+  "factorizephys": 0.6271186440677966
  },
  "per_person": {
   "V01": {
-   "physnet": 12.423947463670881,
-   "factorizephys": 0.5859954042978387
+   "physnet": 11.764124182015209,
+   "factorizephys": 1.2038692147202372
   },
   "V02": {
    "physnet": 76.65009122484321,
@@ -25,6 +25,10 @@
   "V04": {
    "physnet": 26.520194143371395,
    "factorizephys": 16.14230329494629
+  },
+  "V06": {
+   "physnet": 27.634484233571516,
+   "factorizephys": 1.893285116369687
   },
   "V07": {
    "physnet": 49.74612757649923,
@@ -57,6 +61,30 @@
   "V14": {
    "physnet": 16.65731200016146,
    "factorizephys": 4.557379975056676
+  },
+  "V15": {
+   "physnet": 30.37058398064975,
+   "factorizephys": 21.607427707307256
+  },
+  "V17": {
+   "physnet": 32.533371032871734,
+   "factorizephys": 1.1536308526665617
+  },
+  "V18": {
+   "physnet": 19.622351895094955,
+   "factorizephys": 22.41089363167378
+  },
+  "V19": {
+   "physnet": 30.448087800262453,
+   "factorizephys": 17.321149042576206
+  },
+  "V20": {
+   "physnet": 26.316594937319895,
+   "factorizephys": 16.243645327111775
+  },
+  "V21": {
+   "physnet": 9.460716538644133,
+   "factorizephys": 5.284871641062668
   }
  },
  "checkpoints": "PURE_PhysNet_DiffNormalized, PURE_FactorizePhys_FSAM_Res (rPPG-Toolbox, trained on PURE)"
